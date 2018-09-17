@@ -79,7 +79,10 @@ class LayoutManager:
 
     @staticmethod
     def layfiles_equal(lay_path_1, lay_path_2):
-        return LayoutManager._layfile_checksum(lay_path_1) == LayoutManager._layfile_checksum(lay_path_2)
+        try:
+            return LayoutManager._layfile_checksum(lay_path_1) == LayoutManager._layfile_checksum(lay_path_2)
+        except FileNotFoundError:
+            return False
 
     def __init__(self, layfile_path, install=True):
         self.lines = self._read_layfile_lines(layfile_path)

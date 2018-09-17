@@ -9,8 +9,8 @@ if not (os.path.exists(OEM_STAR_PATH)
 		and os.path.exists(os.path.join(OEM_STAR_PATH, 'RunHSLExecutor.dll'))
 		and os.path.exists(os.path.join(OEM_STAR_PATH, 'HSLHttp.dll'))):
     raise FileNotFoundError('pyhamilton requires .../site-packages/pyhamilton/STAR-OEM, distributed separately.')
-OEM_LAY_PATH = join(OEM_STAR_PATH, 'VENUS_Method', 'STAR_OEM_Test.lay')
-OEM_HSL_PATH = join(OEM_STAR_PATH, 'VENUS_Method', 'STAR_OEM_Test.hsl')
+OEM_LAY_PATH = join(OEM_STAR_PATH, 'STAR_OEM.lay')
+OEM_HSL_PATH = join(OEM_STAR_PATH, 'STAR_OEM.hsl')
 OEM_RUN_EXE_PATH = 'C:\\Program Files (x86)\\HAMILTON\\Bin\\HxRun.exe'
 from .interface import *
 from .deckresource import *
