@@ -3,7 +3,6 @@
 *.lay binary
 *.dll binary
 *.pdb binary
-*.hsl binary
 *.hsi binary
 *.hs_ binary
 *.sub binary
