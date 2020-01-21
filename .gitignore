@@ -2,6 +2,7 @@
 *__pycache__
 *.res
 *.DS_store
+*.swp
 pyhamilton/LAY-BACKUP
 pyhamilton/STAR-OEM/HslHamHeaterShakerLib.hsl
 pyhamilton/STAR-OEM/HslHamHeaterShakerLib.hs_
