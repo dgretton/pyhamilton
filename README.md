@@ -37,7 +37,8 @@ if __name__ == "__main__":
     ```
     > pip install git+https://github.com/dgretton/pyhamilton.git#egg=pyhamilton
     ```
-8. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
+8. **Run configure.py from command line.** Navigate to your pyhamilton install directory, run `cd pyhamilton` and then `py configure.py` to configure your pyhamilton installation.
+10. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
 
 ## Installation Troubleshooting
 1. If you encounter an error relating to HxFan (i.e., your robot does not have a fan), open pyhamilton/star-oem/VENUS_Method/STAR_OEM_Test.med, navigate to the "HxFan" grouping, and delete all commands under this grouping.
