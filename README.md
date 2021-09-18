@@ -37,7 +37,7 @@ if __name__ == "__main__":
     ```
     > pip install git+https://github.com/dgretton/pyhamilton.git#egg=pyhamilton
     ```
-8. **Run configure.py from command line.** Navigate to your pyhamilton install directory, run `cd pyhamilton` and then `py configure.py` to configure your pyhamilton installation.
+8. **Run configure.py  in your installation directory from the command line.** Navigate to your pyhamilton install directory, run `cd pyhamilton` and then `py configure.py` to configure your pyhamilton installation by providing the information requested.
 10. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
 
 ## Installation Troubleshooting
