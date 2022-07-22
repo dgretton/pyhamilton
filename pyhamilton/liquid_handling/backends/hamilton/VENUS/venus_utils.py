@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed Mar  9 12:01:01 2022
@@ -10,7 +12,7 @@ from threading import Thread
 
 from .interface import HamiltonInterface
 from .deckresource import LayoutManager, ResourceType, Plate24, Plate96, Tip96
-from .oemerr import PositionError
+from .oemerr import PositionNotReachableError
 from .interface import (INITIALIZE, PICKUP, EJECT, ASPIRATE, DISPENSE, ISWAP_GET, ISWAP_PLACE, HEPA,
 WASH96_EMPTY, PICKUP96, EJECT96, ASPIRATE96, DISPENSE96, ISWAP_MOVE, MOVE_SEQ)
 
@@ -52,7 +54,7 @@ def hepa_on(ham, speed=15, asynch=False, **more_options):
     cmd = ham.send_command(HEPA, fanSpeed=speed, **more_options)
     if not asynch:
         ham.wait_on_response(cmd, raise_first_exception=True)
-    return 
+    return
 
 def wash_empty_refill(ham, asynch=False, **more_options):
     logging.info('wash_empty_refill: empty the washer' +
@@ -73,14 +75,14 @@ def move_plate(ham, source_plate, target_plate, gripHeight = 6, try_inversions=N
         try:
             ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
             break
-        except PositionError:
+        except PositionNotReachableError:
             pass
     else:
         raise IOError
     cid = ham.send_command(ISWAP_PLACE, plateLabwarePositions=trgt_pos)
     try:
         ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
-    except PositionError:
+    except PositionNotReachableError:
         raise IOError
 
 def move_by_seq(ham, source_plate_seq, target_plate_seq, grip_height = 0, try_inversions=None, gripForce = 2):
@@ -94,14 +96,14 @@ def move_by_seq(ham, source_plate_seq, target_plate_seq, grip_height = 0, try_in
         try:
             ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
             break
-        except PositionError:
+        except PositionNotReachableError:
             pass
     else:
         raise IOError
     cid = ham.send_command(ISWAP_PLACE, plateSequence=target_plate_seq)
     try:
         ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
-    except PositionError:
+    except PositionNotReachableError:
         raise IOError
 
 def channel_var(pos_tuples):
@@ -194,7 +196,7 @@ def tip_eject_96(ham_int, tip96=None, **more_options):
     if tip96 is None:
         labware_poss = ''
         more_options.update({'tipEjectToKnownPosition':2}) # 2 is default waste
-    else:   
+    else:
         labware_poss = compound_pos_str_96(tip96)
     ham_int.wait_on_response(ham_int.send_command(EJECT96,
         labwarePositions=labware_poss,
@@ -238,7 +240,7 @@ class StderrLogger:
 def add_stderr_logging(logger_name=None):
     logger = logging.getLogger(logger_name) # root logger if None
     sys.stderr = StderrLogger(logger.error)
-    
+
 def normal_logging(ham_int):
     local_log_dir = os.path.join(method_local_dir, 'log')
     if not os.path.exists(local_log_dir):
