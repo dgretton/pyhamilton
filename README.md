@@ -1,4 +1,4 @@
-# PyHamilton, ***A PyLabRobot Project***
+# PyHamilton, A PyLabRobot Project
 
 <img src="imgs/ph3.png" alt="drawing" width="450"/>
 
