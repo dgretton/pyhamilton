@@ -1,6 +1,6 @@
 # PyHamilton, ***A PyLabRobot Project***
 
-![PyHamilton](imgs/ph3.png)
+<img src="imgs/ph3.png" alt="drawing" width="450"/>
 
 
 **Python for Hamilton liquid handling robots** <br>
