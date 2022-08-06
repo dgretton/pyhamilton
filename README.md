@@ -1,7 +1,9 @@
-# PyHamilton
+# PyHamilton, ***A PyLabRobot Project***
+
+![PyHamilton](imgs/ph3.png)
+
 
 **Python for Hamilton liquid handling robots** <br>
-***A PyLabRobot Project***
 
 Hamilton software only works on Windows, so the same goes for PyHamilton.
 
