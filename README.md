@@ -1,6 +1,7 @@
 # PyHamilton
 
 **Python for Hamilton liquid handling robots**
+*A PyLabRobot Project*
 
 Hamilton software only works on Windows, so the same goes for PyHamilton.
 
