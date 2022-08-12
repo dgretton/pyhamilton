@@ -7,10 +7,9 @@ from os.path import dirname, abspath
 PACKAGE_PATH = abspath(dirname(__file__))
 
 # for legacy reasons, we import all venus methods
-from pyhamilton.liquid_handling.backends.hamilton.VENUS.interface import *
-from pyhamilton.liquid_handling.backends.hamilton.VENUS.deckresource import *
-from pyhamilton.liquid_handling.backends.hamilton.VENUS.oemerr import *
-from pyhamilton.liquid_handling.backends.hamilton.VENUS.venus_utils import *
+from interface import *
+from deckresource import *
+from oemerr import *
 
 this_file_dir = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_DIR = os.path.abspath(os.path.join(this_file_dir))
@@ -44,7 +43,3 @@ def autoconfig():
 
   recursive_copy(LIBRARY_DIR, hamilton_lib_dir)
   print("Configuration completed")
-
-
-import logging
-logging.basicConfig(level=logging.INFO)

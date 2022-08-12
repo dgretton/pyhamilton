@@ -1,2 +1,0 @@
-class NoTipsException(Exception):
-  pass
