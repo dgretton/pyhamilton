@@ -65,7 +65,7 @@ if __name__ == "__main__":
     </br>a. Make sure you don't have any other program running which is communicating with the robot e.g. Venus run control
     </br>b. Make sure the .dlls referenced in ```__init__.py``` are unblocked. See [this StackOverflow thread](https://stackoverflow.com/questions/28840880/pythonnet-filenotfoundexception-unable-to-find-assembly) for more details.
 
-5. Instrument configuration errors can arise right when you start a method, and can call PyHamilton to fail silently if not in "simulate" ie windowed mode. To fix this, make sure to reference a Layfile with the LayoutManager tool that you know works on your robot, before you instantiate the HamiltonInterface class.
+5. Instrument configuration errors can arise right when you start a method, and can call PyHamilton to fail silently if not in "simulate" ie windowed mode. To fix this, make sure to reference a Layfile with the LayoutManager tool that you know works on your robot, before you instantiate the HamiltonInterface class. You can also manually copy this file into pyhamilton/pyhamilton/star-oem/VENUS_Method/STAR_OEM_Test.lay
 
 Please see the list of **Ongoing Projects** for information on other issues with PyHamilton
 
