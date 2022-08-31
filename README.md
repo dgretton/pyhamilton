@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     Press accept to proceed with the bundled installers.
     
-8. **Test your PyHamilton installation**
+8. **Test your PyHamilton installation** </br>
 The easiest way to test your PyHamilton installation is by running the following in your terminal
 
     ```
