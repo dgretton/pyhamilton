@@ -47,7 +47,7 @@ if __name__ == "__main__":
 7. **Run the pyhamilton autoconfig tool from the command line.** 
 
     ```
-    pyhamilton-config
+    pyhamilton-configure
     ``` 
 
     Press accept to proceed with the bundled installers.
