@@ -1,6 +1,12 @@
 from setuptools import setup, find_packages
 
-long_description = open('README.md', encoding='utf-8').read()
+try:
+    print("here")
+    import pypandoc
+    long_description = pypandoc.convert_file('README.md', 'rst')
+    print(long_description)
+except(IOError, ImportError):
+    long_description = open('README.md').read()
 
 setup(
     name='pyhamilton',
@@ -12,7 +18,7 @@ setup(
     install_requires=['requests', 'pythonnet', 'pywin32', 'pyserial'],
     package_data={'pyhamilton': ['star-oem/*', 'star-oem/VENUS_Method/*', 'bin/*','library/*',
                                  'library/HSLInhecoTEC/*','library/HSLAppsLib/*','library/ASWStandard/*',
-                                 'library/DaisyChainedTiltModule/*','library/SchedulingDev/*',]},
+                                 'library/ASWStandard/ASWGlobal/*','library/DaisyChainedTiltModule/*','library/SchedulingDev/*',]},
     url='https://github.com/dgretton/pyhamilton.git',
     author='Dana Gretton',
     author_email='dgretton@mit.edu',

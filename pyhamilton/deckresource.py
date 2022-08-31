@@ -5,8 +5,9 @@ Module `pyhamilton.deckresource` provides convenience classes and methods for in
 """
 import string, shutil, os, string, re
 from datetime import datetime
-from .paths import OEM_LAY_PATH, LAY_BACKUP_DIR
+from pyhamilton import OEM_LAY_PATH, LAY_BACKUP_DIR
 from .oemerr import ResourceUnavailableError
+
 
 class ResourceType:
     """
@@ -263,7 +264,7 @@ class DeckResource:
         Returns:
           The name (`str`) associated with this specific deck resource in the Hamilton Layout (`.lay`) file it came from.
         """
-        return self._layout_name # default; override if needed. (str)
+        return self._layout_name # default; override if needed. (str) 
 
     def position_id(self, idx):
         """The identifier used for one of a sequence of positions inside this labware.

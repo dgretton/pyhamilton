@@ -1,11 +1,6 @@
-<img src="imgs/ph3.png" alt="drawing" width="380"/>
+# PyHamilton
 
-
-# PyHamilton, A PyLabRobot Project
-
-
-
-**Python for Hamilton liquid handling robots** <br>
+**Python for Hamilton liquid handling robots**
 
 Hamilton software only works on Windows, so the same goes for PyHamilton.
 
@@ -47,35 +42,32 @@ if __name__ == "__main__":
 7. **Run the pyhamilton autoconfig tool from the command line.** 
 
     ```
-    pyhamilton-configure
+    pyhamilton-config
     ``` 
 
     Press accept to proceed with the bundled installers.
 
 9. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
 
-## Troubleshooting
-1. If you encounter a "silent error" such as your initialization hanging, or your script crashing without a specific reason, or an unclear error code, try to run your script with HamiltonInterface(simulate=True). This will run PyHamilton with Run Control open in a window rather than in the background. From here you can turn simulate on or off in Run Control, and monitor the execution of your script. In rare cases, Run Control throws errors that are not visible at the Python level.
+## Installation Troubleshooting
+1. If you encounter an error relating to HxFan (i.e., your robot does not have a fan), open pyhamilton/star-oem/VENUS_Method/STAR_OEM_Test.med, navigate to the "HxFan" grouping, and delete all commands under this grouping.
 
-2. If you encounter an error relating to HxFan (i.e., your robot does not have a fan), open pyhamilton/star-oem/VENUS_Method/STAR_OEM_Test.med, navigate to the "HxFan" grouping, and delete all commands under this grouping.
+2. If you would like to test your PyHamilton installation on a computer not connected to a Hamilton robot, use `HamiltonInterface(simulate=True)` to open your interface inside your robot script. 
 
-3. If you would like to test your PyHamilton installation on a computer not connected to a Hamilton robot, use `HamiltonInterface(simulate=True)` to open your interface inside your robot script. 
-
-4. If your initialization hangs (such as on initial_error_example.py), try these steps:
+3. If your initialization hangs (such as on initial_error_example.py), try these steps:
     </br>a. Make sure you don't have any other program running which is communicating with the robot e.g. Venus run control
     </br>b. Make sure the .dlls referenced in ```__init__.py``` are unblocked. See [this StackOverflow thread](https://stackoverflow.com/questions/28840880/pythonnet-filenotfoundexception-unable-to-find-assembly) for more details.
-
-5. Instrument configuration errors can arise right when you start a method, and can call PyHamilton to fail silently if not in "simulate" ie windowed mode. To fix this, make sure to reference a Layfile with the LayoutManager tool that you know works on your robot, before you instantiate the HamiltonInterface class. You can also manually copy this file into pyhamilton/pyhamilton/star-oem/VENUS_Method/STAR_OEM_Test.lay
 
 Please see the list of **Ongoing Projects** for information on other issues with PyHamilton
 
 ## Ongoing Projects
 PyHamilton is an open-source project, and we have a ton of work to do! If you'd like to contribute to the PyHamilton project, please consider these following areas of ongoing work and don't hesitate to reach out if you want to discuss collaborating with the team.
 
-- **Project Manager and Repository:** Sharing Hamilton scripts is a hassle, which hinders community development and reproducibility. We are working on a centralized repository where users can upload their PyHamilton projects to share with the rest of the community, along with a simple command-line API for managing projects.
 - **PyHamilton for Nimbus:** Right now PyHamilton only works on the STAR line of liquid-handling robots, but we have recently received the appropriate libraries for expanding the framework to Hamilton Nimbus, a much more affordable and low-footprint robot. This project is in its very early stages so collaborators will have the opportunity to influence crucial design decisions.
 - **PyHamilton for Linux:** One of the biggest limitations for PyHamilton, Hamilton robots, and much of lab automation in general is their exclusive dependence on Windows as an operating system. We are working to recreate the Venus application (which runs on Windows and which PyHamilton depends on in turn) as a Python library, so that PyHamilton will effectively become OS-agnostic. This is a truly massive undertaking but we have made considerable progress due to incredibly talented team member Rick Wierenga.
+- **Package Manager**
 
+## Applications
 
 - [A high-throughput platform for feedback-controlled directed evolution](https://www.biorxiv.org/content/10.1101/2020.04.01.021022v1), _preprint_
 
