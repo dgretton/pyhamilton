@@ -1,10 +1,15 @@
-import time, json, signal, os, requests, string, logging, subprocess, win32gui, win32con
+import time, json, signal, os, requests, string, logging, subprocess
 from http import server
 from threading import Thread
 from multiprocessing import Process
-from pyhamilton import OEM_RUN_EXE_PATH, OEM_HSL_PATH
+
+from .paths import OEM_RUN_EXE_PATH, OEM_HSL_PATH
 from .oemerr import * #TODO: specify
+# TODO: replace HAMILTON_ERROR_MAP with new error handling system
 from .defaultcmds import defaults_by_cmd
+
+import win32gui, win32con
+
 
 class HamiltonCmdTemplate:
     """
@@ -386,7 +391,7 @@ class HamiltonInterface:
 
         Args:
           template (HamiltonCmdTemplate): Optional; a template to provide default
-            arguments not specified in `cmd_dict`. 
+            arguments not specified in `cmd_dict`.
           block_until_sent (bool): Optional; if `True`, wait for all queued messages,
             including this one, to get picked up by the local server and sent across
             the HTTP connection, before returning. Default is False.
@@ -503,9 +508,9 @@ class HamiltonInterface:
                 errcode = blocks[blocknum][_block_mainerrfield]
                 if errcode != 0:
                     self.log('Exception encoded in Hamilton return.', 'warn')
-                    try:
-                        decoded_exception = HAMILTON_ERROR_MAP[errcode]()
-                    except KeyError:
+                    # decoded_exception = HAMILTON_ERROR_MAP[errcode]()
+                    decoded_exception = error_code_to_exception(errcode)
+                    if isinstance(err, UnknownHamiltonError):
                         self.log_and_raise(InvalidErrCodeError('Response returned had an unknown error code: ' + str(errcode)))
                     self.log('Exception: ' + repr(decoded_exception), 'warn')
                     if raise_first_exception:
@@ -554,7 +559,7 @@ class HamiltonInterface:
 
         ### Block data information
 
-        - Num 
+        - Num
             - Step depended information (e.g. the channel number, a loading position etc.).
 
             - Note: The meaning and data type for this information is described in the corresponding help of single step.

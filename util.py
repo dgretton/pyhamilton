@@ -1,3 +1,5 @@
+from deckresource import DeckResource
+
 class ChannelHead:
 
     def __init__(self):
@@ -6,12 +8,12 @@ class ChannelHead:
     def pack_moves(self, moves):
         pass # return (binary channel pattern string, remaining moves)
 
-    def can_move_simul(move1, move2): # both arguments are 4-tuples, (tips, ml, source, dest) 
+    def can_move_simul(move1, move2): # both arguments are 4-tuples, (tips, ml, source, dest)
         tips, mls, sources, dests = zip(move1, move2)
         move_components = zip(sources, tips, dests)
         xy_deltas = (None, None, None)
         for i, (pos1, pos2) in enumerate(zip(*move_components)):
-            resource = pos1.parent_resource 
+            resource = pos1.parent_resource
             if resource is not pos2.parent_resource:
                 return False
             dx, dy, constraints = resource.alignment_delta(pos1, pos2)
