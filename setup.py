@@ -24,7 +24,7 @@ setup(
     author_email='dgretton@mit.edu',
     entry_points={
         'console_scripts': [
-            'pyhamilton-quickstart = pyhamilton.cmd.quickstart:main',
+            'pyhamilton-new-project = pyhamilton.__init__:create_project',
             'pyhamilton-configure = pyhamilton.__init__:autoconfig'
         ],
     },
