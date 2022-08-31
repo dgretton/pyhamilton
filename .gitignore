@@ -4,3 +4,5 @@
 *.swp
 build/pdf-intermediate.md
 pyhamilton/LAY-BACKUP
+dist
+*.egg-info

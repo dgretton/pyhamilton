@@ -43,8 +43,8 @@ def autoconfig():
     os.startfile(exe_json)
     
     hamilton_lib_dir = os.path.abspath('C:/Program Files (x86)/HAMILTON/Library')
-
-    
+    print("Copying files to Hamilton library")
+    print(LIBRARY_DIR)
     def recursive_copy(source_dir, target_dir):
         source_list = full_paths_list(source_dir)
         for file in source_list:
@@ -52,6 +52,7 @@ def autoconfig():
                 shutil.copy(file, target_dir + '//' + os.path.basename(file))
             if os.path.isdir(file):
                 target = target_dir + '//' + os.path.basename(file)
+                print(target)
                 if not os.path.exists(target):
                     os.mkdir(target)
                 recursive_copy(source_dir + '//' + os.path.basename(file), target)            
