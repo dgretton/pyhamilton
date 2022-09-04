@@ -239,7 +239,7 @@ def add_stderr_logging(logger_name=None):
     logger = logging.getLogger(logger_name) # root logger if None
     sys.stderr = StderrLogger(logger.error)
     
-def normal_logging(ham_int):
+def normal_logging(ham_int, method_local_dir):
     local_log_dir = os.path.join(method_local_dir, 'log')
     if not os.path.exists(local_log_dir):
         os.mkdir(local_log_dir)
