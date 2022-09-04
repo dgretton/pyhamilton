@@ -42,10 +42,20 @@ if __name__ == "__main__":
 7. **Run the pyhamilton autoconfig tool from the command line.** 
 
     ```
-    pyhamilton-config
+    pyhamilton-configure
     ``` 
 
     Press accept to proceed with the bundled installers.
+    
+8. **Test your PyHamilton installation** </br>
+The easiest way to test your PyHamilton installation is by running the following in your terminal
+
+    ```
+    mkdir new-project
+    cd new-project
+    pyhamilton-new-project
+    py robot_method.py
+    ```
 
 9. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
 
