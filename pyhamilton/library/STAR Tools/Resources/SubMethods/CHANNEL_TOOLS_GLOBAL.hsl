@@ -1,0 +1,43 @@
+#pragma global
+
+#ifndef __CHANNEL_TOOLS_GLOBAL_hsl__
+#define __CHANNEL_TOOLS_GLOBAL__ 1
+
+
+namespace SPLIT_WELLS_GLOBAL
+{
+   function InitializeVariables();
+
+   function InitializeVariables()
+   {}
+
+   variable ARR_CONTAINER_IDS[];
+   variable ARR_LABWARE_CONFIG_FILE[];
+   variable ARR_CONTAINER_CONFIG_FILE[];
+   variable ARR_CONTAINER_WIDTH[];
+   variable ARR_CONTAINER_SHAPE[];
+   variable ARR_CONTAINER_BOTTOM_WIDTH[];
+   variable ARR_CONTAINER_TOP_WIDTH[];
+   variable ARR_CONTAINER_BOTTOM_HEIGHT[];
+   variable BOOL_LIBRARY_INITIALIZED(hslFalse);
+} 
+
+namespace LABWARE_OFFSET_GLOBAL
+{
+   variable BOOL_LIBRARY_INITIALIZED(hslFalse);
+   variable ARR_CONTAINER_CONFIG_FILE[];
+   variable ARR_CONTAINER_SHAPE[];
+   variable ARR_CONTAINER_BOTTOM_WIDTH[];
+   variable ARR_CONTAINER_TOP_WIDTH[];
+   variable ARR_CONTAINER_BOTTOM_HEIGHT[];
+}
+
+namespace LABWARE_TILT
+{
+   variable BOOL_LIBRARY_INITIALIZED(hslFalse);
+   variable ARR_LABWARE_CONFIG_FILE[];
+   variable ARR_BASE_OFFSET[];
+}
+
+#endif
+// $$author=Bare_B$$valid=0$$time=2018-03-20 16:48$$checksum=7261bae0$$length=085$$

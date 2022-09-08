@@ -1,0 +1,23 @@
+#pragma global
+
+#ifndef __Tip_Tool_Global_Variables_hsl__
+#define __Tip_Tool_Global_Variables_hsl__ 1
+
+namespace TT_GLOBAL_VARIABLES
+{
+   namespace TIP_COUNT
+   {
+
+      function InitializeVariables();
+
+      function InitializeVariables()
+      {}
+
+      variable TIP_COUNTER[];
+      variable TIP_COUNT_NEEDED[];
+      variable LIBRARY_INITIALIZED(hslFalse);
+   }
+}
+
+#endif
+// $$author=Bare_B$$valid=0$$time=2019-06-17 17:13$$checksum=5085208f$$length=085$$

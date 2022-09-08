@@ -1,0 +1,63 @@
+// {{{ 2 "IncludeGuard" "PragmaOnce"
+#pragma once
+// }} ""
+#include "HSLUtilLib.hsl"
+/* {{ 2 "LibraryInsertLine" "" */ // }} ""
+// {{ 2 "TemplateIncludeBlock" ""
+#include "HSLMETEDLib.hs_"
+#include "HSLMECCLib.hs_"
+// }} ""
+// {{{ 2 "LibraryNamespace" "Begin"
+namespace LOOKUP {
+// }} ""
+/* {{ 2 "VariableInsertLine" "" */ // }} ""
+// {{{ 2 "SubmethodForwardDeclaration" ""
+function Lookup( variable & array[], variable item ) variable ;
+// }} ""
+function _InitLibrary() {
+// {{ 2 "AutoInitBlock" ""
+// }} ""
+}
+function _ExitLibrary() {
+// {{ 2 "AutoExitBlock" ""
+// }} ""
+}
+// {{{ 5 "Lookup" "Begin"
+function Lookup( variable & array[], variable item ) variable {
+// }} ""
+private variable index;
+private variable lookupreturn;
+// {{ 5 "Lookup" "InitLocals"
+// }} ""
+// {{{ 1 1 0 "73682500_9c03_41e6_9201fab1cd9ec558" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+lookupreturn = Util::Lookup(array, item, index);
+// }} ""
+// {{ 2 1 0 "d9632361_4ee8_4d64_b474934cca7658f3" "{B31F3531-5D80-11d4-A5EB-0050DA737D89}"
+if (lookupreturn > 0)
+{
+// }} ""
+// {{ 3 1 0 "44861c96_df20_437e_a886b3c8938bf129" "{B31F3544-5D80-11d4-A5EB-0050DA737D89}"
+index = index + 1;
+// }} ""
+// {{{ 4 1 0 "f372de40_bd88_4ab1_95c0820685390b07" "{9EC997CD-FD3B-4280-811B-49E99DCF062C}"
+return (index);
+// }} ""
+// {{ 5 1 0 "d9632361_4ee8_4d64_b474934cca7658f3" "{B31F3531-5D80-11d4-A5EB-0050DA737D89}"
+}
+else
+{
+// }} ""
+// {{{ 6 1 0 "f060c5ab_63e8_43de_88d40330f32e022d" "{9EC997CD-FD3B-4280-811B-49E99DCF062C}"
+return (0);
+// }} ""
+// {{ 7 1 0 "d9632361_4ee8_4d64_b474934cca7658f3" "{B31F3531-5D80-11d4-A5EB-0050DA737D89}"
+}
+// }} ""
+// {{{ 5 "Lookup" "End"
+}
+// }} ""
+/* {{ 2 "SubmethodInsertLine" "" */ // }} ""
+// {{{ 2 "LibraryNamespace" "End"
+} // library namespace
+// }} ""
+// $$author=Bare_B$$valid=0$$time=2017-01-16 22:36$$checksum=6a223184$$length=085$$

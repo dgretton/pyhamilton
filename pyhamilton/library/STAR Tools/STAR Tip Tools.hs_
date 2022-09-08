@@ -1,0 +1,41 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 4/21/2022 2:36:43 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace STAR_TIP_TOOLS {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function BuildChannelPattern( variable i_int_NumActiveChannels, variable i_int_TotalChannels, variable & o_str_ChPattern ) void { }
+function DefragTipRacks1mL( device & ML_STAR, sequence & io_seq_Tips ) void { }
+function DefragTipRacks5mL( device & ML_STAR, sequence & io_seq_Tips ) void { }
+function Get1mLChannelCount( device & ML_STAR, variable & o_int_Total1mLChannels ) void { }
+function Get5mLChannelCount( device & ML_STAR, variable & o_int_Total5mLChannels ) void { }
+function GetTipCounter( device & ML_STAR, sequence & io_seqTips, variable & o_strTipCounter ) void { }
+function GetTipType( device & Instrument, sequence i_seq_Tips, variable & o_int_TipType ) void { }
+function Optimized1mLTipPickup( device & ML_STAR, sequence & io_seq_TipSequence, sequence i_seq_ControlSequence, variable i_str_TipCounter, variable & o_str_ChannelPattern ) void { }
+function Optimized1mLTipPickup2( device & ML_STAR, sequence & io_seq_TipSequence, variable i_str_TipCounter, variable i_str_ChannelPattern ) void { }
+function Optimized5mLTipPickup( device & ML_STAR, sequence & io_seq_TipSequence, sequence i_seq_ControlSequence, variable i_str_TipCounter, variable & o_str_ChannelPattern ) void { }
+function Optimized5mLTipPickup2( device & ML_STAR, sequence & io_seq_TipSequence, variable i_str_TipCounter, variable i_str_ChannelPattern ) void { }
+function ResetInputSequence( device & Instrument, sequence & io_seq_SequenceToReset ) void { }
+function TipCapacityCheck( device & Instrument, sequence i_seq_TipsToCheck, variable & o_flt_TipCapacity ) void { }
+function TipCheck( device & Instrument, sequence & io_seq_Tips, variable i_str_TipCounter, variable i_int_TipsNeeded ) void { }
+function TipCheck2( device & Instrument, sequence & io_seq_Tips, sequence & i_seq_ControlSequence, variable i_str_TipCounter ) void { }
+function TipCheckMPH96( device & Instrument, sequence & io_seq_Tips, variable i_str_TipCounter ) void { }
+function TipCountNeeded_Add( variable i_str_TipCounter, variable i_int_NumberOfTips ) void { }
+function TipCountNeeded_Get( variable i_str_TipCounter, variable & o_int_NumberOfTips ) void { }
+function TipCountNeeded_Reset( variable i_str_TipCounter ) void { }
+function TipCounter_Edit( device & ML_STAR, sequence & io_seq_TipSequence, variable i_str_TipCounter, variable i_int_TimeOut ) void { }
+function TipCounter_Read( device & ML_STAR, sequence & io_seq_TipSequence, variable i_str_TipCounter ) void { }
+function TipCounter_SetShow( device & ML_STAR, sequence & io_seq_TipSequence, variable i_str_TipCounter, variable i_int_TimeOut, variable i_int_StartPosition, variable i_int_EndPosition ) void { }
+function TipCounter_Write( device & ML_STAR, sequence i_seq_TipSequence, variable i_str_TipCounter ) void { }
+function TipTypeCheck1mL( device & ML_STAR, variable i_str_ReturnFromTipPickUp, sequence & o_seq_IncorrectTipReturn, variable & o_str_IncorrectChannels ) variable {  return (0); }
+function TipTypeLength_Get( variable i_int_TipType, variable & o_flt_TipLength ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2022-04-21 14:36$$checksum=7f92e416$$length=083$$

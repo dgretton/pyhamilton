@@ -1,0 +1,17 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 03.10.2008 08:27:45
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace STRTOKENIZE {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function StrTokenize( variable strIn, variable strDelimiter, variable & arrTokens[], variable bAttendEmptyTokens ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=marsll_hamilton$$valid=0$$time=2008-10-03 08:27$$checksum=c3c24163$$length=092$$

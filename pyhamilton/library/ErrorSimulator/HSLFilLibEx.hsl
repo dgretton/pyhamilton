@@ -1,0 +1,100 @@
+// This is an extension of the HSL File Library Extension.
+// Copyright (C) by HAMILTON Bonaduz AG, CH-7402 Bonaduz.
+// All rights reserved.
+//
+// Modification History
+// 2002-11-27  bandenmatten : Initial file creation.
+// 2003-05-06  bandenmatten : Added function FilFormatReportFile().
+
+#ifndef __HSLFilLibEx_hsl__
+#define __HSLFilLibEx_hsl__	1
+
+// Interface to the File Library Extension
+#ifndef HSL_RUNTIME
+
+// Deletes a specified file.
+function FilDeleteFileEx(
+	variable& filePathName) void						// i: The name of the file to delete. The filespec can contain wildcard characters in the last path component. 
+{}
+
+// Copies one or more files from one location to another.
+function FilCopyFileEx(
+	variable& sourceFilePathName, 					// i: Character string file specification, which can include wildcard characters, for one or more files to be copied. 
+	variable& destinationFilePathName) void		// i: Character string destination where the file or files from source are to be copied. Wildcard characters are not allowed.
+{}
+
+// Formats a specified report file.
+function FilFormatReportFileEx(
+	variable& sourceFilePathName, 					// i: Character string file specification. Wildcard characters are not allowed.
+	variable& destinationFilePathName) variable	// i: Character string destination where the file from source is to be formated. Wildcard characters are not allowed.
+{return(0);}
+
+#endif
+
+// Implementation of the File Library Extension
+#ifdef HSL_RUNTIME
+
+function FilDeleteFileEx(variable& filePathName) void
+{
+	object fso;
+	fso.CreateObject("Scripting.FileSystemObject");
+	fso.DeleteFile(filePathName);
+	fso.ReleaseObject();
+}
+
+function FilCopyFileEx(
+	variable& sourceFilePathName, 
+	variable& destinationFilePathName) void
+{
+	object fso;
+	fso.CreateObject("Scripting.FileSystemObject");
+	fso.CopyFile(sourceFilePathName, destinationFilePathName);
+	fso.ReleaseObject();
+}
+
+namespace IOMode
+{
+	const variable forReading(1);
+	const variable forWriting(2);
+	const variable forAppending(8);
+}
+
+function FilFormatReportFileEx(
+	variable& sourceFilePathName,
+	variable& destinationFilePathName) variable
+{
+	variable write(hslFalse);
+	string line;
+	object fso;
+	object src;
+	object dst;
+
+	onerror goto Unexpected;
+	fso.CreateObject("Scripting.FileSystemObject");
+	src = fso.OpenTextFile(sourceFilePathName, IOMode::forReading);
+	dst = fso.OpenTextFile(destinationFilePathName, IOMode::forWriting, hslTrue);
+	for (line = src.ReadLine(); !src.AtEndOfStream; line = src.ReadLine())
+	{
+		if (!write)
+			if (line.Find("Element Name;") == 0)
+				write = hslTrue;
+		if (write)
+			dst.WriteLine(line);
+	}
+	src.Close();
+	dst.Close();
+	return(hslTrue);
+
+	Unexpected:
+	{
+		if (!src.IsNull())
+			src.Close();
+		if (!dst.IsNull())
+			dst.Close();
+		return(hslFalse);
+	}
+}
+
+#endif
+#endif
+// $$author=bandenmatten$$valid=0$$time=2003-05-06 11:21$$checksum=2131b3b2$$length=089$$

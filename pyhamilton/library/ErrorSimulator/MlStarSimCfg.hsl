@@ -1,0 +1,65 @@
+#pragma once
+
+
+namespace MlStarSimCfg
+{
+	static const variable dataDefName       ("Simulator");
+	static const variable instanceName      ("default");
+	static const variable keyNameUpdateKey  ("updateKeyValue");
+	static const variable keyNameUpdateValue("updateParamValue");
+
+
+	// Update one key value pair in the simulator config file
+	// The previous value for the keyName is readed out and stored
+	// under the keys in the config file which are updated for the second use.
+	// variable instrumentType:
+     // 0= ML STAR
+     // 1= ML STARlet
+     // 2= ML STARplus
+
+	function updateKeyValueForOneUse(
+		variable keyName,
+		variable newValue,
+      variable instrumentType) variable
+	{
+		variable oldValue("");
+
+		variable simulatorConfigFile("");
+
+		variable cfgStatus(-1);
+		variable dateDefVerNum(-1);
+      variable mlStarCfg;	
+
+		object simCfg;
+
+      if(instrumentType==0){mlStarCfg="\\ML_STAR_Simulator.cfg";}
+      if(instrumentType==1){mlStarCfg="\\ML_Starlet_Simulator.cfg";}
+      if(instrumentType==2){mlStarCfg="\\ML_FlexStar_Simulator.cfg";}
+
+		simulatorConfigFile = GetConfigPath() + mlStarCfg;
+
+		simCfg.CreateObject("HXCFGFILLib.HxCfgFile");
+
+		// Load the simulator config
+		cfgStatus = simCfg.LoadFile(simulatorConfigFile);
+
+		// Get the data def version number
+		dateDefVerNum = simCfg.GetDataDefVerNum(dataDefName, instanceName);
+
+		// Read the previous stored value under the keyName
+		oldValue = simCfg.GetDataDefValueAsString(dataDefName, instanceName, keyName);
+
+		// Set the new value for the keyName
+		simCfg.PutStringValueInDataDef(dataDefName, dateDefVerNum, instanceName, keyName, newValue);
+
+		// Set the keyValue and ParamValue which shall be used for the second use
+		simCfg.PutStringValueInDataDef(dataDefName, dateDefVerNum, instanceName, keyNameUpdateKey, keyName);
+		simCfg.PutStringValueInDataDef(dataDefName, dateDefVerNum, instanceName, keyNameUpdateValue, oldValue);
+
+		// Store the file
+		simCfg.StoreFile(simulatorConfigFile, cfgStatus);
+
+		return( oldValue );
+	}
+}
+// $$author=Cuevas_A$$valid=0$$time=2012-07-10 18:09$$checksum=7a8c5e22$$length=085$$

@@ -1,0 +1,64 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 7/23/2021 11:08:24 PM
+
+#pragma global
+#ifndef HSL_RUNTIME
+namespace LPQ {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function ADJUST_AddCarrierToDeckSite( device & Instrument, variable i_str_ConfigFile, variable i_str_NewLabwareID, variable i_int_DeckPosition ) void { }
+function ADJUST_AddContainerToPosition( device & Instrument, sequence i_seq_LabwareToChange, variable i_str_NewContainerFile, variable i_flt_OffsetX, variable i_flt_OffsetY, variable i_flt_OffsetZ ) void { }
+function ADJUST_AddContainerToPositions( device & Instrument, sequence i_seq_LabwareToChange, variable i_str_NewContainerFile, variable i_flt_OffsetX, variable i_flt_OffsetY, variable i_flt_OffsetZ ) void { }
+function ADJUST_ChangeLabwareID( device & Instrument, variable i_str_LabwareID, variable i_str_NewLabID ) void { }
+function ADJUST_GetCurrentStack( device & Instrument, variable i_str_LabwareNameForStack, variable & o_arr_StackedLabware[] ) void { }
+function ADJUST_MoveLabwareSite( device & Instrument, sequence i_seq_LabwareToAdjust, variable i_str_NewSiteID ) void { }
+function ADJUST_MoveLabwareToDeckSite( device & Instrument, variable i_str_Labware, variable i_str_Template, variable i_str_Site ) void { }
+function ADJUST_OffsetWells( device & Instrument, sequence i_seq_LabwarePositionsToOffset, variable i_flt_X_Offset, variable i_flt_Y_Offset ) void { }
+function ADJUST_OffsetWells2( device & Instrument, sequence i_seq_LabwarePositionsToOffset, variable i_flt_X_Offset, variable i_flt_Y_Offset, variable i_flt_Z_Offset ) void { }
+function ADJUST_RotateLabware( device & Instrument, sequence i_seq_LabwarePositionsToOffset, variable i_flt_TargetRotation ) void { }
+function ADJUST_SetAbsolutePosition( device & Instrument, sequence i_seq_LabwarePositionsToAdjust, variable i_fltPositionX, variable i_fltPositionY, variable i_fltPositionZ, variable i_fltPositionR ) void { }
+function ADJUST_SetAbsolutePositionForLabwareID( device & Instrument, variable i_strLabwareID, variable i_fltPositionX, variable i_fltPositionY, variable i_fltPositionZ, variable i_fltPositionR ) void { }
+function ADJUST_SetProperties( device & Instrument, sequence i_seq_LabwarePositionsToAdjust, variable i_strPropertyKey, variable i_strProperyValue ) void { }
+function ADJUST_SetPropertiesForLabwareID( device & Instrument, variable i_strLabwareID, variable i_strPropertyKey, variable i_strProperyValue ) void { }
+function ADJUST_SetRelativePosition( device & Instrument, sequence i_seq_LabwarePositionsToAdjust, variable i_fltPositionX, variable i_fltPositionY, variable i_fltPositionZ, variable i_fltPositionR ) void { }
+function ADJUST_SetRelativePositionForLabwareID( device & Instrument, variable & i_strLabwareID, variable i_fltPositionX, variable i_fltPositionY, variable i_fltPositionZ, variable i_fltPositionR ) void { }
+function ADJUST_StackCreateAtTemplateSite( device & Instrument, variable i_str_ConfigFile, variable i_str_LabwareNameForStack, variable i_str_TemplateID, variable i_str_TemplateSiteID, variable i_int_TotalStack, variable i_int_LabwareType, variable i_bln_LiddedLabware, variable & o_arr_StackedLabware[] ) void { }
+function ADJUST_StackDecrease( device & Instrument, variable i_str_LabwareNameForStack, variable & o_arr_StackedLabware[] ) void { }
+function ADJUST_StackIncrease( device & Instrument, variable i_str_LabwareNameForStack, variable & o_str_LabwareID ) void { }
+function ADJUST_TiltLabware( device & Instrument, sequence i_seq_LabwarePositionsToOffset, variable i_bool_ShiftToDeepestPoint, variable i_flt_TiltAngle, variable i_flt_XOffset, variable i_flt_ZOffset ) void { }
+function CONT_GetBaseMeasurement( device & Instrument, sequence & i_seq_Labware, variable & o_flt_ContainerBaseThickness, variable & o_flt_ContainerBaseOffset ) void { }
+function CONT_GetConfigFile( device & Instrument, sequence i_seq_Labware, variable & o_str_ContainerFileName ) void { }
+function CONT_GetContainerBaseThickness( device & Instrument, sequence i_seq_Labware, variable & o_containerBaseThickness ) void { }
+function CONT_GetContainerDepth( device & Instrument, sequence i_seq_Labware, variable i_bool_UseDeckCoordinates, variable & o_ContainerDepth, variable & o_ContainerClearanceHeight ) void { }
+function CONT_GetContainerWidth( device & Instrument, sequence i_seq_Labware, variable & o_flt_ContainerWidth ) void { }
+function FILE_GetDefinitionFileValue( variable & i_str_ConfigFilePath, variable i_str_ValueToSearch, variable & o_str_Value ) variable {  return (0); }
+function LABWARE_GetCarrierAndSiteID( device & Instrument, sequence i_seq_Labware, variable & o_str_TemplateID, variable & o_str_TemplateSiteID ) void { }
+function LABWARE_GetCarrierTracks( device & Instrument, sequence i_seq_Labware, variable & o_int_TotalTracks, variable & o_int_LeftMostTrack, variable & o_int_RightMostTrack ) void { }
+function LABWARE_GetConfigFile( device & Instrument, sequence i_seq_Labware, variable & o_str_ConfigFilePath ) void { }
+function LABWARE_GetContainerBaseOffset( device & Instrument, sequence i_seq_Labware, variable & o_flt_ContainerBaseOffset ) void { }
+function LABWARE_GetCurrentPosition( device & Instrument, sequence i_seq_Labware, variable & o_flt_X_Coord, variable & o_flt_Y_Coord, variable & o_flt_Z_Coord ) void { }
+function LABWARE_GetDescription( device & Instrument, sequence i_seq_Labware, variable & o_str_LabwareDescription ) void { }
+function LABWARE_GetFirstPosition( device & Instrument, variable i_str_LabID, variable & o_str_PosID ) void { }
+function LABWARE_GetLabwareCenter( device & Instrument, sequence i_seq_Labware, variable & o_flt_X_Center, variable & o_flt_Y_Center ) void { }
+function LABWARE_GetLabwareLW( device & Instrument, sequence i_seq_Labware, variable & o_flt_Labware_L, variable & o_flt_Labware_W ) void { }
+function LABWARE_GetLabwareOrigin( device & Instrument, sequence i_seq_Labware, variable & o_flt_X_Coord, variable & o_flt_Y_Coord, variable & o_flt_Z_Coord ) void { }
+function LABWARE_GetLabwareStackHeight( device & Instrument, sequence i_seq_Labware, variable & o_flt_LabwareStackHeight ) void { }
+function LABWARE_GetLabwareViewName( device & Instrument, sequence i_seq_Labware, variable & o_str_LabwareViewName ) void { }
+function LABWARE_GetRackHeight( device & Instrument, sequence i_seq_Labware, variable i_bool_UseDeckCoordinates, variable & o_flt_RackHeight, variable & o_flt_RackClearanceHeight ) void { }
+function LABWARE_GetRowColumnNumber( device & Instrument, sequence i_seq_Labware, variable & o_int_RowCount, variable & o_int_ColumnCount, variable & o_bool_AlphaNumeric, variable & o_bool_IncrementContainer ) void { }
+function LABWARE_GetVisibility( device & Instrument, sequence i_seq_Labware, variable & o_bool_LabwareVisibility ) void { }
+function LABWARE_IsContainersConnected( device & Instrument, sequence i_seq_Labware, variable & o_bool_ConnectedContainer ) void { }
+function SEQ_GetDefaultSequence( device & Instrument, variable i_str_LabID, variable i_bool_SortByColumn, sequence & o_seq_DefaultSequence ) void { }
+function SEQ_ReloadSequence( device & Instrument, sequence & io_seq_SequenceToReload ) void { }
+function TEMPLATE_GetConfigFile( device & Instrument, sequence i_seq_Labware, variable & o_str_ConfigFilePath ) void { }
+function TEMPLATE_GetConfigFile2( device & Instrument, variable i_str_Labware, variable & o_str_ConfigFilePath ) void { }
+function TEMPLATE_GetTemplateOrigin( device & Instrument, sequence i_seq_Labware, variable & o_flt_X_Coord, variable & o_flt_Y_Coord, variable & o_flt_Z_Coord ) void { }
+function TEMPLATE_GetTemplateOrigin2( device & Instrument, variable i_str_TemplateLabID, variable & o_flt_X_Coord, variable & o_flt_Y_Coord, variable & o_flt_Z_Coord ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2021-07-23 23:08$$checksum=48be9e9d$$length=083$$

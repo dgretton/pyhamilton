@@ -1,0 +1,34 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 10/6/2021 2:58:30 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace STAR_CHANNEL_MOVEMENT_TOOLS {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function CheckPlateWithTwoChannels( device & ML_STAR, variable i_flt_XCenter, variable i_flt_YCenter, variable i_flt_ZMinimumSearchHeight, variable i_flt_ZSpeed, variable i_flt_SearchWidth, variable i_flt_MinimumTraverseHeightBegining, variable i_flt_MinimumTraverseHeightEnding, variable i_int_BackChannel, variable i_int_FrontChannel ) variable {  return (0); }
+function GetStopDiskZCoord( device & ML_STAR, variable i_int_CurrentChannel, variable & o_flt_ZCoord ) void { }
+function Get_Channel_Position( device & ML_STAR, variable i_int_CurrentChannel, variable & o_X_Coord, variable & o_Y_Coord, variable & o_Z_Coord ) void { }
+function Get_Channel_Position_1mL( device & ML_STAR, variable i_int_CurrentChannel, variable & o_X_Coord, variable & o_Y_Coord, variable & o_Z_Coord ) void { }
+function Get_Channel_Position_5mL( device & ML_STAR, variable i_int_CurrentChannel, variable & o_X_Coord, variable & o_Y_Coord, variable & o_Z_Coord ) void { }
+function Get_Tip_Present_1mL( device & ML_STAR, variable i_int_CurrentChannel, variable & o_bool_TipPresent ) void { }
+function Get_Tip_Present_5mL( device & ML_STAR, variable i_int_CurrentChannel, variable & o_bool_TipPresent ) void { }
+function Get_Tip_Volume_1mL( device & ML_STAR, variable i_int_CurrentChannel, variable & o_flt_MaxTipVolume, variable & o_flt_CurrentVolumeInTip ) void { }
+function Get_Tip_Volume_5mL( device & ML_STAR, variable i_int_CurrentChannel, variable & o_flt_MaxTipVolume, variable & o_flt_CurrentVolumeInTip ) void { }
+function InitializeDispenseDrive_1mL( device & ML_STAR, variable i_int_CurrentChannel ) void { }
+function InitializeDispenseDrive_5mL( device & ML_STAR, variable i_int_CurrentChannel ) void { }
+function Move_Channels_To_Absolute_Position( device & ML_STAR, variable i_str_ChannelPattern, variable i_flt_MinimumZHeightAtBegining, variable i_flt_X_Position, variable & i_arr_Y_Position[], variable & i_arr_Z_Position[] ) void { }
+function Move_Channels_To_Absolute_Position_1mL( device & ML_STAR, variable i_str_ChannelPattern, variable i_flt_MinimumZHeightAtBegining, variable & i_arr_X_Position[], variable & i_arr_Y_Position[], variable & i_arr_Z_Position[] ) void { }
+function Move_Channels_To_Absolute_Position_5mL( device & ML_STAR, variable i_str_ChannelPattern, variable i_flt_MinimumZHeightAtBegining, variable & i_arr_X_Position[], variable & i_arr_Y_Position[], variable & i_arr_Z_Position[] ) void { }
+function QueryTipLength( device & ML_STAR, variable i_intChannelNumber, variable & o_fltTipLength ) void { }
+function ResetChannelFW( device & ML_STAR ) void { }
+function Reset_Search_Z( device & ML_STAR ) void { }
+function Search_Z( device & ML_STAR, variable i_int_CurrentChannel, variable i_flt_Z_Min, variable i_flt_TipLength, variable i_int_Sensitivity, variable & o_flt_Z_Found ) variable {  return (0); }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Hamilton$$valid=0$$time=2021-10-06 14:58$$checksum=50ced559$$length=085$$

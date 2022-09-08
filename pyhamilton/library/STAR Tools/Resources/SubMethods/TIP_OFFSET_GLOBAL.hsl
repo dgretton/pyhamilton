@@ -1,0 +1,52 @@
+#pragma global
+
+#ifndef __TIP_OFFSET_GLOBAL_hsl__
+#define __TIP_OFFSET_GLOBAL_hsl__ 1
+
+namespace TIP_OFFSET_GLOBAL
+{
+   namespace INIT
+   {
+      function InitializeVariables();
+
+      function InitializeVariables()
+      {}
+   }
+
+   namespace BOOL
+   {
+      variable LIBRARY_INITIALIZED(hslFalse);
+   }
+
+   namespace SEQ
+   {
+      sequence TIP_REFRESH;
+      sequence SOURCE_TIP_REFRESH;
+      sequence TIP_PICK_UP;
+      sequence TIP_OFFSET_CURRENT;
+      sequence RETURN_TO_PICKUP;
+      sequence EMPTY_POSITIONS;
+   }
+
+   namespace FLT
+   {
+      const variable CONTAINER_OFFSET(12.5);
+   }
+
+   namespace INT
+   {
+      variable TIPS_LOADED(0);
+      variable OFFSET_INDEX(0);
+   }
+
+   namespace ARR
+   {
+      variable TIP_OFFSET_LAB_ID[];
+      variable TIPS_LOADED[];
+      sequence TIPS_RETURN_POSITION[];
+      sequence TIPS_OFFSET_CURRENT[];
+   }
+}
+
+#endif
+// $$author=Bare_B$$valid=0$$time=2019-09-17 13:04$$checksum=21467b7b$$length=085$$

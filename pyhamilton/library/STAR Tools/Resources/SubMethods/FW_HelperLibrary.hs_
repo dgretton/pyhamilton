@@ -1,0 +1,48 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 10/23/2020 1:02:26 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace FW_HELPERLIBRARY {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function CheckForError( variable i_str_FunctionName, variable i_str_ReturnValue, variable i_bool_RaiseError ) void { }
+function GetChannelNumber( variable & io_int_ChannelNumber ) void { }
+function GetChannelValue( variable i_int_ChannelNumber, variable & o_str_ChannelValue ) void { }
+function GetErrorDescriptionMainError( variable i_str_ErrorCode, variable & o_str_ErrorDescription ) void { }
+function GetErrorDescriptionSlaveError( variable i_str_ErrorCode, variable & o_str_ErrorDescription ) void { }
+function GetSlaveError( variable i_str_ReturnValue, variable & o_arr_Channels[], variable & o_arr_SlaveErrors[], variable & o_arr_ErrorDescription[] ) void { }
+function Get_Instrument_Type( device & ML_STAR, variable & o_int_InstrumentType, variable & o_int_MaxAutoloadTracks ) variable {  return (0); }
+function Get_X_Ranges_STAR( device & ML_STAR, variable & o_flt_LeftXMin, variable & o_flt_LeftXMax, variable & o_flt_RightXMin, variable & o_flt_RightXMax ) void { }
+function InitFunction( device & ML_STAR ) void { }
+function Parse_Parameter_Multiple( variable i_str_ParameterFull, variable i_str_Parameter, variable i_flt_Conversion, variable i_int_TotalDigits, variable i_int_MaxValues, variable & o_bol_ParameterFound, variable & o_arr_flt_Value[] ) void { }
+function Parse_Parameter_Multiple2( variable i_str_ParameterFull, variable i_str_Parameter, variable i_flt_Conversion, variable & o_bol_ParameterFound, variable & o_arr_flt_Value[] ) void { }
+function Parse_Parameter_Single( variable i_str_ParameterFull, variable i_str_Parameter, variable i_flt_Conversion, variable i_int_TotalDigits, variable & o_bol_ParameterFound, variable & o_flt_Value ) void { }
+function Parse_Parameter_Single_String( variable i_str_ParameterFull, variable i_str_Parameter, variable & o_bol_ParameterFound, variable & o_str_Value ) void { }
+function RemoveExcessDigits( variable & io_flt_Value ) void { }
+function SetParameter( variable i_strParameterName, variable i_fltValue, variable i_fltConversionValue, variable i_intTotalDigits, variable & o_strParameter ) void { }
+function SetParametersAll( variable i_strParameterName, variable i_fltValue, variable i_fltConversionValue, variable i_intTotalDigits, variable & o_strParameter ) void { }
+function SetParametersArr( variable i_strParameterName, variable & i_arrValues[], variable i_fltConversionValue, variable i_intTotalDigits, variable i_intTotalChannels, variable & o_strParameter ) void { }
+global variable G_ARR_FW_XL_COM_YMin[];
+global variable G_ARR_FW_PIP_COM_YMax[];
+global variable G_ARR_FW_PIP_COM_YMin[];
+global variable G_FW_PIP_COM_XArmMax;
+global variable G_FW_PIP_COM_FirmwareType;
+global variable G_FW_PIP_COM_SimulationMode;
+global variable G_FW_XL_COM_Raster;
+global variable G_FW_PIP_COM_TotalChannels;
+global variable G_ARR_FW_XL_COM_YMax[];
+global variable G_FW_PIP_COM_Raster;
+global variable G_FW_XL_COM_TotalChannels;
+global variable G_FW_PIP_COM_MPH_Exist;
+global variable G_FW_PIP_COM_LibraryInitialized(0);
+global variable G_FW_PIP_COM_XArmMin;
+global variable G_FW_PIP_COM_InstrumentType;
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=user$$valid=0$$time=2020-10-23 13:02$$checksum=a2b94457$$length=081$$

@@ -1,0 +1,27 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 9/28/2021 1:31:16 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace STAR_MPH96_TOOLS {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function MOVE_MPH96ToBack( device & ML_STAR ) void { }
+function TIP_OFFSET_CleanUpTips_Column( device & ML_STAR, sequence & io_seq_SourceTips, sequence i_seq_TipOffset, variable i_str_TipCounter ) void { }
+function TIP_OFFSET_CleanUpTips_Column2( device & ML_STAR, sequence & io_seq_SourceTips, sequence i_seq_TipOffset, variable i_str_TipCounter ) void { }
+function TIP_OFFSET_CleanUpTips_Rows( device & ML_STAR, sequence & io_seq_SourceTips, sequence i_seq_TipOffset, variable i_str_TipCounter ) void { }
+function TIP_OFFSET_CleanUpTips_Rows2( device & ML_STAR, sequence & io_seq_SourceTips, sequence i_seq_TipOffset, variable i_str_TipCounter ) void { }
+function TIP_OFFSET_PickUpTips_Column( device & ML_STAR, sequence & io_seq_SourceTips, sequence i_seq_TipOffset, variable i_int_ColumnsNeeded, variable i_str_TipCounter, variable i_bln_UseLeftSide ) variable {  return (0); }
+function TIP_OFFSET_PickUpTips_Rows( device & ML_STAR, sequence & io_seq_SourceTips, sequence i_seq_TipOffset, variable i_int_RowsNeeded, variable i_str_TipCounter, variable i_bool_UseTop ) variable {  return (0); }
+function TOOL_ChangePickUpMode( device & ML_STAR, sequence i_seq_TipPositionToAdjust, variable i_int_PickUpMode ) void { }
+function TOOL_GetLiquidLevelHeight( device & ML_STAR, variable i_str_ReturnValue3FromTipPickUp, variable i_str_ReturnValue3FromPipetting, variable & o_flt_LiquidLevelHeight ) void { }
+function TOOL_GetTipPresence( device & ML_STAR, variable & o_bln_TipLoaded ) void { }
+function TOOL_PickUpNextMPH96Tips( device & ML_STAR, sequence & io_seq_SourceTips, variable i_str_TipCounter ) variable {  return (0); }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2021-09-28 13:31$$checksum=3443695f$$length=083$$

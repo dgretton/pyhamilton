@@ -1,0 +1,20 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 12/17/2020 3:41:53 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace PLATE_STACK_VERIFY {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function Get_Arr_StackSequences( device & ML_STAR, sequence i_seq_AllStacks, sequence & o_arr_StackSequences[] ) void { }
+function Plate_Stack_Verfy_V2( device & ML_STAR, sequence & i_arr_seq_PlateStacks[], variable & o_arr_PlateCounts[] ) void { }
+function Plate_Stack_Verify( device & ML_STAR, sequence & i_arr_seq_PlateStacks[], variable & o_arr_PlateCounts[] ) void { }
+function _ConvertChannelToAlpha( variable & i_int_ChanNum, variable & o_str_ChanNum ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Windows10$$valid=0$$time=2020-12-17 15:41$$checksum=9020ed07$$length=086$$

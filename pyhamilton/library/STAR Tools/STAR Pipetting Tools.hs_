@@ -1,0 +1,33 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 12/9/2021 11:07:24 AM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace SPT {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function MPH_AspirateFromFixedHeight( device & ML_STAR, sequence i_seq_AspirationPositions, variable i_flt_AspHeight, variable i_int_End_Position, variable i_bln_UseLiquidFollowing, variable i_str_LiquidClass, variable i_flt_AspirationVolume, variable i_flt_PullOutDistance ) void { }
+function MPH_DispenseToFixedHeight( device & ML_STAR, sequence i_seq_DispensePositions, variable i_flt_DispenseHeight, variable i_int_End_Position, variable i_bln_UseLiquidFollowing, variable i_flt_DispenseVolume, variable i_flt_PullOutDistance ) void { }
+function PIP_AspirateFromFixedHeight( device & ML_STAR, variable i_str_ChPattern, sequence i_seq_AspirationPositions, variable & i_arr_FixedHeights[], variable i_int_End_Position, variable i_bln_UseLiquidFollowing, variable i_str_LiquidClass, variable i_flt_AspirationVolume, variable i_flt_PullOutDistance ) void { }
+function PIP_BuildChannelPatternFromSequence( device & ML_STAR, sequence i_seq_ControllingSequence, variable & o_str_ChPattern ) void { }
+function PIP_DispenseToFixedHeight( device & ML_STAR, variable i_str_ChPattern, sequence i_seq_DispensePositions, variable & i_arr_FixedHeights[], variable i_int_End_Position, variable i_bln_UseLiquidFollowing, variable i_flt_DispenseVolume, variable i_flt_PullOutDistance ) void { }
+function PIP_FindLiquidLevel( device & ML_STAR, variable i_str_ChPattern, sequence i_seq_PositionsToCheck, variable i_int_End_Position, variable i_bln_UseCLLD, variable & o_arr_LiquidHeightsFound[] ) void { }
+function PIP_MixFromFixedHeight( device & ML_STAR, variable i_str_ChPattern, sequence i_seq_MixPositions, variable & i_arr_FixedHeights[], variable i_int_End_Position, variable i_bln_UseLiquidFollowing, variable i_str_LiquidClass, variable i_flt_MixVolume, variable i_int_MixCycles ) void { }
+function PIP_PhaseAspiration( device & ML_STAR, variable & io_str_ChPattern, variable i_bln_ResetChPattern, variable i_str_LiquidClass, sequence i_seq_AspirationPosition, sequence i_seq_DispensePosition, variable i_bln_UseCLLD, variable i_flt_AspirationVolume, variable i_flt_DispenseBackVolume, variable i_flt_SubmergeDepth, variable i_flt_MaxVolumeToRemove, variable i_bln_DisableTADMFirst ) variable {  return (0); }
+function PIP_PhaseAspirationParseReturnValue( variable i_strReturnFromPhaseAspiration, variable & o_arrAspirationReturns[], variable & o_arrDispenseReturns[] ) void { }
+function PIP_PhaseAspirationRemainder( device & ML_STAR, variable i_str_ChPattern, variable i_str_LiquidClass, sequence i_seq_AspirationPosition, sequence i_seq_DispensePosition, variable i_bln_UseCLLD, variable i_flt_SafeHeightAbovePhase, variable i_flt_AdditionalAspirationVolume, variable i_flt_SubmergeHeight ) variable {  return (0); }
+function PIP_PhaseAspirationSmallLayer( device & ML_STAR, variable i_str_ChPattern, variable i_str_LiquidClass, sequence i_seq_AspirationPosition, sequence i_seq_DispensePosition, variable i_flt_AdditionalAspirationVolume, variable i_flt_OffsetBelowSecondPhase, variable i_int_TotalAspirationRounds, variable i_flt_DispenseHeight ) variable {  return (0); }
+function PIP_PhaseAspirationWasteRemainder( device & ML_STAR, variable i_str_ChPattern, variable i_str_LiquidClass, sequence i_seq_AspirationPosition, sequence i_seq_DispensePosition, variable i_bln_UseCLLD, variable i_flt_SafeHeightAbovePhase, variable i_flt_AdditionalAspirationVolume, variable i_flt_DispenseHeight ) void { }
+function PIP_ProgressSequenceFromChannelPattern( variable i_str_ChPattern, variable i_bln_ProgressByUsedChannels, sequence & io_seq_SequenceToProgress ) void { }
+function TOOL_BuildArrayForChannels( device & ML_STAR, variable i_flt_ValueToSet, variable & o_arr_Values[] ) void { }
+function TOOL_CalculateHeightForVolume( device & ML_STAR, sequence i_seq_LabwareForCalculation, variable i_flt_VolumeInLabware, variable & o_flt_HeightOfVolume ) void { }
+function TOOL_CalculateVolumeForHeight( device & ML_STAR, sequence i_seq_LabwareForCalculation, variable i_flt_HeightOfVolume, variable & o_flt_Volume ) void { }
+function TOOL_OffsetArrayForChannels( device & ML_STAR, variable i_flt_ValueToOffset, variable & io_arr_Values[] ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2021-12-09 11:07$$checksum=6e910ad1$$length=083$$

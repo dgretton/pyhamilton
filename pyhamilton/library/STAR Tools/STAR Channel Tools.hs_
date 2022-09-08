@@ -1,0 +1,48 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 12/13/2021 11:05:43 AM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace STAR_CHANNEL_TOOLS {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function CHAN_ACCESS_Sort1Sequence( device & ML_STAR, sequence & io_Sequence_to_Sort, variable i_Channel_Type, variable i_Sort_by_Labware, variable i_Sort_by_XY, variable i_Sort_for_Channel_Raster, variable i_Max_Channel, sequence & o_Sorted_Sequence, variable & o_Channel_Pattern ) variable {  return (0); }
+function CHAN_ACCESS_Sort1Sequence1Array( device & ML_STAR, sequence & io_Sequence_to_Sort, variable & io_Array_of_Variables[], variable i_Channel_Type, variable i_Sort_by_Labware, variable i_Sort_by_XY, variable i_Sort_for_Channel_Raster, variable i_Max_Channel, sequence & o_Sorted_Sequence, variable & o_Sorted_Array[], variable & o_Channel_Pattern ) variable {  return (0); }
+function CHAN_ACCESS_Sort1Sequence2Arrays( device & ML_STAR, sequence & io_Sequence_to_Sort, variable & io_Array_of_Variables[], variable & io_Array_of_Variables2[], variable i_Channel_Type, variable i_Sort_by_Labware, variable i_Sort_by_XY, variable i_Sort_for_Channel_Raster, variable i_Max_Channel, sequence & o_Sorted_Sequence, variable & o_Sorted_Array[], variable & o_Sorted_Array2[], variable & o_Channel_Pattern ) variable {  return (0); }
+function CHAN_ACCESS_Sort2Sequences( device & ML_STAR, sequence & io_Sequence_to_Sort, sequence & io_Sequence_to_Sort2, variable i_Channel_Type, variable i_Sort_by_Labware, variable i_Sort_by_XY, variable i_Sort_for_Channel_Raster, variable i_Max_Channel, sequence & o_Sorted_Sequence, sequence & o_Sorted_Sequence2, variable & o_Channel_Pattern ) variable {  return (0); }
+function CHAN_ACCESS_Sort2Sequences1Array( device & ML_STAR, sequence & io_Sequence_to_Sort, sequence & io_Sequence_to_Sort2, variable & io_Array_of_Variables[], variable i_Channel_Type, variable i_Sort_by_Labware, variable i_Sort_by_XY, variable i_Sort_for_Channel_Raster, variable i_Max_Channel, sequence & o_Sorted_Sequence, sequence & o_Sorted_Sequence2, variable & o_Sorted_Array[], variable & o_Channel_Pattern ) variable {  return (0); }
+function CHAN_ACCESS_Sort2Sequences2Arrays( device & ML_STAR, sequence & io_Sequence_to_Sort, sequence & io_Sequence_to_Sort2, variable & io_Array_of_Variables[], variable & io_Array_of_Variables2[], variable i_Channel_Type, variable i_Sort_by_Labware, variable i_Sort_by_XY, variable i_Sort_for_Channel_Raster, variable i_Max_Channel, sequence & o_Sorted_Sequence, sequence & o_Sorted_Sequence2, variable & o_Sorted_Array[], variable & o_Sorted_Array2[], variable & o_Channel_Pattern ) variable {  return (0); }
+function LIQUID_LEVEL_GetLiquidLevelHeight( device & ML_STAR, variable i_str_LiquidLevelReturn, sequence i_seq_Labware, variable i_int_Channel, variable & o_flt_LiquidHeight ) void { }
+function LIQUID_LEVEL_MeasureLiquidMulti( device & ML_STAR, sequence & i_arrseq_FullReservoirSequences[], sequence & i_seq_TipsToUse, sequence i_seq_TipWaste, variable i_str_TipCounter, variable i_int_LLD_Sensitivity, variable i_bool_ConvertTouL, variable & o_arr_VolumesMeasured[] ) variable {  return (0); }
+function LIQUID_LEVEL_MeasureLiquidSingle( device & ML_STAR, sequence i_seq_FullReservoirSequence, sequence & i_seq_TipsToUse, sequence i_seq_TipWaste, variable i_str_TipCounter, variable i_bool_IncrementTipSequence, variable i_int_LLD_Sensitivity, variable i_bool_ConvertTouL, variable & o_flt_VolumeMeasured ) variable {  return (0); }
+function LIQUID_LEVEL_ReturnVolumesFromLiquidLevel( device & ML_STAR, variable i_str_PipettingReturn, variable i_str_LiquidLevelReturn, variable i_bool_ConvertTouL, variable & o_arr_VolumesMeasured[] ) void { }
+function MOVE_ChannelsToSequencePosition( device & ML_STAR, variable i_str_ChPattern, sequence i_seq_Positions, variable i_flt_ZHeight ) void { }
+function MOVE_ChannelsToSequencePosition_5mL( device & ML_STAR, variable i_str_ChPattern, sequence i_seq_Positions, variable i_flt_ZHeight ) void { }
+function MOVE_CheckPlateWithTwoChannels( device & ML_STAR, variable i_int_FrontMostChannel, sequence i_seq_PlateToCheck, variable i_flt_TapWidth ) variable {  return (0); }
+function MOVE_InitDispenseDrive( device & ML_STAR, variable i_int_ChNumber ) void { }
+function MOVE_InitDispenseDrive_5mL( device & ML_STAR, variable i_int_ChNumber ) void { }
+function PLATE_STACK_CountPlateStacks( device & ML_STAR, sequence i_seq_PlateStack_Full, sequence & o_seq_PlateStack_Count, variable & o_int_PlateCount ) void { }
+function QUERY_GetChannelPosition( device & ML_STAR, variable i_int_ChNumber, variable & o_flt_XCoord, variable & o_flt_YCoord, variable & o_flt_ZCoord ) void { }
+function QUERY_GetChannelPosition_5mL( device & ML_STAR, variable i_int_ChNumber, variable & o_flt_XCoord, variable & o_flt_YCoord, variable & o_flt_ZCoord ) void { }
+function QUERY_GetTipPresentState( device & ML_STAR, variable i_int_ChNumber, variable & o_bln_TipPresent ) void { }
+function QUERY_GetTipPresentState_5mL( device & ML_STAR, variable i_int_ChNumber, variable & o_bln_TipPresent ) void { }
+function QUERY_GetTipVolume( device & ML_STAR, variable i_int_ChNumber, variable & o_flt_MaxVolume, variable & o_flt_CurrentChannelVolume ) void { }
+function QUERY_GetTipVolume_5mL( device & ML_STAR, variable i_int_ChNumber, variable & o_flt_MaxVolume, variable & o_flt_CurrentChannelVolume ) void { }
+function SPLIT_WELLS_AddContainersToWell( device & ML_STAR, sequence i_seq_SequenceToSplit, variable i_int_SequenceIndex, variable i_int_MaxSplitNumber, sequence & io_seq_SplitSequence ) void { }
+function SPLIT_WELLS_RemoveContainers( device & ML_STAR, variable i_bool_UpdateVolumes ) void { }
+function TRAVEL_LANES_MoveChannelsToTravelLanes( device & ML_STAR ) void { }
+function TRAVEL_LANES_MoveChannelsToTravelLanes_5mL( device & ML_STAR ) void { }
+function TRAVEL_LANES_MoveChannelsToYPosition( device & ML_STAR, sequence i_seq_TargetSequence, variable i_flt_XOffsetFromOrigin ) void { }
+function TRAVEL_LANES_MoveChannelsToYPosition_5mL( device & ML_STAR, sequence i_seq_TargetSequence, variable i_flt_XOffsetFromOrigin ) void { }
+function TRAVEL_LANES_MoveChannelsWithTravelLanes( device & ML_STAR, sequence i_seq_TargetSequence, variable i_flt_XOffsetFromOrigin ) void { }
+function TRAVEL_LANES_MoveChannelsWithTravelLanes_5mL( device & ML_STAR, sequence i_seq_TargetSequence, variable i_flt_XOffsetFromOrigin ) void { }
+function TRAVEL_LANES_SingleSource_ChannelDisplacement( device & ML_STAR, variable i_strStepReturn ) void { }
+function TRAVEL_LANES_SingleSource_ChannelDisplacement_5mL( device & ML_STAR, variable i_strStepReturn ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2021-12-13 11:05$$checksum=1b6412be$$length=083$$

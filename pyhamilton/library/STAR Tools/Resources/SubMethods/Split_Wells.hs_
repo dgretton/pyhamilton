@@ -1,0 +1,22 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 9/26/2019 9:05:44 AM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace SPLIT_WELLS {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function CalcualteOffsetHeight( variable i_flt_WellAngle, variable i_flt_YOffset, variable & o_flt_ZOffset ) void { }
+function CalculateWellAngle( variable i_flt_BottomWellSegment_Height, variable i_flt_BottomWellSegment_TopWidth, variable i_flt_BottomWellSegment_BottomWidth, variable & o_flt_BottomWellSegment_Angle ) void { }
+function InitializeSplitWells(  ) void { }
+function RemoveContainers( device & ML_STAR, variable i_bool_ConsolidateVolumes ) void { }
+function SplitWellsFlatBottom( device & ML_STAR, sequence i_seq_SequenceToSplitWells, variable i_int_SequenceIndex, variable i_int_MaxWellSplit, sequence & io_seq_SpltSequence ) void { }
+function SplitWellsVBottom( device & ML_STAR, sequence i_seq_SequenceToSplitWells, variable i_int_SequenceIndex, variable i_int_MaxWellSplit, variable i_flt_ContainerBottomSegment_TopDiameter, variable i_flt_ContainerBottomSegment_BottomDiameter, variable i_flt_ContainerBottomSegment_Height, sequence & io_seq_SpltSequence ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2019-09-26 09:05$$checksum=d31d8911$$length=083$$

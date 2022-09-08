@@ -1,0 +1,28 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 7/16/2012 3:01:49 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace ERRORSIMULATOR {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function AA_Abstract(  ) void { }
+function STEP1_PrepareRegistryAndCfgFile( device & ML_STAR ) void { }
+function STEP2a_SimulateError_Channels( variable ChannelNumber, variable WhenSimulateError, variable ErrorToSimulate, device & ML_STAR ) void { }
+function STEP2b_SimulateError_COREGripper( variable ChannelNumber, variable WhenSimulateError, variable ErrorToSimulate, device & ML_STAR ) void { }
+function STEP2c_SimulateError_iSWAP( variable WhenSimulateError, variable ErrorToSimulate, device & ML_STAR ) void { }
+function STEP2d_SimulateError_96Head( variable WhenSimulateError, variable ErrorToSimulate, device & ML_STAR ) void { }
+function STEP2e_SimulateError_384head( variable WhenSimulateError, variable ErrorToSimulate, device & ML_STAR ) void { }
+function STEP2f_SimulateError_BarcodeReading( variable WhenSimulateError, device & ML_STAR ) void { }
+function STEP2g_SimulateError_Autoload( variable notReadPositions_Str, variable notPresentPositions_Str, device & ML_STAR ) void { }
+function STEP2h_SimulateError_CRWashstation( variable errorToSimulate, device & ML_STAR ) void { }
+function STEP3_Restore_BackupCfgFile( device & ML_STAR ) void { }
+function STEP4_Optional_SwitchChecksum_ON(  ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Cuevas_A$$valid=0$$time=2012-07-16 15:01$$checksum=0cf6bb89$$length=085$$

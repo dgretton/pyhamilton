@@ -1,0 +1,19 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 9/23/2019 10:30:09 AM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace LIQUID_LEVEL_CHECK {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function FindLiquidHeight( device & ML_STAR, variable i_str_LiquidLevelReturn, sequence i_seq_Labware, variable i_int_Channel, variable & o_flt_LiquidHeight ) void { }
+function MeasureLiquidLevel_Multi( device & ML_STAR, sequence & i_arrseq_FullReservoirSequences[], sequence & i_seq_TipsToUse, sequence i_seq_TipWaste, variable i_str_TipCounter, variable i_int_LLD_Sensitivity, variable i_bool_ConvertTouL, variable & o_arr_VolumesMeasured[] ) variable {  return (0); }
+function MeasureLiquidLevel_Single( device & ML_STAR, sequence i_seq_FullReservoirSequence, sequence & i_seq_TipsToUse, sequence i_seq_TipWaste, variable i_str_TipCounter, variable i_bool_IncrementTipSequence, variable i_int_LLD_Sensitivity, variable i_bool_ConvertTouL, variable & o_flt_VolumeMeasured ) variable {  return (0); }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2019-09-23 10:30$$checksum=652b603e$$length=083$$

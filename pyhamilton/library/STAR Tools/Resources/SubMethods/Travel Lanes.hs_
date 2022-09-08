@@ -1,0 +1,24 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 3/26/2020 2:50:35 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace TRAVEL_LANES {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function MoveChannelsToSequencePosition( device & ML_STAR, sequence i_seq_PositionsToMove ) void { }
+function MoveChannelsToSequencePosition_5mL( device & ML_STAR, sequence i_seq_PositionsToMove ) void { }
+function MoveChannelsToTravelLanes( device & ML_STAR ) void { }
+function MoveChannelsToTravelLanes_5mL( device & ML_STAR ) void { }
+function MoveSingleChannel( device & ML_STAR, variable i_int_ChannelNumber, variable i_flt_YCoordinate ) void { }
+function MoveSingleChannel_5mL( device & ML_STAR, variable i_int_ChannelNumber, variable i_flt_YCoordinate ) void { }
+function MoveUsedChannel( device & ML_STAR, variable i_str_PipetteReturn ) void { }
+function MoveUsedChannel_5mL( device & ML_STAR, variable i_str_PipetteReturn ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2020-03-26 14:50$$checksum=0a6679c2$$length=083$$

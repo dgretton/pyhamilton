@@ -1,0 +1,2858 @@
+//--------------------------------------------------------------------------------------------------------
+// Copyright (C) by HAMILTON Bonaduz AG, CH-7402 Bonaduz.
+// All rights reserved.
+//
+// Project
+// Description      :    Accessing, setting and saving labware properties and labware positions on deck
+//
+// Software Version :    4.2.1.6547
+//
+// Revision history :    V1.0    2011.04.04   D. Hollstein  library released
+//                       V1.01   2011.05.25   D. Hollstein  changed includes, 
+//                                                          made SaveChangesToDecklayout private (currently deletes additional resources in the decklayout)
+//                       V1.02   2011.07.12   D. Hollstein  SaveChangesToDecklayout works now properly and preserves additional resources
+//                       V1.03   2012.02.24   B. Huf        new function GetConfigurationFilename
+//                                                          reworked function SaveChangesToDecklayout to handle more devices that just ML_STAR
+//                                                          removed some unused variables (objects)
+//                                                          reworked whole library to meet AAW 650410
+//                       V1.04   2012.03.14   B.Huf         new function SetTraceLevel
+//                                                          new function SaveChangesToSpecificDecklayout
+//                                                          changed tracing to meet standard library behavior
+//                       V1.05   2012.03.22   D.Hollstein   new function GetDefaultSequenceForLabwareID - shameless plug from B. Andenmatten in the
+//                                                          Microlab Star Deck Definition Library. However, it was not a public function - and I needed it.
+//                       V1.06   2012.08.13   D.Hollstein   new function GetRowAndColumnCountForLabwareID - returns the default number of columns and rows of a rect labware.
+//                       V1.1    2012.09.11   D.Hollstein   new functions:
+//                                                          CreateStack creates a stack at the specified position from a rectrack, 
+//                                                          GetTemplateIDAndTemplateSiteID returns carrier ID and position on carrier for a given labware ID (shares the functionality with the VirtualLabwareV2 lib, however the function is implemented differently)
+//                                                          GetTransportSequenceForLabwareID returns a sequence with just one position on the plate for transports
+//                       V1.2    2012.10.25   D.Hollstein   new function GetLabwareIDsAndTemplateSiteIDsForTemplateID returns the labwareID of racks and their position on a carrier.
+//                       V1.3    2012.10.31   D.Hollstein   new functions StackIncrease, StackDecrease. Renamed stack create function.
+//                       V1.4    2012.11.06   D.Hollstein   new function TiltLabware to create a labware with containers that are shifted in z-direction.
+//                       V1.5    2012.11.29   D.Hollstein   added function for sorting with a probe head.
+//                       V2.0.0  2012.11.30   D.Hollstein   added sorting function with probe head and variable sequence. Renamed version according to AAW 650427.
+//                       V2.0.1  2012.12.11   K.Stadtmüller fixed bug in function "AbsolutePositionValuesSetForLabwareID"
+//                       V2.0.4  2013.08.19   D.Kaufmann    validated
+//--------------------------------------------------------------------------------------------------------
+
+#ifndef __HSLLABWRACCESS__
+  #define __HSLLABWRACCESS__ 1
+
+  //============================== includes ==============================
+  #ifndef __HSLSynLib_hsl__
+    #include "HSLSynLib.hsl"
+  #endif
+
+  //============================== HSLLabwareAccess ==============================
+  namespace HSLLabwrAccess
+  {
+    // Declaration ////////////////////////////////////////////////////
+
+    function ValueForKeyGetForPropertiesOfLabwareID(device&   io_devDevice,
+                                                    variable& o_strPropertyValue,
+                                                    variable  i_strPropertyKey,
+                                                    variable  i_strLabwareID) variable;
+
+    function ValueForKeySetForPropertiesOfLabwareID(device&  io_devDevice,
+                                                    variable i_strPropertyValue,
+                                                    variable i_strPropertyKey,
+                                                    variable i_strLabwareID) variable;
+
+    function AbsolutePositionValuesSetForLabwareID(device&  io_devDevice,
+                                                   variable i_strLabwareID,
+                                                   variable i_fltPositionX,
+                                                   variable i_fltPositionY,
+                                                   variable i_fltPositionZ,
+                                                   variable i_fltPositionR) variable;
+
+    function AbsolutePositionValuesGetForLabwareID(device&   io_devDevice,
+                                                   variable  i_strLabwareID,
+                                                   variable& o_fltPositionX,
+                                                   variable& o_fltPositionY,
+                                                   variable& o_fltPositionZ,
+                                                   variable& o_fltPositionR) variable;
+
+    function RelativePositionValuesSetForLabwareID(device&  io_devDevice,
+                                                   variable i_strLabwareID,
+                                                   variable i_fltPositionX,
+                                                   variable i_fltPositionY,
+                                                   variable i_fltPositionZ,
+                                                   variable i_fltPositionR) variable;
+
+    function SaveChangesToDecklayout(device& io_devDevice) variable;
+
+    function SaveChangesToSpecificDecklayout(device&  io_devDevice,
+                                             variable i_strDecklayoutName) variable;
+
+    function GetConfigurationFilename(device&   io_devDevice,
+                                      variable  i_strLabwareID,
+                                      variable& o_strConfigurationFilename) variable;
+
+    function GetDefaultSequenceForLabwareID(device&   io_devDevice,
+                                            variable& i_strLabwareID,
+                                            variable  i_intEnumSorting,
+                                            sequence& o_seqDefaultSequence) variable;
+
+    function GetRowAndColumnCountForLabwareID(device&   io_devDevice,
+                                              variable  i_strLabwareID,
+                                              variable& o_intNumberOfRows,
+                                              variable& o_intNumberOfColumns) variable;
+
+    function SetTraceLevel(variable i_intTraceLevel) variable;
+
+    // Helper functions
+    private function ConvertToFloat(variable iVariable, variable& oVariable) variable;
+    private function CheckBool(variable iVariable, variable iTraceEntry, variable iFunctionName) variable;
+    private function CheckInteger(variable iVariable, variable iTraceEntry, variable iFunctionName) variable;
+    private function CheckIntegerRange(variable iVariable, variable iTraceEntry, variable iMin, variable iMax, variable iFunctionName) variable;
+    private function CheckString(variable iVariable, variable iTraceEntry, variable iFunctionName) variable;
+    private function CheckFloat(variable iVariable, variable iTraceEntry, variable iFunctionName) variable;
+    private function StatusTrace(variable i_intState, variable i_intTraceLevel, variable i_strTraceString, variable i_strFunctionName) void;
+    private function EnterSemaphore();
+    private function LeaveSemaphore();
+    private function ExtractFunctionName(variable i_strFunctionName) variable;
+    private function ReverseFind(string i_strString, string i_strSubString) variable;
+
+    // Variable definition/////////////////////////////////////////////////////
+    namespace Enum
+    {
+      namespace Rack
+      { 
+         const variable Circular("HxLabwr2.CircRack.1");
+         const variable Rect("HxLabwr2.RectRack.1");
+      }
+      namespace Orientation
+      {
+         const variable Degree0("0");
+         const variable Degree90("90");
+         const variable Degree180("180");
+         const variable Degree270("270");
+      }
+      namespace Sorting
+      {
+         const variable ByXAscending(0);
+         const variable ByXDescending(1);
+         const variable ByYAscending(2);
+         const variable ByYDescending(3);
+         const variable ByZAscending(4);
+         const variable ByZDescending(5);
+         const variable ByLabwareIDAscending(6);
+         const variable ByLabwareIDDescending(7);
+         const variable ByPositionIDAscending(8);
+         const variable ByPositionIDDescending(9);
+      }
+    }
+
+    // Tracing constants
+    static variable         CMD_FAIL            (0);
+    static variable         CMD_START           (1);
+    static variable         CMD_COMPLETE        (2);
+    static variable         CMD_ERROR           (3);
+    static variable         CMD_PROGRESS        (4);
+    static variable         CMD_ERRCOMPLETE     (5);
+
+    static variable         TRACE_LEVEL_DEBUG(2);
+    static variable         TRACE_LEVEL_RELEASE(1);
+    static variable         TRACE_LEVEL_NONE(0);
+
+    static variable                 HSLLabwareAccess_LLE("");                       // LLE: last library error
+    private global static variable  HSLLabwareAccess_IO(hslFalse);                  // IO:  library init once
+    private global static variable  HSLLabwareAccess_SH(0);                         // SH:  Semaphore handle
+    private global static variable  HSLLabwareAccess_TraceLevel(TRACE_LEVEL_DEBUG);
+  
+    // HxPars keys
+    static string P_XCOORD("Labwr_XCoord");
+    static string P_YCOORD("Labwr_YCoord");
+    static string P_ZCOORD("Labwr_ZCoord");
+    static string P_RZCOORD("Labwr_Rotation");
+    static string P_LABWARE_ID("Labwr_Id");
+
+    // additions
+    static string P_FILE("Labwr_File");
+    static string P_COUNT("Labwr_count");
+    static string P_DKSITEID("Labwr_DkSiteId");
+    static string P_TEMPLATEID("Labwr_TemplateId");
+    static string P_XDIM("Labwr_XDim");
+    static string P_YDIM("Labwr_YDim");
+    static string P_ISCOVERED("Labwr_IsCovered");
+    static string P_CLSID("Labwr_CLSID");
+    static string P_DKSITEDX("Labwr_DkSiteDimX");
+    static string P_DKSITEDY("Labwr_DkSiteDimY");
+    static string P_DECKSITES("Labwr_SiteData");
+    static string P_STACKID("Labwr_stackID");
+
+
+    // P stands for HXP_LABWR
+
+    // Implementation //////////////////////////////////////////////////////////
+ 
+    ////////////////////////////////////////////////////////////////////////////
+    // ValueForKeyGetForPropertiesOfLabwareID
+    ////////////////////////////////////////////////////////////////////////////
+    function ValueForKeyGetForPropertiesOfLabwareID(device& io_devDevice,
+                                                    variable& o_strPropertyValue,
+                                                    variable i_strPropertyKey,
+                                                    variable i_strLabwareID) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strPropertyKey, "i_strPropertyKey", strFunctionName)) return(hslFalse);
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareID = " + i_strLabwareID + ", i_strPropertyKey = " + i_strPropertyKey, strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+
+      if (!objDecklayout.IsNull())
+      {
+        object objLabware;
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if (!objLabware.IsNull())
+        {
+           object   objEditLabware5;
+           object   objPropertyParameters;
+
+           objLabware.GetObject("IEditLabware5", objEditLabware5);
+
+           objPropertyParameters.CreateObject("HXPARAMSLib.HxPars");
+           objPropertyParameters.Add("", i_strPropertyKey);
+
+           objEditLabware5.GetLabwrProperties(objPropertyParameters);
+
+           o_strPropertyValue = objPropertyParameters.Item1(i_strPropertyKey);
+
+           StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Property [" + i_strPropertyKey + "] = " + o_strPropertyValue, strFunctionName);
+
+           objPropertyParameters.ReleaseObject();
+           objEditLabware5.ReleaseObject();
+           objLabware.ReleaseObject();
+           objDecklayout.ReleaseObject();
+
+           StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+           return(hslTrue);
+        }
+        else
+        {
+           StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+           objDecklayout.ReleaseObject();
+           return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // ValueForKeySetForPropertiesOfLabwareID
+    ////////////////////////////////////////////////////////////////////////////
+    function ValueForKeySetForPropertiesOfLabwareID(device& io_devDevice,
+                                                    variable i_strPropertyValue,
+                                                    variable i_strPropertyKey,
+                                                    variable i_strLabwareID) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strPropertyValue, "i_strPropertyValue", strFunctionName)) return(hslFalse);
+      if (!CheckString(i_strPropertyKey, "i_strPropertyKey", strFunctionName)) return(hslFalse);
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareID = " + i_strLabwareID + ", i_strPropertyKey = " + i_strPropertyKey + ", i_strPropertyValue = " + i_strPropertyValue, strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+
+      if (!objDecklayout.IsNull())
+      {
+        object objLabware;
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if (!objLabware.IsNull())
+        {
+          object   objEditLabware5;
+          object   objPropertyParameters;
+
+          objLabware.GetObject("IEditLabware5", objEditLabware5);
+
+          // prepare a new Pars object for the labware properties
+          objPropertyParameters.CreateObject("HXPARAMSLib.HxPars");
+          objPropertyParameters.Add(i_strPropertyValue, i_strPropertyKey);
+
+          // check data from the decklayout
+          objEditLabware5.SetLabwrProperties(objPropertyParameters);
+
+          i_strPropertyValue = objPropertyParameters.Item1(i_strPropertyKey);
+
+          objPropertyParameters.ReleaseObject();
+          objEditLabware5.ReleaseObject();
+          objDecklayout.ReleaseObject();
+          objLabware.ReleaseObject();
+
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+
+          return(hslTrue);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+          objDecklayout.ReleaseObject();
+          return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // AbsolutePositionValuesSetForLabwareID
+    ////////////////////////////////////////////////////////////////////////////
+    function AbsolutePositionValuesSetForLabwareID(device& io_devDevice,
+                                                   variable i_strLabwareID,
+                                                   variable i_fltPositionX,
+                                                   variable i_fltPositionY,
+                                                   variable i_fltPositionZ,
+                                                   variable i_fltPositionR) variable
+    {
+      variable PosVals[];
+      object   objDecklayout;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareID = " + i_strLabwareID + ", i_fltPositionX = " + FStr(i_fltPositionX) + ", i_fltPositionY = " + FStr(i_fltPositionY) + ", i_fltPositionZ = " + FStr(i_fltPositionZ) + ", i_fltPositionR = " + FStr(i_fltPositionR), strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+
+      if (!objDecklayout.IsNull())
+      {
+        object objLabware;
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if (!objLabware.IsNull())
+        {
+          object Decklayout5;
+          object MoveParameters;
+
+          objDecklayout.GetObject("IDeckLayout5", Decklayout5);
+
+          EnterSemaphore();             
+          io_devDevice.GetLabwarePosition(i_strLabwareID, PosVals);
+          LeaveSemaphore();
+
+          StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Current position: (" + FStr(PosVals[0]) + "/" + FStr(PosVals[1]) + "/" + FStr(PosVals[2]) + "/" + FStr(PosVals[3]) + ")", strFunctionName);
+
+          MoveParameters.CreateObject("HXPARAMSLib.HxPars");
+          MoveParameters.Add(i_strLabwareID, P_LABWARE_ID);
+          MoveParameters.Add(i_fltPositionX, P_XCOORD);
+          MoveParameters.Add(i_fltPositionY, P_YCOORD);
+          MoveParameters.Add(i_fltPositionZ, P_ZCOORD);
+          MoveParameters.Add(i_fltPositionR, P_RZCOORD);
+
+          Decklayout5.MoveLabware(objLabware, MoveParameters);
+
+          // Trace new position
+          EnterSemaphore();
+          io_devDevice.GetLabwarePosition(i_strLabwareID, PosVals);
+          LeaveSemaphore();
+
+          objLabware.ReleaseObject();
+          objDecklayout.ReleaseObject();
+          Decklayout5.ReleaseObject();
+          MoveParameters.ReleaseObject();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "New position:     (" + FStr(PosVals[0]) + "/" + FStr(PosVals[1]) + "/" + FStr(PosVals[2]) + "/" + FStr(PosVals[3]) + ")", strFunctionName);
+          return(hslTrue);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+          objDecklayout.ReleaseObject();
+          return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // AbsolutePositionValuesGetForLabwareID
+    ////////////////////////////////////////////////////////////////////////////
+    function AbsolutePositionValuesGetForLabwareID(device& io_devDevice,
+                                                   variable i_strLabwareID,
+                                                   variable& o_fltPositionX,
+                                                   variable& o_fltPositionY,
+                                                   variable& o_fltPositionZ,
+                                                   variable& o_fltPositionR) variable
+    {
+      variable PosVals[];
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareID = " + i_strLabwareID, strFunctionName);
+
+      EnterSemaphore();
+      io_devDevice.GetLabwarePosition(i_strLabwareID, PosVals);
+      LeaveSemaphore();
+
+      o_fltPositionX = PosVals[0];
+      o_fltPositionY = PosVals[1];
+      o_fltPositionZ = PosVals[2];
+      o_fltPositionR = PosVals[3];
+      StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "o_fltPositionX = " + FStr(o_fltPositionX) + ", o_fltPositionY = " + FStr(o_fltPositionY) + ", o_fltPositionZ = " + FStr(o_fltPositionZ) + ", o_fltPositionR = " + FStr(o_fltPositionR), strFunctionName);
+      return(hslTrue);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // RelativePositionValuesSetForLabwareID
+    ////////////////////////////////////////////////////////////////////////////
+    function RelativePositionValuesSetForLabwareID(device& io_devDevice,
+                                                   variable i_strLabwareID,
+                                                   variable i_fltPositionX,
+                                                   variable i_fltPositionY,
+                                                   variable i_fltPositionZ,
+                                                   variable i_fltPositionR) variable
+    {
+      variable PosVals[];
+      variable myValue;
+      object   objDecklayout;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if(!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareID = " + i_strLabwareID, strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+   
+      if(!objDecklayout.IsNull())
+      {
+        object objLabware;
+        variable strPos("");
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if(!objLabware.IsNull())
+        {
+          object Decklayout5;
+          object MoveParameters;
+          variable fltPos, fltPosShift;
+
+          objDecklayout.GetObject("IDeckLayout5", Decklayout5);
+
+          MoveParameters.CreateObject("HXPARAMSLib.HxPars");
+          MoveParameters.Add(i_strLabwareID, P_LABWARE_ID);
+
+          EnterSemaphore();
+          io_devDevice.GetLabwarePosition(i_strLabwareID, PosVals);
+          LeaveSemaphore();
+
+          StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Current position: (" + FStr(PosVals[0]) + "/" + FStr(PosVals[1]) + "/" + FStr(PosVals[2]) + "/" + FStr(PosVals[3]) + ")", strFunctionName);
+
+          ConvertToFloat(PosVals[0],fltPos);
+          ConvertToFloat(i_fltPositionX,fltPosShift);
+          MoveParameters.Add(fltPos+fltPosShift, P_XCOORD);
+
+          ConvertToFloat(PosVals[1],fltPos);
+          ConvertToFloat(i_fltPositionY,fltPosShift);
+          MoveParameters.Add(fltPos+fltPosShift, P_YCOORD);
+
+          ConvertToFloat(PosVals[2],fltPos);
+          ConvertToFloat(i_fltPositionZ,fltPosShift);
+          MoveParameters.Add(fltPos+fltPosShift, P_ZCOORD);
+
+          ConvertToFloat(PosVals[3],fltPos);
+          ConvertToFloat(i_fltPositionR,fltPosShift);
+          MoveParameters.Add(fltPos+fltPosShift, P_RZCOORD);
+
+          Decklayout5.MoveLabware(objLabware, MoveParameters);
+
+          EnterSemaphore();
+          io_devDevice.GetLabwarePosition(i_strLabwareID, PosVals);
+          LeaveSemaphore();
+
+          objLabware.ReleaseObject();
+          objDecklayout.ReleaseObject();
+          Decklayout5.ReleaseObject();
+          MoveParameters.ReleaseObject();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "New position:     (" + FStr(PosVals[0]) + "/" + FStr(PosVals[1]) + "/" + FStr(PosVals[2]) + "/" + FStr(PosVals[3]) + ")", strFunctionName);
+          return(hslTrue);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+
+          objDecklayout.ReleaseObject();
+          return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // SaveChangesToDecklayout
+    ////////////////////////////////////////////////////////////////////////////
+    function SaveChangesToDecklayout(device& io_devDevice) variable
+    {
+      object   objDeck;
+      object   objDecklayout;
+      string   strLabwareID;
+      string   strLabwarePropertyKey;
+      string   strConfigFilename;
+      object   objDecklayoutFile;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "", strFunctionName);
+
+      EnterSemaphore();
+      objDeck = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+      objDeck.GetObject("IEditDeckLayout6", objDecklayout);
+      if (!objDecklayout.IsNull())
+      {
+        strConfigFilename = objDecklayout.FileName();
+        objDecklayoutFile.CreateObject("HXCFGFILLib.HxCfgFile");
+
+        objDecklayoutFile.LoadFile(strConfigFilename);
+
+        objDecklayout.WriteToDataDef(objDecklayoutFile, objDecklayout.Instrument);
+        objDecklayoutFile.SerializeFile(strConfigFilename, 1);
+        objDeck.ReleaseObject();
+        objDecklayout.ReleaseObject();
+        StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+        return(hslTrue);
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // SaveChangesToSpecificDecklayout
+    ////////////////////////////////////////////////////////////////////////////
+    function SaveChangesToSpecificDecklayout(device& io_devDevice,
+                                             variable i_strDecklayoutName) variable
+    {
+      object   objDeck;
+      object   objDecklayout;
+      string   strLabwareID;
+      string   strLabwarePropertyKey;
+      object   objDecklayoutFile;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "", strFunctionName);
+
+      EnterSemaphore();
+      objDeck = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+      objDeck.GetObject("IEditDeckLayout6", objDecklayout);
+      if (!objDecklayout.IsNull())
+      {
+        objDecklayoutFile.CreateObject("HXCFGFILLib.HxCfgFile");
+
+        objDecklayoutFile.LoadFile(i_strDecklayoutName);
+
+        objDecklayout.WriteToDataDef(objDecklayoutFile, objDecklayout.Instrument);
+        objDecklayoutFile.SerializeFile(i_strDecklayoutName, 1);
+        objDeck.ReleaseObject();
+        objDecklayout.ReleaseObject();
+        StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+        return(hslTrue);
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // GetConfigurationFilename
+    ////////////////////////////////////////////////////////////////////////////
+    function GetConfigurationFilename(device& io_devDevice,
+                                      variable i_strLabwareID,
+                                      variable& o_strConfigurationFilename) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+  
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareID = " + i_strLabwareID, strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+
+      if (!objDecklayout.IsNull())
+      {
+        object objLabware;
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if (!objLabware.IsNull())
+        {
+          object   objEditLabware5;
+
+          objLabware.GetObject("IEditLabware5", objEditLabware5);
+
+          o_strConfigurationFilename = objEditLabware5.Filename;
+
+          objEditLabware5.ReleaseObject();
+          objDecklayout.ReleaseObject();
+          objLabware.ReleaseObject();
+
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "o_strConfigurationFilename = " + o_strConfigurationFilename, strFunctionName);
+          return(hslTrue);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+          objDecklayout.ReleaseObject();
+          return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // GetDefaultSequenceForLabwareID
+    ////////////////////////////////////////////////////////////////////////////
+    function GetDefaultSequenceForLabwareID(device& io_devDevice,
+                                            variable& i_strLabwareID,
+                                            variable i_intEnumSorting,
+                                            sequence& o_seqDefaultSequence) variable
+    {
+      object   objDecklayout;
+      object   comObject;
+      variable strFunctionName("");
+      sequence seqLocalSequence;
+      variable blnReturnValue(hslTrue);
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+      if (!CheckIntegerRange(i_intEnumSorting, "i_intEnumSorting", 0, 9, strFunctionName)) return(hslFalse);
+  
+      StatusTrace(CMD_START, 
+                  TRACE_LEVEL_DEBUG, 
+                  "i_strLabwareID = " + i_strLabwareID + ", i_intEnumSorting = " + IStr(i_intEnumSorting), 
+                  strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+
+      if (!objDecklayout.IsNull())
+      {
+        object objLabware;
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if (!objLabware.IsNull())
+        {
+          object   objEditLabware5;
+          object   objDeckLayout6;
+          object   objSequence;
+          object   objTemplate;
+          object   objRack;
+          object   objProbeInLabware;
+          object   objParameter;
+          variable intNumberOfElements;
+          variable intNumberOfRows;
+          variable i;
+          variable strPositionIDs[];
+          variable strLabwareIDs[];
+
+
+          objLabware.GetObject("IEditLabware5", objEditLabware5);
+          objLabware.GetObject("ITemplateDeckData", objTemplate);
+          objLabware.GetObject("IRectRack", objRack);
+
+          objDecklayout.GetObject("IDeckLayout6", objDeckLayout6);
+
+   		 if (objTemplate.IsNull())
+   		 {
+   			 // it's not a template
+             while(o_seqDefaultSequence.GetTotal()>0) o_seqDefaultSequence.RemoveAt(1);
+   			 objEditLabware5.DefaultSequence(objSequence);
+            
+             onerror goto HandleComError;
+             comObject.CreateObject("Hamilton.ASW.SequenceSorting.Controller");
+             blnReturnValue=comObject.SortSequenceByOne(objDeckLayout6, i_intEnumSorting, objSequence, strLabwareIDs, strPositionIDs);
+             onerror goto HandleLabwareError;
+             if(!blnReturnValue)
+             {
+                StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "COM object returned 'false'. Something went wrong.", strFunctionName);
+                return(hslFalse); 
+             }
+   			 intNumberOfElements = strLabwareIDs.GetSize();
+             intNumberOfRows = objRack.Rows;
+             Trace("Number of rows: ", intNumberOfRows);
+
+   			 for (i = 0; i < intNumberOfElements; i++)
+   			 {
+   			    o_seqDefaultSequence.Add(strLabwareIDs.GetAt(i), strPositionIDs.GetAt(i));
+   			 }
+      		 o_seqDefaultSequence.SetCount(o_seqDefaultSequence.GetTotal());
+      		 o_seqDefaultSequence.SetMax(o_seqDefaultSequence.GetTotal());
+      		 o_seqDefaultSequence.SetCurrentPosition(1);
+
+             StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Default sequence found for labwareID " + i_strLabwareID, strFunctionName);
+          }
+          else
+          {
+            blnReturnValue=hslFalse;
+            StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Default sequence not found. Labware ID " + i_strLabwareID + " is a template.", strFunctionName);
+          }
+          
+          objEditLabware5.ReleaseObject();
+          objDecklayout.ReleaseObject();
+          objLabware.ReleaseObject();
+          objSequence.ReleaseObject();
+          objTemplate.ReleaseObject();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+          return(blnReturnValue);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+          objDecklayout.ReleaseObject();
+          return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+
+      // runtime error handling
+      HandleComError :
+      {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error while creating or using the COM object Hamilton.ASW.SequenceSorting. Is this component installed and registered?", strFunctionName);
+          return(hslFalse);  
+      }
+
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // SortSequenceByProbeHead
+    ////////////////////////////////////////////////////////////////////////////
+    function SortSequenceByProbeHead(device& io_devDevice,
+                                     variable i_intProbeHeadConfiguration,
+                                     sequence& i_seqToBeSorted,
+                                     sequence& o_seqSortedSequence) variable
+    {
+      object   objDecklayout;
+      object   objDecklayout6;
+      object   objEditSequence2;
+      object   objSequence;
+      object   comObject;
+      variable blnReturnValue(hslTrue);
+      variable strSortingAlgorithmDescription;
+      variable strLabwareIDs[];
+      variable strPositionIDs[];
+      variable strFunctionName;
+      variable strMessage;
+      variable i;
+
+      strFunctionName=GetFunctionName();
+
+      if (!CheckInteger(i_intProbeHeadConfiguration, "i_intProbeHeadConfiguration", strFunctionName)) return(hslFalse);
+
+      strMessage = "i_intProbeHeadConfiguration = " + IStr(i_intProbeHeadConfiguration);
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, strMessage, strFunctionName);
+
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      if (objDecklayout.IsNull())
+      {
+         StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not get decklayout.", strFunctionName);
+         return(hslFalse);
+      }
+          
+      onerror goto HandleComCreationError;
+      comObject.CreateObject("Hamilton.ASW.SequenceSorting.Controller");
+      if (comObject.IsNull())
+      {
+         StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not create the COM object Hamilton.ASW.SequenceSorting. Is this component installed and registered?.", strFunctionName);
+         return(hslFalse); 
+      }
+  
+      onerror goto HandleComError;
+      blnReturnValue=comObject.SortSequenceByProbeHead(objDecklayout, i_seqToBeSorted.GetSequenceObject(), i_intProbeHeadConfiguration, strLabwareIDs, strPositionIDs, strSortingAlgorithmDescription);
+
+      if(!blnReturnValue)
+      {
+         StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "COM object returned 'false'. Something went wrong.", strFunctionName);
+         return(hslFalse); 
+      }
+      
+      onerror goto 0;
+      while(o_seqSortedSequence.GetTotal()>0) o_seqSortedSequence.RemoveAt(1);
+      for (i = 0; i < strLabwareIDs.GetSize(); i++)
+      {
+         o_seqSortedSequence.Add(strLabwareIDs.GetAt(i), strPositionIDs.GetAt(i));
+      }
+      o_seqSortedSequence.SetCount(o_seqSortedSequence.GetTotal());
+      o_seqSortedSequence.SetMax(o_seqSortedSequence.GetTotal());
+      o_seqSortedSequence.SetCurrentPosition(1);
+
+      StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Sorted sequence with algorithm '" + strSortingAlgorithmDescription + "'.", strFunctionName);
+
+      objDecklayout.ReleaseObject();
+
+      StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+      return(blnReturnValue);
+
+      // runtime error handling
+      HandleComCreationError :
+      {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error while creating the COM object Hamilton.ASW.SequenceSorting. Is this component installed and registered?", strFunctionName);
+          return(hslFalse);  
+      }
+
+      // runtime error handling
+      HandleComError :
+      {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error while calling a function of the COM object Hamilton.ASW.SequenceSorting.", strFunctionName);
+          return(hslFalse);  
+      }
+   }
+
+   ////////////////////////////////////////////////////////////////////////////
+    // SortSequenceByProbeHeadWithPresort
+    ////////////////////////////////////////////////////////////////////////////
+    function SortSequenceByProbeHeadWithPresort(device& io_devDevice,
+                                                variable i_intProbeHeadConfiguration,
+                                                variable i_intEnumSorting,
+                                                sequence& i_seqToBeSorted,
+                                                sequence& o_seqSortedSequence) variable
+    {
+      object   objDecklayout;
+      object   objDecklayout6;
+      object   objEditSequence2;
+      object   objSequence;
+      object   comObject;
+      variable blnReturnValue(hslTrue);
+      variable strSortingAlgorithmDescription;
+      variable strLabwareIDs[];
+      variable strPositionIDs[];
+      variable strFunctionName;
+      variable strMessage;
+      variable i;
+
+      strFunctionName=GetFunctionName();
+
+      if (!CheckInteger(i_intProbeHeadConfiguration, "i_intProbeHeadConfiguration", strFunctionName)) return(hslFalse);
+      if (!CheckInteger(i_intEnumSorting, "i_intEnumSorting", strFunctionName)) return(hslFalse);
+
+      strMessage = "i_intProbeHeadConfiguration = " + IStr(i_intProbeHeadConfiguration);
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, strMessage, strFunctionName);
+
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      if (objDecklayout.IsNull())
+      {
+         StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not get decklayout.", strFunctionName);
+         return(hslFalse);
+      }
+          
+      onerror goto HandleComCreationError;
+      comObject.CreateObject("Hamilton.ASW.SequenceSorting.Controller");
+      if (comObject.IsNull())
+      {
+         StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not create the COM object Hamilton.ASW.SequenceSorting. Is this component installed and registered?.", strFunctionName);
+         return(hslFalse); 
+      }
+  
+      onerror goto HandleComError;
+      blnReturnValue=comObject.SortSequenceByProbeHeadWithPresort(objDecklayout, i_seqToBeSorted.GetSequenceObject(), i_intEnumSorting, i_intProbeHeadConfiguration, strLabwareIDs, strPositionIDs, strSortingAlgorithmDescription);
+
+      if(!blnReturnValue)
+      {
+         StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "COM object returned 'false'. Something went wrong.", strFunctionName);
+         return(hslFalse); 
+      }
+      
+      onerror goto 0;
+      while(o_seqSortedSequence.GetTotal()>0) o_seqSortedSequence.RemoveAt(1);
+      for (i = 0; i < strLabwareIDs.GetSize(); i++)
+      {
+         o_seqSortedSequence.Add(strLabwareIDs.GetAt(i), strPositionIDs.GetAt(i));
+      }
+      o_seqSortedSequence.SetCount(o_seqSortedSequence.GetTotal());
+      o_seqSortedSequence.SetMax(o_seqSortedSequence.GetTotal());
+      o_seqSortedSequence.SetCurrentPosition(1);
+
+      StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Sorted sequence with algorithm '" + strSortingAlgorithmDescription + "'.", strFunctionName);
+
+      objDecklayout.ReleaseObject();
+
+      StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+      return(blnReturnValue);
+
+      // runtime error handling
+      HandleComCreationError :
+      {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error while creating the COM object Hamilton.ASW.SequenceSorting. Is this component installed and registered?", strFunctionName);
+          return(hslFalse);  
+      }
+
+      // runtime error handling
+      HandleComError :
+      {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error while calling a function of the COM object Hamilton.ASW.SequenceSorting.", strFunctionName);
+          return(hslFalse);  
+      }
+   }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // SortSequenceByColumn
+    ////////////////////////////////////////////////////////////////////////////
+    private function SortSequenceByColumn(device& io_devDevice,
+                                           variable strFunctionName,
+                                           variable i_intNumberOfSorts,
+                                           variable i_intEnumSorting1,
+                                           variable i_intEnumSorting2,
+                                           variable i_intEnumSorting3,
+                                           sequence& i_seqToBeSorted,
+                                           sequence& o_seqSortedSequence) variable
+    {
+      object   objDecklayout;
+      object   objDecklayout6;
+      object   objEditSequence2;
+      object   objSequence;
+      object   comObject;
+      variable blnReturnValue(hslTrue);
+      variable strLabwareIDs[];
+      variable strPositionIDs[];
+      variable strMessage;
+      variable i;
+
+
+      if (!CheckIntegerRange(i_intEnumSorting1, "i_intEnumSorting1", 0, 9, strFunctionName)) return(hslFalse);
+      if (i_intNumberOfSorts>1) if (!CheckIntegerRange(i_intEnumSorting2, "i_intEnumSorting2", 0, 9, strFunctionName)) return(hslFalse);
+      if (i_intNumberOfSorts>2) if (!CheckIntegerRange(i_intEnumSorting3, "i_intEnumSorting3", 0, 9, strFunctionName)) return(hslFalse);
+
+      strMessage = "i_intEnumSorting1 = " + IStr(i_intEnumSorting1);
+      if (i_intNumberOfSorts>1) strMessage = strMessage + ", i_intEnumSorting2 = " + IStr(i_intEnumSorting2);
+      if (i_intNumberOfSorts>2) strMessage = strMessage + ", i_intEnumSorting3 = " + IStr(i_intEnumSorting3);
+
+      StatusTrace(CMD_START, 
+                  TRACE_LEVEL_DEBUG, 
+                  strMessage,
+                  strFunctionName);
+
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      if (objDecklayout.IsNull())
+      {
+         StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not get decklayout.", strFunctionName);
+         return(hslFalse);
+      }
+          
+      onerror goto HandleComCreationError;
+      comObject.CreateObject("Hamilton.ASW.SequenceSorting.Controller");
+      if (comObject.IsNull())
+      {
+         StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not create the COM object Hamilton.ASW.SequenceSorting. Is this component installed and registered?.", strFunctionName);
+         return(hslFalse); 
+      }
+      onerror goto HandleComError;
+      if (i_intNumberOfSorts==1)
+      {
+         blnReturnValue=comObject.SortSequenceByOne(objDecklayout, i_intEnumSorting1, i_seqToBeSorted.GetSequenceObject(), strLabwareIDs, strPositionIDs);
+      }
+      if (i_intNumberOfSorts==2)
+      {
+         blnReturnValue=comObject.SortSequenceByTwo(objDecklayout, i_intEnumSorting1, i_intEnumSorting2, i_seqToBeSorted.GetSequenceObject(), strLabwareIDs, strPositionIDs);
+      }
+      if (i_intNumberOfSorts==3)
+      {
+         blnReturnValue=comObject.SortSequenceByThree(objDecklayout, i_intEnumSorting1, i_intEnumSorting2,i_intEnumSorting3, i_seqToBeSorted.GetSequenceObject(), strLabwareIDs, strPositionIDs);
+      }
+      onerror goto HandleLabwareError;
+      if(!blnReturnValue)
+      {
+         StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "COM object returned 'false'. Something went wrong.", strFunctionName);
+         return(hslFalse); 
+      }
+
+      while(o_seqSortedSequence.GetTotal()>0) o_seqSortedSequence.RemoveAt(1);
+      for (i = 0; i < strLabwareIDs.GetSize(); i++)
+      {
+         o_seqSortedSequence.Add(strLabwareIDs.GetAt(i), strPositionIDs.GetAt(i));
+      }
+      o_seqSortedSequence.SetCount(o_seqSortedSequence.GetTotal());
+      o_seqSortedSequence.SetMax(o_seqSortedSequence.GetTotal());
+      o_seqSortedSequence.SetCurrentPosition(1);
+
+      StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Sorted sequence.", strFunctionName);
+
+      objDecklayout.ReleaseObject();
+
+      StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+      return(blnReturnValue);
+
+
+      // runtime error handling
+      HandleComError :
+      {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error while using the COM object Hamilton.ASW.SequenceSorting. Maybe the object version does not match the library or venus version?", strFunctionName);
+          return(hslFalse);  
+      }
+
+      HandleComCreationError :
+      {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error while creating the COM object Hamilton.ASW.SequenceSorting. Is this component installed and registered?", strFunctionName);
+          return(hslFalse);  
+      }
+
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // SortSequenceByColumn1
+    ////////////////////////////////////////////////////////////////////////////
+    function SortSequenceByColumn1(device& io_devDevice,
+                                   variable i_intEnumSorting1,
+                                   sequence& i_seqToBeSorted,
+                                   sequence& o_seqSortedSequence) variable
+    {
+      variable strFunctionName;
+      strFunctionName=ExtractFunctionName(GetFunctionName());
+      return(SortSequenceByColumn(io_devDevice, strFunctionName, 1, i_intEnumSorting1, 0, 0, i_seqToBeSorted, o_seqSortedSequence));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // SortSequenceByColumn2
+    ////////////////////////////////////////////////////////////////////////////
+    function SortSequenceByColumn2(device& io_devDevice,
+                                   variable i_intEnumSorting1,
+                                   variable i_intEnumSorting2,
+                                   sequence& i_seqToBeSorted,
+                                   sequence& o_seqSortedSequence) variable
+    {
+      variable strFunctionName;
+      strFunctionName=ExtractFunctionName(GetFunctionName());
+      return(SortSequenceByColumn(io_devDevice, strFunctionName, 2, i_intEnumSorting1, i_intEnumSorting2, 0, i_seqToBeSorted, o_seqSortedSequence));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // SortSequenceByColumn3
+    ////////////////////////////////////////////////////////////////////////////
+    function SortSequenceByColumn3(device& io_devDevice,
+                                   variable i_intEnumSorting1,
+                                   variable i_intEnumSorting2,
+                                   variable i_intEnumSorting3,
+                                   sequence& i_seqToBeSorted,
+                                   sequence& o_seqSortedSequence) variable
+    {
+      variable strFunctionName;
+      strFunctionName=ExtractFunctionName(GetFunctionName());
+      return(SortSequenceByColumn(io_devDevice, strFunctionName, 3, i_intEnumSorting1, i_intEnumSorting2, i_intEnumSorting3, i_seqToBeSorted, o_seqSortedSequence));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // GetTransportSequenceForLabwareID
+    ////////////////////////////////////////////////////////////////////////////
+    function GetTransportSequenceForLabwareID(device& io_devDevice,
+                                              variable i_strLabwareID,
+                                              sequence& o_seqTransportSequence) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+      sequence seqLocalSequence;
+      variable blnReturnValue(hslTrue);
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+  
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareID = " + i_strLabwareID, strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+
+      if (!objDecklayout.IsNull())
+      {
+        object objLabware;
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if (!objLabware.IsNull())
+        {
+          object   objEditLabware5;
+          object   objSequence;
+          object   objTemplate;
+          object   objRack;
+          variable intNumberOfElements;
+          variable i;
+          variable intNumberOfRows;
+
+          objLabware.GetObject("IEditLabware5", objEditLabware5);
+          objLabware.GetObject("ITemplateDeckData", objTemplate);
+          objLabware.GetObject("IRectRack", objRack);
+
+   		 if (objTemplate.IsNull())
+   		 {
+   			 // it's not a template
+   			 objEditLabware5.DefaultSequence(objSequence);
+   			 intNumberOfElements = objSequence.Count;
+
+   			 if(intNumberOfElements>0)
+   			 {
+   			    object seqItem;
+                while(o_seqTransportSequence.GetTotal()>0) o_seqTransportSequence.RemoveAt(1);
+   				 seqItem = objSequence.Item(1);
+   			    o_seqTransportSequence.Add(seqItem.ObjectId, seqItem.PositionId);
+         		 o_seqTransportSequence.SetCount(o_seqTransportSequence.GetTotal());
+         		 o_seqTransportSequence.SetMax(o_seqTransportSequence.GetTotal());
+         		 o_seqTransportSequence.SetCurrentPosition(1);
+                StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Transport sequence created for labwareID " + i_strLabwareID, strFunctionName);
+             }
+             else 
+             {
+               blnReturnValue=hslFalse;
+               StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Default sequence does not contain labware positions. Does Labware ID " + i_strLabwareID + " has containers/wells defined?", strFunctionName);  
+             }
+          }
+          else
+          {
+            blnReturnValue=hslFalse;
+            StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Default sequence not found. Labware ID " + i_strLabwareID + " is a template.", strFunctionName);
+          }
+          
+          objEditLabware5.ReleaseObject();
+          objDecklayout.ReleaseObject();
+          objLabware.ReleaseObject();
+          objSequence.ReleaseObject();
+          objTemplate.ReleaseObject();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+          return(blnReturnValue);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+          objDecklayout.ReleaseObject();
+          return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    } 
+
+    ////////////////////////////////////////////////////////////////////////////
+    // TiltLabware
+    ////////////////////////////////////////////////////////////////////////////
+    function TiltLabware(device& io_devDevice,
+                         variable i_fltTiltAngleInDegree,
+                         variable i_fltTiltXOriginOffsetInMillimeter,
+                         variable i_fltTiltZOriginOffsetInMillimeter,
+                         variable i_blnShiftToDeepestPoint,
+                         variable i_strLabwareID) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+      variable blnReturnValue(hslTrue);
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+      if (!CheckFloat(i_fltTiltAngleInDegree, "i_fltTiltAngleInDegree", strFunctionName)) return(hslFalse);
+      if (!CheckFloat(i_fltTiltXOriginOffsetInMillimeter, "i_fltTiltXOriginOffsetInMillimeter", strFunctionName)) return(hslFalse);
+      if (!CheckFloat(i_fltTiltZOriginOffsetInMillimeter, "i_fltTiltZOriginOffsetInMillimeter", strFunctionName)) return(hslFalse);
+      if (!CheckBool(i_blnShiftToDeepestPoint, "i_blnShiftToDeepestPoint", strFunctionName)) return(hslFalse);
+  
+      StatusTrace(CMD_START, 
+                  TRACE_LEVEL_DEBUG, 
+                  "i_strLabwareID = " + i_strLabwareID + ", i_fltTiltAngleInDegree: " + FStr(i_fltTiltAngleInDegree) +
+                  ", i_fltTiltXOriginOffsetInMillimeter: " + FStr(i_fltTiltXOriginOffsetInMillimeter) +
+                  ", i_fltTiltZOriginOffsetInMillimeter: " + FStr(i_fltTiltZOriginOffsetInMillimeter) +
+                  ", i_blnShiftToDeepestPoint: " + IStr(i_blnShiftToDeepestPoint),
+                  strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+
+      if (!objDecklayout.IsNull())
+      {
+        object objLabware;
+        object objParams;
+        object objPositionDatas;
+        object objPositionData;
+        object objRackDataParams;
+        variable strFileName;
+        variable strPosition;
+        variable intNumberOfRows;
+        variable intNumberOfColumns;
+        variable fltOffset;
+        variable fltTiltAngleInRadian;
+        const variable ConversionFactor(0.01745329251994329576923690768489);
+
+        fltTiltAngleInRadian=i_fltTiltAngleInDegree*ConversionFactor;
+
+        objParams.CreateObject("HXPARAMSLib.HxPars");
+        objPositionData.CreateObject("HXPARAMSLib.HxPars");
+        objPositionDatas.CreateObject("HXPARAMSLib.HxPars");
+        objRackDataParams.CreateObject("HXPARAMSLib.HxPars");
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if (!objLabware.IsNull())
+        {
+          object objTemplate;
+          object objRack;
+          object objRack4;
+          object objEditLabware5;
+          object objDefaultSequence;
+
+          objLabware.GetObject("ITemplateDeckData", objTemplate);
+          objLabware.GetObject("IRectRack4", objRack4);
+          objLabware.GetObject("IRectRack", objRack);
+          objLabware.GetObject("IEditLabware5", objEditLabware5);
+
+   		 if (objTemplate.IsNull())
+   		 {
+   			 // it's not a template
+             object objSequenceItem;
+             variable intSequenceIndex;
+             variable arrFltPosition[];
+             variable arrFltOffset[](3);
+             variable fltPlateXOrigin;
+             variable fltNewXOffset;
+             variable fltNewZOffset;
+             variable fltCurrentXOffset;
+             variable fltCurrentZOffset;
+             variable fltPipettingXShift;
+             variable fltPipettingZShift;
+             variable fltCos;
+             variable fltSin;
+
+             fltCos=Cos(fltTiltAngleInRadian);
+             fltSin=Sin(fltTiltAngleInRadian);
+
+             onerror goto HandleRackError;
+
+             intNumberOfRows = objRack.Rows;
+             intNumberOfColumns = objRack.Columns;
+
+             objEditLabware5.DefaultSequence(objDefaultSequence);
+
+             objRack4.GetRackPositionData(objParams);
+             objPositionDatas=objParams.Item1("Labwr_PosData");
+
+             objRack4.GetRackData(objRackDataParams);
+             fltPlateXOrigin=objRackDataParams.Item1("Labwr_Bndry1X");
+
+
+             Trace("fltPlateXOrigin: ", fltPlateXOrigin);
+    
+             for (intSequenceIndex=1; intSequenceIndex<=objDefaultSequence.Count(); intSequenceIndex++)
+             {
+               objSequenceItem=objDefaultSequence.Item(intSequenceIndex);
+               strPosition=objSequenceItem.PositionId;
+
+               Trace("Current Position: ", strPosition);
+
+               io_devDevice.GetLabwarePosition(i_strLabwareID, arrFltPosition, strPosition);
+             
+               objPositionData=objPositionDatas.Item1(strPosition);
+               
+               if (i_blnShiftToDeepestPoint)
+               {
+                  variable fltRadius;
+                  fltRadius=(objPositionData.Item1("Labwr_XDim")/2);
+                  fltRadius=fltRadius * 0.85; // removing tolerance value to avoid hitting the border with the tip
+                  fltPipettingXShift=fltRadius*fltCos;
+                  fltPipettingZShift=fltRadius*fltSin;           
+               }
+               else 
+               {
+                  fltPipettingXShift=0.0; 
+                  fltPipettingZShift=0.0;
+               }       
+                          
+               // get current container position in x and z
+               fltCurrentXOffset=objPositionData.Item1("Labwr_XCoord") - fltPlateXOrigin + i_fltTiltXOriginOffsetInMillimeter;
+               fltCurrentZOffset=objRack4.ContainerBaseOffset(strPosition) + i_fltTiltZOriginOffsetInMillimeter;
+          
+               fltNewXOffset=(fltCurrentXOffset * fltCos - fltCurrentZOffset * fltSin) - fltCurrentXOffset - fltPipettingXShift;
+               fltNewZOffset=((fltCurrentXOffset * fltSin + fltCurrentZOffset * fltCos) - fltCurrentZOffset - fltPipettingZShift)+objRack4.ContainerBaseOffset(strPosition); // this strange correction exists because the container is not placed at (0,0,0), but instead at (0,0,BaseOffset).
+
+               StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "New offsets [x, z] : " + FStr(fltNewXOffset) + ", " + FStr(fltNewZOffset) + ".", strFunctionName);
+
+               arrFltOffset[0]=fltNewXOffset;
+               arrFltOffset[1]=0.0;
+               arrFltOffset[2]=fltNewZOffset;
+
+               // shift container, replacing it in the action.
+               strFileName=objPositionData.Item1("Labwr_File");
+               io_devDevice.AddContainerToRack(i_strLabwareID, strPosition, strFileName, arrFltOffset);
+             }
+
+             onerror goto 0;
+             err.Clear();
+
+             StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Labware containers were successfully shifted.", strFunctionName);
+          }
+          else
+          {
+            blnReturnValue=hslFalse;
+            StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Labware ID " + i_strLabwareID + " is a template. Could not get position data for containers.", strFunctionName);
+          }
+          
+          objDecklayout.ReleaseObject();
+          objLabware.ReleaseObject();
+          objTemplate.ReleaseObject();
+          objRack.ReleaseObject();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+          return(blnReturnValue);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+          objDecklayout.ReleaseObject();
+          return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+
+            // runtime error handling
+      HandleRackError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error occured. Maybe rack is not a rect?", strFunctionName);
+        return(hslFalse);
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // TiltLabwareWithPipettingOffset
+    ////////////////////////////////////////////////////////////////////////////
+    function TiltLabwareWithPipettingOffset(device& io_devDevice,
+                                             variable i_fltTiltAngleInDegree,
+                                             variable i_fltTiltXOriginOffsetInMillimeter,
+                                             variable i_fltTiltZOriginOffsetInMillimeter,
+                                             variable i_fltXAxisShiftInWellInMillimeter,
+                                             variable i_fltYAxisShiftInWellInMillimeter,
+                                             variable i_blnAdjustXAxisShiftInWellByAngle,
+                                             variable i_strLabwareID) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+      variable blnReturnValue(hslTrue);
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+      if (!CheckFloat(i_fltTiltAngleInDegree, "i_fltTiltAngleInDegree", strFunctionName)) return(hslFalse);
+      if (!CheckFloat(i_fltTiltXOriginOffsetInMillimeter, "i_fltTiltXOriginOffsetInMillimeter", strFunctionName)) return(hslFalse);
+      if (!CheckFloat(i_fltTiltZOriginOffsetInMillimeter, "i_fltTiltZOriginOffsetInMillimeter", strFunctionName)) return(hslFalse);
+      if (!CheckFloat(i_fltXAxisShiftInWellInMillimeter, "i_fltXAxisShiftInWellInMillimeter", strFunctionName)) return(hslFalse);
+      if (!CheckFloat(i_fltYAxisShiftInWellInMillimeter, "i_fltYAxisShiftInWellInMillimeter", strFunctionName)) return(hslFalse);
+      if (!CheckBool(i_blnAdjustXAxisShiftInWellByAngle, "i_blnAdjustXAxisShiftInWellByAngle", strFunctionName)) return(hslFalse);
+  
+      StatusTrace(CMD_START, 
+                  TRACE_LEVEL_DEBUG, 
+                  "i_strLabwareID = " + i_strLabwareID + ", i_fltTiltAngleInDegree: " + FStr(i_fltTiltAngleInDegree) +
+                  ", i_fltTiltXOriginOffsetInMillimeter: " + FStr(i_fltTiltXOriginOffsetInMillimeter) +
+                  ", i_fltTiltZOriginOffsetInMillimeter: " + FStr(i_fltTiltZOriginOffsetInMillimeter) +
+                  ", i_fltXAxisShiftInWellInMillimeter: " + FStr(i_fltXAxisShiftInWellInMillimeter) +
+                  ", i_fltYAxisShiftInWellInMillimeter: " + FStr(i_fltYAxisShiftInWellInMillimeter) +
+                  ", i_blnAdjustXAxisShiftInWellByAngle: " + IStr(i_blnAdjustXAxisShiftInWellByAngle),
+                  strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+
+      if (!objDecklayout.IsNull())
+      {
+        object objLabware;
+        object objParams;
+        object objPositionDatas;
+        object objPositionData;
+        object objRackDataParams;
+        variable strFileName;
+        variable strPosition;
+        variable intNumberOfRows;
+        variable intNumberOfColumns;
+        variable fltOffset;
+        variable fltTiltAngleInRadian;
+        const variable ConversionFactor(0.01745329251994329576923690768489);
+
+        fltTiltAngleInRadian=i_fltTiltAngleInDegree*ConversionFactor;
+
+        objParams.CreateObject("HXPARAMSLib.HxPars");
+        objPositionData.CreateObject("HXPARAMSLib.HxPars");
+        objPositionDatas.CreateObject("HXPARAMSLib.HxPars");
+        objRackDataParams.CreateObject("HXPARAMSLib.HxPars");
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if (!objLabware.IsNull())
+        {
+          object objTemplate;
+          object objRack;
+          object objRack4;
+          object objEditLabware5;
+          object objDefaultSequence;
+
+          objLabware.GetObject("ITemplateDeckData", objTemplate);
+          objLabware.GetObject("IRectRack4", objRack4);
+          objLabware.GetObject("IRectRack", objRack);
+          objLabware.GetObject("IEditLabware5", objEditLabware5);
+
+   		 if (objTemplate.IsNull())
+   		 {
+   			 // it's not a template
+             object objSequenceItem;
+             variable intSequenceIndex;
+             variable arrFltPosition[];
+             variable arrFltOffset[](3);
+             variable fltPlateXOrigin;
+             variable fltNewXOffset;
+             variable fltNewZOffset;
+             variable fltCurrentXOffset;
+             variable fltCurrentZOffset;
+             variable fltPipettingXShift;
+             variable fltPipettingZShift;
+             variable fltCos;
+             variable fltSin;
+
+             fltCos=Cos(fltTiltAngleInRadian);
+             fltSin=Sin(fltTiltAngleInRadian);
+
+             onerror goto HandleRackError;
+
+             intNumberOfRows = objRack.Rows;
+             intNumberOfColumns = objRack.Columns;
+
+             objEditLabware5.DefaultSequence(objDefaultSequence);
+
+             objRack4.GetRackPositionData(objParams);
+             objPositionDatas=objParams.Item1("Labwr_PosData");
+
+             objRack4.GetRackData(objRackDataParams);
+             fltPlateXOrigin=objRackDataParams.Item1("Labwr_Bndry1X");
+    
+             for (intSequenceIndex=1; intSequenceIndex<=objDefaultSequence.Count(); intSequenceIndex++)
+             {
+               objSequenceItem=objDefaultSequence.Item(intSequenceIndex);
+               strPosition=objSequenceItem.PositionId;
+
+               Trace("Current Position: ", strPosition);
+
+               io_devDevice.GetLabwarePosition(i_strLabwareID, arrFltPosition, strPosition);
+             
+               objPositionData=objPositionDatas.Item1(strPosition);
+               
+               if (i_blnAdjustXAxisShiftInWellByAngle)
+               {
+                  fltPipettingXShift=(-1)*i_fltXAxisShiftInWellInMillimeter*fltCos;  
+                  Trace("Shifted!");         
+               }
+               else 
+               {
+                  fltPipettingXShift=(-1)*i_fltXAxisShiftInWellInMillimeter; 
+               } 
+               fltPipettingZShift=fltPipettingXShift*fltSin;      
+                          
+               // get current container position in x and z
+               fltCurrentXOffset=objPositionData.Item1("Labwr_XCoord") - fltPlateXOrigin + i_fltTiltXOriginOffsetInMillimeter;
+               fltCurrentZOffset=objRack4.ContainerBaseOffset(strPosition) + i_fltTiltZOriginOffsetInMillimeter;
+           
+               fltNewXOffset=(fltCurrentXOffset * fltCos - fltCurrentZOffset * fltSin) - fltCurrentXOffset - fltPipettingXShift;
+               fltNewZOffset=((fltCurrentXOffset * fltSin + fltCurrentZOffset * fltCos) - fltCurrentZOffset - fltPipettingZShift)+objRack4.ContainerBaseOffset(strPosition); // this strange correction exists because the container is not placed at (0,0,0), but instead at (0,0,BaseOffset).
+               
+
+               StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "New offsets [x, y, z] : " + FStr(fltNewXOffset) + ", " + FStr(i_fltYAxisShiftInWellInMillimeter) + ", " + FStr(fltNewZOffset) + ".", strFunctionName);
+
+               arrFltOffset[0]=fltNewXOffset;
+               arrFltOffset[1]=i_fltYAxisShiftInWellInMillimeter;
+               arrFltOffset[2]=fltNewZOffset;
+
+               // shift container, replacing it in the action.
+               strFileName=objPositionData.Item1("Labwr_File");
+               io_devDevice.AddContainerToRack(i_strLabwareID, strPosition, strFileName, arrFltOffset);
+             }
+
+             onerror goto 0;
+             err.Clear();
+
+             StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Labware containers were successfully shifted.", strFunctionName);
+          }
+          else
+          {
+            blnReturnValue=hslFalse;
+            StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Labware ID " + i_strLabwareID + " is a template. Could not get position data for containers.", strFunctionName);
+          }
+          
+          objDecklayout.ReleaseObject();
+          objLabware.ReleaseObject();
+          objTemplate.ReleaseObject();
+          objRack.ReleaseObject();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+          return(blnReturnValue);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+          objDecklayout.ReleaseObject();
+          return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+
+            // runtime error handling
+      HandleRackError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error occured. Maybe rack is not a rect?", strFunctionName);
+        return(hslFalse);
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // GetRowAndColumnCountForLabwareID
+    ////////////////////////////////////////////////////////////////////////////
+    function GetRowAndColumnCountForLabwareID(device& io_devDevice,
+                                              variable i_strLabwareID,
+                                              variable& o_intNumberOfRows,
+                                              variable& o_intNumberOfColumns) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+      variable blnReturnValue(hslTrue);
+
+      o_intNumberOfRows=0;
+      o_intNumberOfColumns=0;
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+  
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareID = " + i_strLabwareID, strFunctionName);
+
+      EnterSemaphore();
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+      LeaveSemaphore();
+
+      if (!objDecklayout.IsNull())
+      {
+        object objLabware;
+
+        onerror goto HandleLabwareError;
+        objLabware = objDecklayout.Labware(i_strLabwareID);
+        onerror goto 0;
+        err.Clear();
+
+        if (!objLabware.IsNull())
+        {
+          object   objTemplate;
+          object   objRack;
+          variable i;
+
+          objLabware.GetObject("ITemplateDeckData", objTemplate);
+          objLabware.GetObject("IRectRack", objRack);
+
+   		 if (objTemplate.IsNull())
+   		 {
+   			 // it's not a template
+             onerror goto HandleRackError;
+             o_intNumberOfRows = objRack.Rows;
+             o_intNumberOfColumns = objRack.Columns;
+             onerror goto 0;
+             err.Clear();
+
+             StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Number of rows: " + IStr(o_intNumberOfRows) + ", number of columns: " + IStr(o_intNumberOfColumns) + " for labwareID " + i_strLabwareID, strFunctionName);
+          }
+          else
+          {
+            blnReturnValue=hslFalse;
+            StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Labware ID " + i_strLabwareID + " is a template. Could not find number of rows and columns.", strFunctionName);
+          }
+          
+          objDecklayout.ReleaseObject();
+          objLabware.ReleaseObject();
+          objTemplate.ReleaseObject();
+          objRack.ReleaseObject();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+          return(blnReturnValue);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find labware.", strFunctionName);
+          objDecklayout.ReleaseObject();
+          return(hslFalse);
+        }
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+
+            // runtime error handling
+      HandleRackError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Error occured. Maybe rack is not a rect?", strFunctionName);
+        return(hslFalse);
+      }
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // StackCreate
+    ////////////////////////////////////////////////////////////////////////////
+    function StackCreate(device&  io_devDevice,
+                         variable i_strLabwareIDForStack,
+                         variable i_strLabwareFileName, 
+                         variable i_intNumberOfPlatesInStack,
+                         variable i_strTemplateSiteID,
+                         variable i_strTemplateID,
+                         variable i_blnLabwareIsCovered,
+                         variable i_strRackType,
+                         variable o_arrStrLabwareIDs[],
+                         variable o_arrStrLabwareLidIDs[]) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strLabwareIDForStack, "i_strLabwareIDForStack", strFunctionName)) return(hslFalse);
+      if (!CheckString(i_strLabwareFileName, "i_strLabwareFileName", strFunctionName)) return(hslFalse);
+      if (!CheckInteger(i_intNumberOfPlatesInStack, "i_intNumberOfPlatesInStack", strFunctionName)) return(hslFalse);
+      if (!CheckString(i_strTemplateSiteID, "i_strTemplateSiteID", strFunctionName)) return(hslFalse);
+      if (!CheckString(i_strTemplateID, "i_strTemplateID", strFunctionName)) return(hslFalse);
+      if (!CheckBool(i_blnLabwareIsCovered, "i_blnLabwareIsCovered", strFunctionName)) return(hslFalse);
+
+
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareIDForStack = " + i_strLabwareIDForStack + 
+                                                ", i_strLabwareFileName = " + i_strLabwareFileName + 
+                                                ", i_intNumberOfPlatesInStack = " + IStr(i_intNumberOfPlatesInStack) +
+                                                ", i_strTemplateSiteID = " + i_strTemplateSiteID + 
+                                                ", i_strTemplateID = " + i_strTemplateID +
+                                                ", i_blnLabwareIsCovered = " + IStr(i_blnLabwareIsCovered) +
+                                                ", i_strRackType = " + i_strRackType, strFunctionName);
+
+      onerror goto HandleLabwareError;
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+
+      if (!objDecklayout.IsNull())
+      {
+          object EditDecklayout5;
+          object Parameter;
+          object LabwareObjects;
+          object LabwareNames;
+          variable myKeys[];
+          variable intCounter;
+          variable blnPlate(hslTrue);
+
+          objDecklayout.GetObject("IEditDeckLayout5", EditDecklayout5);
+
+          Parameter.CreateObject("HXPARAMSLib.HxPars");
+          Parameter.Add(i_strLabwareFileName, P_FILE);
+          Parameter.Add(i_strLabwareIDForStack, P_LABWARE_ID);
+          Parameter.Add(i_intNumberOfPlatesInStack, P_COUNT);
+          Parameter.Add(i_strTemplateSiteID, P_DKSITEID);
+          Parameter.Add(i_strTemplateID, P_TEMPLATEID);
+          Parameter.Add(0, P_XDIM);
+          Parameter.Add(0, P_YDIM);
+          Parameter.Add(i_blnLabwareIsCovered, P_ISCOVERED);
+          Parameter.Add(i_strRackType, P_CLSID);
+
+          objDecklayout.AddStackToDecksite(Parameter);
+
+          LabwareObjects.CreateObject("HXPARAMSLib.HxPars");
+          LabwareNames.CreateObject("HXPARAMSLib.HxPars");
+
+          objDecklayout.TemplateLabwareNames(LabwareObjects);
+          myKeys = LabwareObjects.GetKeys();
+
+          for(intCounter=1; intCounter<=myKeys.GetSize(); intCounter++)
+          {
+            LabwareNames = LabwareObjects.Item1(intCounter);           
+            if(LabwareNames.Item1("Labwr_TemplateId") == i_strTemplateID && LabwareNames.Item1("Labwr_DkSiteId") == i_strTemplateSiteID)
+            {
+               if (!blnPlate && i_blnLabwareIsCovered) 
+               {
+                  o_arrStrLabwareLidIDs.AddAsLast(LabwareNames.Item1("Labwr_Id"));
+                  blnPlate=hslTrue;
+               }
+               else 
+               {  
+                  if(i_blnLabwareIsCovered) blnPlate=hslFalse;
+                  o_arrStrLabwareIDs.AddAsLast(LabwareNames.Item1("Labwr_Id"));
+               }     
+            }
+          }
+
+          objDecklayout.ReleaseObject();
+          EditDecklayout5.ReleaseObject();
+          Parameter.ReleaseObject();
+          onerror goto 0;
+          err.Clear();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+          return(hslTrue);
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // StackIncrease
+    ////////////////////////////////////////////////////////////////////////////
+    function StackIncrease(device&  io_devDevice,
+                           variable i_strLabwareIDForStack,
+                           variable& o_strLabwareID,
+                           variable& o_strLabwareLidID) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+      variable strTemplateID;
+      variable strTemplateSiteID;
+      string   strLabwareID;
+
+      o_strLabwareLidID="";
+      o_strLabwareID="";
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strLabwareIDForStack, "i_strLabwareIDForStack", strFunctionName)) return(hslFalse);
+
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareIDForStack = " + i_strLabwareIDForStack, strFunctionName);
+
+      onerror goto HandleLabwareError;
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+
+      if (!objDecklayout.IsNull())
+      {
+          object EditDecklayout5;
+          object EditDecklayout7;
+          object Parameter;
+          object LabwareObjects;
+          object LabwareNames;
+          variable myKeys[];
+          variable intCounter;
+          variable intInverseCounter;
+          variable blnPlate(hslTrue);
+
+          objDecklayout.GetObject("IEditDeckLayout5", EditDecklayout5);
+          objDecklayout.GetObject("IEditDeckLayout7", EditDecklayout7);
+
+          Parameter.CreateObject("HXPARAMSLib.HxPars");
+          Parameter.Add(i_strLabwareIDForStack, P_STACKID);
+
+          objDecklayout.IncreaseStack(Parameter);
+
+          LabwareObjects.CreateObject("HXPARAMSLib.HxPars");
+          LabwareNames.CreateObject("HXPARAMSLib.HxPars");
+
+          EditDecklayout7.GetLabwareData(LabwareObjects);
+          myKeys = LabwareObjects.GetKeys();
+
+          // Get the template site ID and template ID of the stack
+          for(intCounter=1; intCounter<=myKeys.GetSize(); intCounter++)
+          {
+            LabwareNames = LabwareObjects.Item1(intCounter);       
+            if(LabwareNames.Item1("Labwr_Id") == i_strLabwareIDForStack)
+            {
+               strTemplateID=LabwareNames.Item1("Labwr_TemplateId");
+               strTemplateSiteID=LabwareNames.Item1("Labwr_DkSiteId");
+            }
+          }
+
+          // Get all the labware on this site
+          objDecklayout.TemplateLabwareNames(LabwareObjects);
+          myKeys = LabwareObjects.GetKeys();
+
+          intInverseCounter=myKeys.GetSize();
+
+          for(intCounter=1; intCounter<=myKeys.GetSize(); intCounter++)
+          {
+            LabwareNames = LabwareObjects.Item1(intInverseCounter);
+            intInverseCounter=intInverseCounter-1;
+          
+            if(LabwareNames.Item1("Labwr_TemplateId") == strTemplateID && LabwareNames.Item1("Labwr_DkSiteId") == strTemplateSiteID && LabwareNames.Item1("Labwr_Id")!=i_strLabwareIDForStack)
+            {
+                 strLabwareID=LabwareNames.Item1("Labwr_Id");
+                 if(strLabwareID.Find("_lid")==-1) o_strLabwareID=strLabwareID;
+                 else o_strLabwareLidID=strLabwareID; 
+            }
+          }
+
+          objDecklayout.ReleaseObject();
+          EditDecklayout5.ReleaseObject();
+          EditDecklayout7.ReleaseObject();
+          Parameter.ReleaseObject();
+          onerror goto 0;
+          err.Clear();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "Successfully added a plate to stack. Plate LabwareID: '" + o_strLabwareID + "', Lid LabwareID: '" + o_strLabwareLidID + "'.", strFunctionName);
+          return(hslTrue);
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // StackDecrease
+    ////////////////////////////////////////////////////////////////////////////
+    function StackDecrease(device&  io_devDevice,
+                           variable i_strLabwareIDForStack) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strLabwareIDForStack, "i_strLabwareIDForStack", strFunctionName)) return(hslFalse);
+
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareIDForStack = " + i_strLabwareIDForStack, strFunctionName);
+
+      onerror goto HandleLabwareError;
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+
+      if (!objDecklayout.IsNull())
+      {
+          object EditDecklayout5;
+          object EditDecklayout7;
+          object Parameter;
+          object LabwareObjects;
+          object LabwareNames;
+          variable myKeys[];
+          variable intCounter;
+          variable intInverseCounter;
+          variable blnPlate(hslTrue);
+
+          objDecklayout.GetObject("IEditDeckLayout5", EditDecklayout5);
+          objDecklayout.GetObject("IEditDeckLayout7", EditDecklayout7);
+
+          Parameter.CreateObject("HXPARAMSLib.HxPars");
+          Parameter.Add(i_strLabwareIDForStack, P_STACKID);
+
+          objDecklayout.DecreaseStack(Parameter);
+
+          objDecklayout.ReleaseObject();
+          EditDecklayout5.ReleaseObject();
+          EditDecklayout7.ReleaseObject();
+          Parameter.ReleaseObject();
+          onerror goto 0;
+          err.Clear();
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "Successfully removed a plate from stack.", strFunctionName);
+          return(hslTrue);
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // AddLabwareToTemplateSite
+    ////////////////////////////////////////////////////////////////////////////
+    function AddLabwareToTemplateSite(device&  io_devDevice,
+                                      variable i_strLabwareFileName,
+                                      variable i_strTemplateID,
+                                      variable i_strTemplateSiteID,
+                                      variable i_strEnumOrientation,
+                                      variable i_blnCoverRack,
+                                      variable& io_strLabwareID,
+                                      variable& o_strLabwareIDCover) variable
+    {
+      object   objDecklayout;
+      variable strFunctionName("");
+      variable strLabwareIDTemp;
+      variable strLabwareIDMarker;
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strLabwareFileName, "i_strLabwareFileName", strFunctionName)) return(hslFalse);
+      if (!CheckString(i_strTemplateID, "i_strTemplateID", strFunctionName)) return(hslFalse);
+      if (!CheckString(i_strTemplateSiteID, "i_strTemplateSiteID", strFunctionName)) return(hslFalse);
+      if (!CheckString(io_strLabwareID, "io_strLabwareID", strFunctionName)) return(hslFalse);
+      if (!CheckString(i_strEnumOrientation, "i_strEnumOrientation", strFunctionName)) return(hslFalse);
+
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareFileName = " + i_strLabwareFileName + 
+                                                ", i_strTemplateID = " + i_strTemplateID + 
+                                                ", i_strTemplateSiteID = " + i_strTemplateSiteID + 
+                                                ", i_strEnumOrientation = " + i_strEnumOrientation + 
+                                                ", io_strLabwareID = " + io_strLabwareID, 
+                                                strFunctionName);
+
+
+      onerror goto HandleLabwareError;
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+
+      if (!objDecklayout.IsNull())
+      {
+         object EditDecklayout6;
+         object EditDecklayout7;
+         object objParameter;
+         object objSitesParameter;
+         object objSiteParameter;
+         object objLabware;
+         object objTemplate;
+         object objDeckData;
+         object objEditLabware6;
+         object objRectRack2;
+         variable arrTemplateSitesKeys[];
+         variable intCounter;
+         variable fltLabwareMeasureX;
+         variable fltLabwareMeasureY;
+         variable fltSiteMeasureX;
+         variable fltSiteMeasureY;
+         variable position[](4);
+
+         objDecklayout.GetObject("IEditDeckLayout6", EditDecklayout6);
+         objDecklayout.GetObject("IEditDeckLayout7", EditDecklayout7);
+         objDecklayout.GetObject("IEditLabware6", objEditLabware6);
+
+         objParameter.CreateObject("HXPARAMSLib.HxPars");
+         objSitesParameter.CreateObject("HXPARAMSLib.HxPars");
+         objSiteParameter.CreateObject("HXPARAMSLib.HxPars");
+
+         objDecklayout.GetObject("IDeckData", objDeckData);
+         objLabware=objDecklayout.Labware(i_strTemplateID);
+         objLabware.GetObject("ITemplateDeckData", objTemplate);
+
+         if (objTemplate.IsNull())
+         {
+            StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Cannot get template data.", strFunctionName);
+            return(hslFalse);  
+         }
+
+         objDeckData.GetTemplateData(i_strTemplateID, objParameter);
+         if (objDeckData.IsNull())
+         {
+            StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Cannot get deck data.", strFunctionName);
+            return(hslFalse);  
+         }
+
+         objSitesParameter=objParameter.Item1(P_DECKSITES);
+         arrTemplateSitesKeys=objSitesParameter.GetKeys();
+
+         // we have parameters of all sites. Find the one with the name given.
+         for(intCounter=0; intCounter<arrTemplateSitesKeys.GetSize(); intCounter++)
+         {
+            objSiteParameter=objSitesParameter.Item1(arrTemplateSitesKeys.GetAt(intCounter));
+            if(objSiteParameter.Item1(P_DKSITEID)==i_strTemplateSiteID)
+            {
+               break;
+            }
+         }
+
+         fltSiteMeasureX=objSiteParameter.Item1(P_DKSITEDX);
+         fltSiteMeasureY=objSiteParameter.Item1(P_DKSITEDY);
+
+         // Preload labware on deck
+         StatusTrace(CMD_PROGRESS, 
+                   TRACE_LEVEL_DEBUG, 
+                   "Site '" + i_strTemplateSiteID + "' X-Dim: " + FStr(fltSiteMeasureX) + 
+                   ", Y-Dim: " + FStr(fltSiteMeasureY), 
+                   strFunctionName);
+       
+         objLabware = EditDecklayout6.Labware(i_strTemplateID);
+         position[0] = 0;
+         position[1] = 0;
+         position[2] = 0;
+         
+         // rotate al gusto
+         if(i_strEnumOrientation==Enum::Orientation::Degree0)
+         {
+            position[3] = 0;
+         }
+         if(i_strEnumOrientation==Enum::Orientation::Degree90)
+         {
+            position[3] = 90;
+         }
+         if(i_strEnumOrientation==Enum::Orientation::Degree180)
+         {
+            position[3] = 180;
+         }
+         if(i_strEnumOrientation==Enum::Orientation::Degree270) 
+         {
+            position[3] = 270;
+         }
+
+         if(io_strLabwareID=="") 
+         {
+            io_strLabwareID="Labware_" + i_strTemplateID + "_" + i_strTemplateSiteID;
+            StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "LabwareID was left empty. Created a new one: '" + io_strLabwareID + "'.", strFunctionName); 
+         }
+
+         if(0!=io_devDevice.IsValidLabwareForCurrentDeckLayout(io_strLabwareID))
+         {
+            EditDecklayout6.GetUniqueLabwareID(io_strLabwareID, io_strLabwareID); 
+            StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "LabwareID is already in use. Created a new one: '" + io_strLabwareID + "'.", strFunctionName); 
+         }
+
+         // create unique labware IDs
+         strLabwareIDMarker=io_strLabwareID;
+         io_strLabwareID=io_strLabwareID+"TempID";
+         EditDecklayout6.GetUniqueLabwareID(io_strLabwareID, io_strLabwareID);
+         strLabwareIDTemp=io_strLabwareID;
+         io_strLabwareID=strLabwareIDMarker;
+
+         io_devDevice.AddLabware(strLabwareIDTemp, i_strLabwareFileName, position);
+         objDecklayout.GetObject("ILabware7", objLabware);          
+         objLabware=EditDecklayout6.Labware(strLabwareIDTemp);
+         objLabware.GetBoundary(objParameter);
+         objLabware.GetObject("IRectRack", objRectRack2);
+         if (!objRectRack2.IsNull() && i_blnCoverRack)
+         {
+             StatusTrace(CMD_PROGRESS, TRACE_LEVEL_DEBUG, "Covered rack with lid.", strFunctionName);
+             if (i_blnCoverRack) objRectRack2.Covered=1;          
+         }
+
+         fltLabwareMeasureX=objParameter.Item1(P_XDIM);
+         fltLabwareMeasureY=objParameter.Item1(P_YDIM);
+
+         StatusTrace(CMD_PROGRESS, 
+                     TRACE_LEVEL_DEBUG, 
+                     "Labware X-Dim: " + FStr(fltLabwareMeasureX) + ", Y-Dim: " + FStr(fltLabwareMeasureY) + ".", 
+                     strFunctionName);
+
+         onerror goto HandleBoundsDoNotFitError;
+         EditDecklayout7.AddLabwareToDeckSite(objLabware, i_strTemplateSiteID, io_strLabwareID, i_strTemplateID, 1);
+         onerror goto HandleLabwareError;
+         io_devDevice.RemoveLabware(strLabwareIDTemp);
+
+
+         if (!objRectRack2.IsNull() && i_blnCoverRack) o_strLabwareIDCover=objRectRack2.CoverID;
+         else o_strLabwareIDCover="";
+ 
+         objDecklayout.ReleaseObject();
+         EditDecklayout6.ReleaseObject();
+         EditDecklayout7.ReleaseObject();
+
+         objParameter.ReleaseObject();
+         onerror goto 0;
+         err.Clear();
+         StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "Successfully added '" + io_strLabwareID + "' to decklayout.", strFunctionName);
+         return(hslTrue);
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+
+      // runtime error handling
+      HandleBoundsDoNotFitError:
+      {
+        io_devDevice.RemoveLabware(strLabwareIDTemp);
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "ErrorID: " + IStr(err.GetId()) + ". Labware does not fit onto site.", strFunctionName);
+        return(hslFalse);       
+      }
+
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "ErrorID: " + IStr(errorID) + ". LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "ErrorID: " + IStr(errorID) + ". Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // GetTemplateIDAndTemplateSiteID
+    ////////////////////////////////////////////////////////////////////////////
+    function GetTemplateIDAndTemplateSiteID(device&  io_devDevice,
+                                              variable  i_strLabwareID,
+                                              variable& o_strTemplateID,
+                                              variable& o_strTemplateSiteID) variable
+    {
+      variable PosVals[];
+      object   objDecklayout;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strLabwareID, "i_strLabwareID", strFunctionName)) return(hslFalse);
+
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strLabwareID = " + i_strLabwareID, strFunctionName);
+
+      o_strTemplateID="";
+      o_strTemplateSiteID="";
+
+      onerror goto HandleLabwareError;
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+
+      if (!objDecklayout.IsNull())
+      {
+          object EditDecklayout5;
+          object Parameter;
+          object LabwareObjects;
+          object LabwareNames;
+          variable myKeys[];
+          variable intCounter;
+          variable blnFoundLocation(hslFalse);
+          variable strMessage;
+
+          objDecklayout.GetObject("IEditDeckLayout5", EditDecklayout5);
+
+
+          LabwareObjects.CreateObject("HXPARAMSLib.HxPars");
+          LabwareNames.CreateObject("HXPARAMSLib.HxPars");
+
+          objDecklayout.TemplateLabwareNames(LabwareObjects);
+          myKeys = LabwareObjects.GetKeys();
+
+          for(intCounter=1; intCounter<=myKeys.GetSize(); intCounter++)
+          {
+            LabwareNames = LabwareObjects.Item1(intCounter);
+            if(LabwareNames.Item1("Labwr_Id") == i_strLabwareID)
+            {
+              blnFoundLocation=hslTrue; 
+              o_strTemplateSiteID=LabwareNames.Item1("Labwr_DkSiteId");
+              o_strTemplateID=LabwareNames.Item1("Labwr_TemplateId");            
+            }      
+          }
+
+          objDecklayout.ReleaseObject();
+          EditDecklayout5.ReleaseObject();
+          Parameter.ReleaseObject();
+          onerror goto 0;
+          err.Clear();
+          if (blnFoundLocation) strMessage="Found labwareID '" + i_strLabwareID + "' to be located on templateID '" + o_strTemplateID + "' on templateSiteID '" + o_strTemplateSiteID + "'.";
+          else strMessage="Could not find templateID and templateSiteID for labwareID '" + i_strLabwareID + "'";
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, strMessage, strFunctionName);
+          return(blnFoundLocation);
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // GetLabwareIDsAndTemplateSiteIDsForTemplateID
+    ////////////////////////////////////////////////////////////////////////////
+    function GetLabwareIDsAndTemplateSiteIDsForTemplateID(device&  io_devDevice,                                                        
+                                                          variable i_strTemplateID,
+                                                          variable o_arrStrTemplateSiteIDs[],
+                                                          variable o_arrStrLabwareIDs[]) variable
+    {
+      variable PosVals[];
+      object   objDecklayout;
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      // check input variables
+      if (!CheckString(i_strTemplateID, "i_strTemplateID", strFunctionName)) return(hslFalse);
+
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_strTemplateID = " + i_strTemplateID, strFunctionName);
+
+      o_arrStrTemplateSiteIDs.SetSize(0);
+      o_arrStrLabwareIDs.SetSize(0);
+
+      onerror goto HandleLabwareError;
+      objDecklayout = io_devDevice.GetDeckLayoutObject();
+
+      if (!objDecklayout.IsNull())
+      {
+          object EditDecklayout5;
+          object Parameter;
+          object LabwareObjects;
+          object LabwareNames;
+          variable myKeys[];
+          variable intCounter;
+          variable blnFoundLocation(hslFalse);
+          variable strMessage;
+
+          objDecklayout.GetObject("IEditDeckLayout5", EditDecklayout5);
+
+
+          LabwareObjects.CreateObject("HXPARAMSLib.HxPars");
+          LabwareNames.CreateObject("HXPARAMSLib.HxPars");
+
+          objDecklayout.TemplateLabwareNames(LabwareObjects);
+          myKeys = LabwareObjects.GetKeys();
+
+          for(intCounter=1; intCounter<=myKeys.GetSize(); intCounter++)
+          {
+            LabwareNames = LabwareObjects.Item1(intCounter);
+
+            if(i_strTemplateID==LabwareNames.Item1("Labwr_TemplateId"))
+            {
+               blnFoundLocation=hslTrue;
+               o_arrStrTemplateSiteIDs.AddAsLast(LabwareNames.Item1("Labwr_DkSiteId"));
+               o_arrStrLabwareIDs.AddAsLast(LabwareNames.Item1("Labwr_Id"));     
+            }
+          }
+
+          objDecklayout.ReleaseObject();
+          EditDecklayout5.ReleaseObject();
+          Parameter.ReleaseObject();
+          onerror goto 0;
+          err.Clear();
+          if (blnFoundLocation) strMessage="Found template site ID and labwareID.";
+          else strMessage="Could not find anything on templateID.";
+          StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, strMessage, strFunctionName);
+          return(blnFoundLocation);
+      }
+      else
+      {
+        StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Could not find decklayout.", strFunctionName);
+        return(hslFalse);
+      }
+      // runtime error handling
+      HandleLabwareError :
+      {
+        variable errorID;
+        errorID=err.GetId();
+        err.Clear();
+
+        if (errorID==-1574764487)
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "LabwareID is  unknown.", strFunctionName);
+          return(hslFalse);
+        }
+        else
+        {
+          StatusTrace(CMD_ERRCOMPLETE, TRACE_LEVEL_RELEASE, "Unknown error occured.", strFunctionName);
+          return(hslFalse);
+        }
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // SetTraceLevel
+    ////////////////////////////////////////////////////////////////////////////
+    function SetTraceLevel(variable i_intTraceLevel) variable
+    {
+      variable strFunctionName("");
+
+      strFunctionName = ExtractFunctionName(GetFunctionName());
+
+      if (!CheckIntegerRange(i_intTraceLevel, "i_intTraceLevel", TRACE_LEVEL_NONE, TRACE_LEVEL_DEBUG, strFunctionName)) return(hslFalse);
+
+      StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "i_intTraceLevel = " + IStr(i_intTraceLevel), strFunctionName);
+
+      HSLLabwareAccess_TraceLevel = i_intTraceLevel;
+
+      StatusTrace(CMD_COMPLETE, TRACE_LEVEL_DEBUG, "", strFunctionName);
+
+      return(hslTrue);
+    }
+
+
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // private function ConvertToFloat
+    //////////////////////////////////////////////////////////////////////////
+    private function ConvertToFloat(variable iVariable, variable& oVariable) variable
+    {
+      variable blnResult(hslFalse);
+      if(GetType(iVariable) == "s")
+      {
+        oVariable=FVal(iVariable);
+        blnResult=hslTrue;
+      }
+      if(GetType(iVariable) == "i")
+      {
+        oVariable=IStr(iVariable);
+        oVariable=FVal(oVariable);
+        blnResult=hslTrue;
+      }
+      if(GetType(iVariable) == "f")
+      {
+        oVariable=iVariable;
+        blnResult=hslTrue;
+      }
+      return(blnResult);
+    } // ConvertToFloat
+
+    //////////////////////////////////////////////////////////////////////////
+    // private function CheckBool
+    //////////////////////////////////////////////////////////////////////////
+    private function CheckBool(variable iVariable,
+                               variable iTraceEntry,
+                               variable iFunctionName) variable
+    {
+      if(GetType(iVariable) == "i")
+      {
+        if(iVariable == hslTrue || iVariable == hslFalse)
+        {
+          return(hslTrue);
+        }
+      }
+      StatusTrace(CMD_ERROR, TRACE_LEVEL_RELEASE, HSLLabwareAccess_LLE, iFunctionName);
+      return(hslFalse);
+    } // CheckBool
+
+    //////////////////////////////////////////////////////////////////////////
+    // private function CheckInteger
+    //////////////////////////////////////////////////////////////////////////
+    private function CheckInteger(variable iVariable,
+                                  variable iTraceEntry,
+                                  variable iFunctionName) variable
+    {
+      if("i" == GetType(iVariable))
+      {
+        return(hslTrue);
+      }
+      HSLLabwareAccess_LLE = "Input parameter " + iTraceEntry + " is not of type integer";
+      StatusTrace(CMD_ERROR, TRACE_LEVEL_RELEASE, HSLLabwareAccess_LLE, iFunctionName);
+      return(hslFalse);
+    } // CheckInteger
+
+    ////////////////////////////////////////////////////////////////////////////
+    //private function CheckIntegerRange
+    ////////////////////////////////////////////////////////////////////////////
+    private function CheckIntegerRange(variable iVariable,
+                                       variable iTraceEntry,
+                                       variable iMin,
+                                       variable iMax,
+                                       variable iFunctionName) variable
+    {
+      if(GetType(iVariable) == "i")
+      {
+        if(iVariable >= iMin && iVariable <= iMax)
+        {
+          return(hslTrue);
+        }
+        else
+        {
+          HSLLabwareAccess_LLE = "Parameter " + iTraceEntry + " is out of range("+ IStr(iMin) + ".." + IStr(iMax) + ")!";
+        }
+      }
+      else
+      {
+        HSLLabwareAccess_LLE = "Input parameter " + iTraceEntry + " is not of type integer";
+      }
+    
+      StatusTrace(CMD_ERROR, TRACE_LEVEL_RELEASE, HSLLabwareAccess_LLE, iFunctionName);
+      return(hslFalse);
+    } // CheckIntegerRange
+
+    ////////////////////////////////////////////////////////////////////////////
+    // private function CheckString
+    ////////////////////////////////////////////////////////////////////////////
+    private function CheckString(variable iVariable,
+                                 variable iTraceEntry,
+                                 variable iFunctionName) variable
+    {
+      if(GetType(iVariable) == "s")
+        return(hslTrue);
+      HSLLabwareAccess_LLE = "Parameter " + iTraceEntry + " is not of type string!";
+      StatusTrace(CMD_ERROR, TRACE_LEVEL_RELEASE, HSLLabwareAccess_LLE, iFunctionName);
+      return(hslFalse);
+    } // CheckString
+
+    ////////////////////////////////////////////////////////////////////////////
+    // private function CheckFloat
+    ////////////////////////////////////////////////////////////////////////////
+    private function CheckFloat(variable iVariable,
+                                 variable iTraceEntry,
+                                 variable iFunctionName) variable
+    {
+      if(GetType(iVariable) == "f")
+        return(hslTrue);
+      HSLLabwareAccess_LLE = "Parameter " + iTraceEntry + " is not of type float!";
+      StatusTrace(CMD_ERROR, TRACE_LEVEL_RELEASE, HSLLabwareAccess_LLE, iFunctionName);
+      return(hslFalse);
+    } // CheckString
+
+    ////////////////////////////////////////////////////////////////////////////
+    // private function StatusTrace
+    //////////////////////////////////////////////////////////////////////////// 
+    private function StatusTrace(variable iState,
+                                 variable iTraceLevel,
+                                 variable iTraceString,
+                                 variable iFunctionName) void
+    {
+      if(iTraceLevel <= HSLLabwareAccess_TraceLevel)
+      {
+        FormatTrace("HSLLabwrAccess", iFunctionName, iState, " ", iTraceString);
+      }
+    } // StatusTrace
+
+    ////////////////////////////////////////////////////////////////////////////
+    // private function ExtractFunctionName
+    //////////////////////////////////////////////////////////////////////////// 
+    private function ExtractFunctionName(variable iFunctionName) variable
+    {
+      string FunctionName(iFunctionName);
+      return(FunctionName.Mid(ReverseFind(iFunctionName, ":") + 1, FunctionName.GetLength()));
+    } // ExtractFunctionName
+
+    ////////////////////////////////////////////////////////////////////////////
+    // private function InitSemaphore
+    ////////////////////////////////////////////////////////////////////////////
+    private function InitSemaphore()
+    {
+      // Pls. don't call this function directly. Use EnterSemaphore() instead.
+      if(HSLLabwareAccess_SH==0)
+      {
+        variable strFunctionName("");
+        strFunctionName = ExtractFunctionName(GetFunctionName());
+        HSLLabwareAccess_SH=SynInitializeCriticalSection();
+        //StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "Semaphore handle = " + IStr(HSLLabwareAccess_SH), strFunctionName);
+
+        SynEnterCriticalSection(HSLLabwareAccess_SH);
+        if(!HSLLabwareAccess_IO)
+        {
+          HSLLabwareAccess_IO=hslTrue;
+          // do something, that has to be done only once
+          //StatusTrace(CMD_START, TRACE_LEVEL_DEBUG, "Library semaphore initialised.", strFunctionName);
+        }
+        SynLeaveCriticalSection(HSLLabwareAccess_SH);
+      }    
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // private function ReverseFind
+    ////////////////////////////////////////////////////////////////////////////
+    private function ReverseFind(string String, string SubString) variable
+    {
+      variable index;
+      variable result(-1);
+      variable strLength;
+      variable subLength;
+      string strStr;
+
+      strStr = String;
+      strLength = strStr.GetLength();
+      for (index = strStr.Find(SubString); index != -1; index = strStr.Find(SubString))
+      {
+        result = result + index + 1;
+        strStr = strStr.Mid(index + 1, strLength);
+      }
+      return(result);
+    } // ReverseFind
+
+    ////////////////////////////////////////////////////////////////////////////
+    // private function EnterSemaphore
+    ////////////////////////////////////////////////////////////////////////////
+    private function  EnterSemaphore()
+    {
+      InitSemaphore();
+      SynEnterCriticalSection(HSLLabwareAccess_SH);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // private function LeaveSemaphore
+    ////////////////////////////////////////////////////////////////////////////
+    private function  LeaveSemaphore()
+    {
+      InitSemaphore();
+      SynLeaveCriticalSection(HSLLabwareAccess_SH);
+    }
+  } //end HSLLabwareAccess
+#endif //end __HSLLABWAREACCESS__
+
+// $$author=dkaufmann$$valid=1$$time=2013-08-19 14:39$$checksum=0ac5703d$$length=086$$

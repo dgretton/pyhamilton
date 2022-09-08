@@ -1,0 +1,38 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 7/29/2021 11:19:22 AM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace FIRMWARE_PIPETTING_COMMANDS {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function GetChannelNumber1mL( device & ML_STAR, variable & o_int_ChannelCount ) void { }
+function GetChannelNumber5mL( device & ML_STAR, variable & o_int_ChannelCount ) void { }
+function GetChannelPatternWithTips( device & ML_STAR, variable i_bln_1mL, variable & o_str_ChannelPattern ) void { }
+function GetChannelRaster1mL( device & ML_STAR, variable & o_flt_ChannelRaster ) void { }
+function GetChannelRaster5mL( device & ML_STAR, variable & o_flt_ChannelRaster ) void { }
+function GetChannelXCoordinate( device & ML_STAR, variable & o_flt_CurrentXCoord ) void { }
+function GetChannelYCoordinates( device & ML_STAR, variable i_bln_1mL, variable & o_arr_YCoords[] ) void { }
+function GetChannelZCoordinates( device & ML_STAR, variable i_bln_1mL, variable & o_arr_ZCoords[] ) void { }
+function GetChannelZCoordinatesLastLLD( device & ML_STAR, variable i_bln_1mL, variable & o_arr_ZCoords[] ) void { }
+function GetMPHExist( device & ML_STAR, variable & o_int_MPHExists ) void { }
+function Get_Tip_Volume_1mL( device & ML_STAR, variable i_int_CurrentChannel, variable & o_flt_MaxTipVolume, variable & o_flt_CurrentVolumeInTip ) void { }
+function Get_Tip_Volume_5mL( device & ML_STAR, variable i_int_CurrentChannel, variable & o_flt_MaxTipVolume, variable & o_flt_CurrentVolumeInTip ) void { }
+function MPH96AspirateFromFixedHeight( device & ML_STAR, variable i_flt_XCoord, variable i_flt_YCoord, variable i_flt_AspHeight, variable i_flt_AspirateDistance, variable i_flt_StartTraverseHeight, variable i_flt_EndTranverseHeight, variable i_flt_MinimumHeight, variable i_flt_ZBottom, variable i_flt_SubmergeDepth, variable i_flt_AspirateVolume, variable i_flt_AspirateSpeed, variable i_flt_TransportAirGap, variable i_flt_BlowoutVolume, variable i_int_SettlingTime, variable i_flt_SwapSpeed, variable i_flt_PullOutDistance ) void { }
+function MPH96DispenseFromFixedHeight( device & ML_STAR, variable i_int_DispenseMode, variable i_flt_XCoord, variable i_flt_YCoord, variable i_flt_DispHeight, variable i_flt_DispenseDistance, variable i_flt_StartTraverseHeight, variable i_flt_EndTranverseHeight, variable i_flt_MinimumHeight, variable i_flt_ZBottom, variable i_flt_SubmergeDepth, variable i_flt_DispenseVolume, variable i_flt_DispenseSpeed, variable i_flt_CutOffSpeed, variable i_flt_StopBackVolume, variable i_flt_TransportAirGap, variable i_flt_BlowoutVolume, variable i_int_SettlingTime, variable i_flt_SwapSpeed, variable i_flt_PullOutDistance ) void { }
+function MPH96GetCoordinates( device & ML_STAR, variable & o_flt_CurrentXCoord, variable & o_flt_CurrentYCoord, variable & o_flt_CurrentZCoord ) void { }
+function MPH96GetTipPresence( device & ML_STAR, variable & o_bln_TipLoaded ) void { }
+function PIPAspirateFromFixedHeight( device & ML_STAR, variable i_str_ChannelPattern, variable & i_arr_XCoord[], variable & i_arr_YCoord[], variable & i_arr_FixedHeights[], variable & i_arr_AspirateDistance[], variable i_flt_StartTraverseHeight, variable i_flt_EndTranverseHeight, variable i_flt_MinimumHeight, variable i_flt_ZBottom, variable i_flt_ContainerDepth, variable i_flt_AspirateVolume, variable i_flt_AspirateSpeed, variable i_flt_TransportAirGap, variable i_flt_BlowoutVolume, variable i_int_SettlingTime, variable i_flt_SwapSpeed, variable i_flt_PullOutDistance ) void { }
+function PIPAspirateFromFixedHeight_ArrayVolumes( device & ML_STAR, variable i_str_ChannelPattern, variable & i_arr_XCoord[], variable & i_arr_YCoord[], variable & i_arr_FixedHeights[], variable & i_arr_AspirateDistance[], variable i_flt_StartTraverseHeight, variable i_flt_EndTranverseHeight, variable i_flt_MinimumHeight, variable i_flt_ZBottom, variable i_flt_ContainerDepth, variable & i_arr_AspirateVolume[], variable i_flt_AspirateSpeed, variable i_flt_TransportAirGap, variable i_flt_BlowoutVolume, variable i_int_SettlingTime, variable i_flt_SwapSpeed, variable i_flt_PullOutDistance ) void { }
+function PIPDispenseFromFixedHeight( device & ML_STAR, variable i_str_ChannelPattern, variable i_int_DispenseMode, variable & i_arr_XCoord[], variable & i_arr_YCoord[], variable & i_arr_FixedHeights[], variable & i_arr_DispenseDistance[], variable i_flt_StartTraverseHeight, variable i_flt_EndTranverseHeight, variable i_flt_MinimumHeight, variable i_flt_ZBottom, variable i_flt_DispenseVolume, variable i_flt_DispenseSpeed, variable i_flt_CutOffSpeed, variable i_flt_StopBackVolume, variable i_flt_TransportAirGap, variable i_flt_BlowoutVolume, variable i_int_SettlingTime, variable i_flt_SwapSpeed, variable i_flt_PullOutDistance, variable i_flt_MaximumHeight ) void { }
+function PIPDispenseFromFixedHeight_ArrayVolumes( device & ML_STAR, variable i_str_ChannelPattern, variable i_int_DispenseMode, variable & i_arr_XCoord[], variable & i_arr_YCoord[], variable & i_arr_FixedHeights[], variable & i_arr_DispenseDistance[], variable i_flt_StartTraverseHeight, variable i_flt_EndTranverseHeight, variable i_flt_MinimumHeight, variable i_flt_ZBottom, variable & i_arr_DispenseVolume[], variable i_flt_DispenseSpeed, variable i_flt_CutOffSpeed, variable i_flt_StopBackVolume, variable i_flt_TransportAirGap, variable i_flt_BlowoutVolume, variable i_int_SettlingTime, variable i_flt_SwapSpeed, variable i_flt_PullOutDistance, variable i_flt_MaximumHeight ) void { }
+function PIPFindLiquidLevel( device & ML_STAR, variable i_str_ChannelPattern, variable & i_arr_XCoord[], variable & i_arr_YCoord[], variable i_flt_StartTraverseHeight, variable i_flt_EndTranverseHeight, variable i_flt_LiquidSearchHeight, variable i_flt_MinimumHeight, variable i_bln_UseCLLD, variable & o_arr_LiquidHeights[] ) void { }
+function PIPMixFromFixedHeight( device & ML_STAR, variable i_str_ChannelPattern, variable & i_arr_XCoord[], variable & i_arr_YCoord[], variable & i_arr_FixedHeights[], variable & i_arr_MixDistance[], variable i_flt_StartTraverseHeight, variable i_flt_EndTranverseHeight, variable i_flt_MinimumHeight, variable i_flt_ZBottom, variable i_int_MixCycles, variable i_flt_MixVolume, variable i_flt_MixSpeed ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2021-07-29 11:19$$checksum=d2f0cb19$$length=083$$

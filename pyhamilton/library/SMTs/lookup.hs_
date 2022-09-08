@@ -1,0 +1,17 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 1/16/2017 10:36:57 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace LOOKUP {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function Lookup( variable & array[], variable item ) variable {  return (0); }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2017-01-16 22:36$$checksum=21d7e3ff$$length=083$$

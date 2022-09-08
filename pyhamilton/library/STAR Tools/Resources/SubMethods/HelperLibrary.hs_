@@ -1,0 +1,65 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 4/20/2022 4:45:49 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace HELPERLIBRARY {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function AdjustSequence( device & ML_STAR, sequence i_seq_SequenceToAdjust, variable i_int_StartingPosition, variable i_int_EndingPosition, sequence & o_seq_AdjustedSequence ) void { }
+function CalculateVolumeToHeight( device & ML_STAR, variable iLabwareID, variable iLiquidVolume, variable iStartHeight ) variable {  return (0); }
+function CalculateXYFromDiameterAndAngle( variable iDiameter, variable iPhi_Degree, variable & oDelta_X, variable & oDelta_Y ) void { }
+function ConvertToFloat( variable iVariable, variable & oVariable ) void { }
+function ConvertToInteger( variable iVariable, variable & oVariable ) void { }
+function GetCarrierAndSiteID( device & Instrument, variable i_str_Labware, variable & o_str_TemplateID, variable & o_str_TemplateSiteID ) void { }
+function GetCenterSpotContainer( variable & o_str_CenterSpotContainerPath ) void { }
+function GetCenterSpotLabware( variable & o_str_CenterSpotLabwarePath ) void { }
+function GetChannelLimits( device & ML_STAR, variable i_Channel_Type, variable & o_Y_Max[], variable & o_Y_Min[], variable & o_Raster ) variable {  return (0); }
+function GetConfigurationFile( device & i_Instrument, variable i_LabwareID, variable & o_ConfigFile ) void { }
+function GetConnectedContainer( device & ML_STAR, variable i_str_LabID, variable & o_bool_ConnectedContainer ) void { }
+function GetContainerBaseOffset( device & io_instrument, variable i_str_Labware, variable i_str_PosID, variable & o_containerBaseOffset ) void { }
+function GetContainerBaseThickness( device & io_instrument, variable i_str_Labware, variable i_str_PositionID, variable & o_containerBaseThickness ) void { }
+function GetContainerConfigurationFile( device & io_instrument, variable i_str_Labware, variable i_str_PosID, variable & o_str_ContainerFileName ) void { }
+function GetContainerDepth( device & io_instrument, variable i_str_Labware, variable i_str_PositionID, variable & o_ContainerDepth, variable & o_ContainerClearanceHeight ) void { }
+function GetContainerGeometry( device & io_instrument, variable i_str_Labware, variable i_str_PositionID, variable & o_str_ContainerGeometry ) void { }
+function GetContainerShape( device & io_instrument, variable i_str_Labware, variable i_str_PositionID, variable & o_int_ContainerShape ) void { }
+function GetContainerWidth( device & ML_STAR, variable i_str_LabID, variable & o_flt_ContainerWidth ) void { }
+function GetDefaultSequence( device & ML_STAR, variable i_str_LabID, variable i_bool_SortByColumn, sequence & o_seq_DefaultSequence ) void { }
+function GetDefinitionFileValue( variable & i_str_ConfigFilePath, variable i_str_ValueToSearch, variable & o_str_Value ) variable {  return (0); }
+function GetFirstPosition( device & ML_STAR, variable i_str_LabID, variable & o_str_PosID ) void { }
+function GetIndexingFormat( device & io_instrument, variable i_str_Labware, variable & o_positionIndexingFormat ) void { }
+function GetLabwareCenter2( device & ML_STAR, variable i_str_LabID, variable & o_flt_X_Center, variable & o_flt_Y_Center ) void { }
+function GetLabwareFileName( device & ML_STAR, variable i_str_LabID, variable & o_str_LabwareFileName ) void { }
+function GetLabwareLW( device & Instrument, variable i_str_LabID, variable & o_flt_Labware_L, variable & o_flt_Labware_W ) void { }
+function GetLabwareName( device & ML_STAR, variable i_str_LabID, variable & o_str_ViewName ) void { }
+function GetLabwareOrigin( device & Instrument, variable i_str_LabID, variable & o_flt_X_Coord, variable & o_flt_Y_Coord, variable & o_flt_Z_Coord ) void { }
+function GetLabwareType( device & ML_STAR, variable i_str_LabID, variable & o_str_LabwareType ) void { }
+function GetLabwareVisibility( device & ML_STAR, variable i_str_LabID, variable & o_int_LabwareVisibility ) void { }
+function GetRackHeight( device & ML_STAR, variable i_str_LabID, variable & o_flt_RackHeight, variable & o_flt_RackClearanceHeight ) void { }
+function GetRowColumnNumber( device & Instrument, variable i_str_LabwareID, variable & o_int_RowCount, variable & o_int_ColumnCount, variable & o_bool_AlphaNumeric, variable & o_bool_IncrementContainer ) void { }
+function GetTempSortingFilePath( variable & o_str_TempSortingFilePath ) void { }
+function GetTipName( device & ML_STAR, variable i_str_TipLabware, variable & o_str_TipName, variable & o_int_TipType ) void { }
+function GetTransportSequence( device & ML_STAR, variable i_str_LabID, sequence & o_seq_TransportSequence ) void { }
+function GetZTranslate( device & ML_STAR, variable i_str_LabID, variable & o_flt_ZTranslate, variable & o_flt_ZTransValue ) void { }
+function Lookup( variable & array[], variable item ) variable {  return (0); }
+function RemoveTruncatedSequencePositions( device & Instrument, sequence & io_Sequence ) void { }
+function ReplaceLabware( device & ML_STAR, variable i_str_LabID, variable i_str_NewConfigFile ) void { }
+function SetAbsolutePositionForLabwareID( device & io_devDevice, variable i_strLabwareID, variable i_fltPositionX, variable i_fltPositionY, variable i_fltPositionZ, variable i_fltPositionR ) void { }
+function Set_Channel_Pattern( variable & io_Channel_Pattern, variable i_Channel_Number, variable i_Value ) void { }
+function Set_Relative_Position_for_LabwareID( device & io_devDevice, variable & i_strLabwareID, variable i_fltPositionX, variable i_fltPositionY, variable i_fltPositionZ, variable i_fltPositionR ) void { }
+function SortSequence( device & Instrument, sequence & io_Sequence, variable i_bln_ByLabID ) void { }
+function SortSequenceRaster( device & Instrument, sequence & io_Sequence, variable i_bln_ByLabID, variable i_flt_YRaster ) void { }
+function SortSequences( device & Instrument, sequence & io_Sequence1, sequence & io_Sequence2, variable i_bln_ByLabID ) void { }
+function SplitString( variable strIn, variable strDelimiter, variable & arrTokens[], variable bAttendEmptyTokens ) void { }
+function TipCapacityCheck( device & Instrument, variable i_str_TipLabware, variable & o_flt_TipCapacity ) void { }
+function TipCheck( device & Instrument, sequence & i_seq_Tips, variable i_str_TipCounter, variable i_int_TipsNeeded ) void { }
+function _ConvertToFloat( variable & io_Variable ) void { }
+function _ConvertToInt( variable & io_Variable ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2022-04-20 16:45$$checksum=e738357c$$length=083$$

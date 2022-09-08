@@ -1,0 +1,20 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 8/15/2017 8:46:29 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace ANC {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function Alpha_Num_Add_0_to_Position( variable & io_Str_Position_ID ) void { }
+function Alpha_Num_Remove_0_from_Position( variable & io_Str_Position_ID ) void { }
+function Convert_Alpha_Numeric_to_Numbers( variable i_Sort_by_Column, variable i_Alpha_Numeric_Value, variable i_Total_Rows, variable i_Total_Columns, variable & o_Numeric_Value ) void { }
+function Convert_Numbers_to_Alpha_Numeric( variable i_Sort_by_Column, variable i_Numeric_Value, variable i_Total_Rows, variable i_Total_Columns, variable & o_Alpha_Numeric_Value ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=Bare_B$$valid=0$$time=2017-08-15 20:46$$checksum=5f5785bd$$length=083$$

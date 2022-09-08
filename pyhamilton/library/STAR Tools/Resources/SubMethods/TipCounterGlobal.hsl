@@ -1,0 +1,159 @@
+#pragma global
+
+#ifndef __TipCounterGlobal_hsl__
+#define __TipCounterGlobal_hsl__ 1
+
+static variable initializedLib(hslFalse);
+static object m_elementCounterObject;
+static variable systemSimulationOn(hslFalse);
+
+namespace TIP_COUNTER
+{
+   function InitTipCountingLibrary();
+   function CheckTipCounterName(variable& tipCounter);
+   function ReadFromHxElementCounter(device& deviceContext, sequence& sequenceObj, variable labwareType, variable tipCounter, variable InstrumentClass); 
+   function CreateNewHxElementCounter(sequence& sequenceObj, variable labwareType, variable tipCounter, variable InstrumentClass);
+   function EditSequence(device& deviceContext, sequence& sequenceObj, variable blnEditable, variable intTimeOut);
+   function EditSequence2(device& deviceContext, sequence& sequenceObj, variable blnEditable, variable firstPosition, variable lastPosition, variable intTimeOut);
+   function WriteHxElementCounter(sequence sequenceObj, variable labwareType, variable tipCounter, variable InstrumentClass);
+   function RemoveUsedPositions(device& deviceContext, sequence& sequenceObj);
+   function GetListOfElementCounterNames(variable InstrumentClass, variable labwareType, variable& listOfTipCounters[]);
+
+   function InitTipCountingLibrary()
+   {
+      if(!initializedLib)
+      {
+         object vectorDbTracker;
+		   object elementCounter;
+		   object services;
+		   object generalSettings;
+         
+         vectorDbTracker = GetVectorDbTrackerObject();
+         elementCounter = vectorDbTracker.GetElementCounter();
+         elementCounter.GetObject2("{4BD6717B-EF66-42ff-9EF8-166099E46E2B}", m_elementCounterObject);
+         services.CreateObject( "Hamilton.HxServicesGeneralSettings" );
+         services.GetObject( "IHxServicesGeneralSettings2", generalSettings );
+         systemSimulationOn = ( generalSettings.SimulationOn != 0 );
+
+         vectorDbTracker.ReleaseObject();
+			elementCounter.ReleaseObject();
+			services.ReleaseObject();
+			generalSettings.ReleaseObject();
+
+			initializedLib = hslTrue;
+         //Trace("Initialized");
+      }
+   }
+
+   function CheckTipCounterName(variable& tipCounter)
+   {
+      if(!m_elementCounterObject.ElementCounterNameIsValid(tipCounter))
+      {
+         variable invalidName(tipCounter);
+         tipCounter = m_elementCounterObject.GetValidElementCounterName(invalidName);
+         //Trace(tipCounter);
+      }
+   }
+
+   function ReadFromHxElementCounter(device& deviceContext, sequence& sequenceObj, variable labwareType, variable tipCounter, variable InstrumentClass)
+   {
+      deviceContext.CopyResetSequence(sequenceObj.GetName(), sequenceObj);
+      if(!m_elementCounterObject.ElementCounterExists(tipCounter, InstrumentClass)) return;
+      m_elementCounterObject.ReadElementCounterIntoSequence(tipCounter, InstrumentClass, labwareType, GetSimulationMode(), sequenceObj.GetSequenceObject());
+      if(sequenceObj.GetCount() == 0)
+      {
+         deviceContext.CopyResetSequence(sequenceObj.GetName(), sequenceObj);
+      }
+   }
+
+   function CreateNewHxElementCounter(sequence sequenceObj, variable labwareType, variable tipCounter, variable InstrumentClass)
+   {
+      if(!m_elementCounterObject.ElementCounterExists(tipCounter, InstrumentClass))
+      {
+         m_elementCounterObject.CreateElementCounter(tipCounter, InstrumentClass, GetSimulationMode());
+         m_elementCounterObject.ResetElementCounter(tipCounter, InstrumentClass, labwareType, GetSimulationMode(), sequenceObj.GetSequenceObject(), 1);
+      }
+   }
+
+   function EditSequence(device& deviceContext, sequence& sequenceObj, variable blnEditable, variable intTimeOut)
+   {  
+      sequence reloadSequence;
+
+      deviceContext.CopyResetSequence(sequenceObj.GetName(), reloadSequence);
+      deviceContext.RemoveSequences();
+      deviceContext.AddSequence2(sequenceObj, reloadSequence, blnEditable);
+      if(intTimeOut< 0) deviceContext.EditSequences("Edit Tip Count","Set the first and the last position of the tip sequence as the actual  current and count position of the tip sequence respectively.",hslInfinite,"");
+      else  deviceContext.EditSequences("Edit Tip Count","Set the first and the last position of the tip sequence as the actual  current and count position of the tip sequence respectively.",intTimeOut,"");
+      deviceContext.RemoveSequences();
+   }
+
+   function EditSequence2(device& deviceContext, sequence& sequenceObj, variable blnEditable, variable firstPosition, variable lastPosition, variable intTimeOut)
+   {  
+      sequence reloadSequence;
+
+      deviceContext.CopyResetSequence(sequenceObj.GetName(), sequenceObj);
+      deviceContext.RemoveSequences();
+      deviceContext.AddSequence(sequenceObj, 0, firstPosition, lastPosition, blnEditable, "");
+      if(intTimeOut< 0) deviceContext.EditSequences("Edit Tip Count","Set the first and the last position of the tip sequence as the actual  current and count position of the tip sequence respectively.",hslInfinite,"");
+      else deviceContext.EditSequences("Edit Tip Count","Set the first and the last position of the tip sequence as the actual  current and count position of the tip sequence respectively.",intTimeOut,"");
+      deviceContext.RemoveSequences();
+   }
+
+   function WriteHxElementCounter(sequence sequenceObj, variable labwareType, variable tipCounter, variable InstrumentClass)
+   {
+      m_elementCounterObject.WriteSequenceIntoElementCounter(tipCounter, InstrumentClass,labwareType, GetSimulationMode(), sequenceObj.GetSequenceObject());
+   }
+
+   function RemoveUsedPositions(device& deviceContext, sequence& sequenceObj)
+   {
+      if(sequenceObj.GetCurrentPosition() != 1)
+      {
+         	variable position;
+	         variable total;
+            variable emptySequence(hslFalse);
+
+	         if(sequenceObj.GetCurrentPosition() == 0)
+            {
+            total = sequenceObj.GetTotal();
+            emptySequence = hslTrue;
+            }
+            else
+            {
+               total = sequenceObj.GetCurrentPosition() - 1;
+               //emptySequence = hslTrue;
+            }
+	         //sequenceObj.SetCount(total);
+	         sequenceObj.SetCurrentPosition(1);
+	         for (position = 1; position <= total; position++)
+		         sequenceObj.RemoveAt(1);
+      
+            //sequenceObj.SetMax(sequenceObj.GetCount());
+            
+            if(emptySequence)
+            { 
+	            sequenceObj.SetCount(0);
+	            sequenceObj.SetCurrentPosition(0);
+	            sequenceObj.SetMax(0);
+            }
+      }     
+   }
+
+   function GetListOfElementCounterNames(variable InstrumentClass, variable labwareType, variable& listOfTipCounters[])
+   {
+      variable NumberOfCounters(0);
+      object listOfCounters;
+      object pars;
+
+      NumberOfCounters = m_elementCounterObject.GetListOfElementCounterNames(InstrumentClass, labwareType, listOfCounters);
+      pars.CreateObject("HXPARAMSLib.HxPars");
+      //Trace("     ","Total number of counters:  ",NumberOfCounters);
+
+      listOfTipCounters = listOfCounters.GetKeys();
+      
+      listOfCounters.ReleaseObject();
+      pars.ReleaseObject();
+   }
+}
+
+#endif
+// $$author=Hamilton$$valid=0$$time=2021-10-06 18:21$$checksum=236d30cb$$length=087$$

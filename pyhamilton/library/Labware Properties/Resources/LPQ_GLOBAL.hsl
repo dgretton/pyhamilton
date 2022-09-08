@@ -1,0 +1,34 @@
+#pragma global
+
+#ifndef __LPQ_GLOBAL_hsl__
+#define __LPQ_GLOBAL__ 1
+
+namespace LPQ
+{
+   function InitializeVariables();
+
+   function InitializeVariables()
+   {}
+namespace LABWARE_OFFSET_GLOBAL
+{
+   variable BOOL_LIBRARY_INITIALIZED(hslFalse);
+   variable ARR_CONTAINER_CONFIG_FILE[];
+   variable ARR_CONTAINER_SHAPE[];
+   variable ARR_CONTAINER_BOTTOM_WIDTH[];
+   variable ARR_CONTAINER_TOP_WIDTH[];
+   variable ARR_CONTAINER_BOTTOM_HEIGHT[];
+   variable ARR_BASE_OFFSET[];
+   variable ARR_X_OFFSET[];
+   variable ARR_Y_OFFSET[];
+}
+
+namespace LABWARE_TILT
+{
+   variable BOOL_LIBRARY_INITIALIZED(hslFalse);
+   variable ARR_LABWARE_CONFIG_FILE[];
+   variable ARR_BASE_OFFSET[];
+}
+
+}
+#endif
+// $$author=Bare_B$$valid=0$$time=2018-08-10 21:06$$checksum=de018a99$$length=085$$
