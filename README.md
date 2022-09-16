@@ -22,6 +22,9 @@ if __name__ == "__main__":
 
 [Available online](https://dgretton.github.io/pyhamilton-docs/).
 
+## Tutorial Video
+https://www.youtube.com/watch?v=G92neaVfvyw
+
 ## Installation
 
 1. **Install and test the standard Hamilton software suite for your system.**
