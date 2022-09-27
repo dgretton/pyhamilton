@@ -77,7 +77,7 @@ Please see the list of **Ongoing Projects** for information on other issues with
 PyHamilton is an open-source project, and we have a ton of work to do! If you'd like to contribute to the PyHamilton project, please consider these following areas of ongoing work and don't hesitate to reach out if you want to discuss collaborating with the team.
 
 - **PyHamilton for Nimbus:** Right now PyHamilton only works on the STAR line of liquid-handling robots, but we have recently received the appropriate libraries for expanding the framework to Hamilton Nimbus, a much more affordable and low-footprint robot. This project is in its very early stages so collaborators will have the opportunity to influence crucial design decisions.
-- **PyHamilton for Linux:** One of the biggest limitations for PyHamilton, Hamilton robots, and much of lab automation in general is their exclusive dependence on Windows as an operating system. We are working to recreate the Venus application (which runs on Windows and which PyHamilton depends on in turn) as a Python library, so that PyHamilton will effectively become OS-agnostic. This is a truly massive undertaking but we have made considerable progress due to incredibly talented team member Rick Wierenga.
+- **PyHamilton for Linux:** One of the biggest limitations for PyHamilton, Hamilton robots, and much of lab automation in general is their exclusive dependence on Windows as an operating system. We are working to recreate the Venus application (which runs on Windows and which PyHamilton depends on in turn) as a Python library, so that PyHamilton will effectively become OS-agnostic. 
 - **Package Manager**
 
 ## Applications
