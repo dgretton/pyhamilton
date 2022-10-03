@@ -9,12 +9,15 @@
 #include "HSLStrLib.hsl"
 #include "HSLTrcLib.hsl"
 #include "HSL_LiquidClassLib.hsl"
-#include "HslHamHeaterShakerLib.hsl"
 #include "HSLInhecoTEC\\HSLInhecoTECLib.hsl"
 #include "HSLDaisyChainedTiltModule.hsl"
+#include "HSLBarcodeReader.hsl"
+#include "HslHamHeaterShakerLib.hsl"
 #include "HSLDaisyChainedMediaLine.hsl"
 #include "HSLDaisyChainCommunication.hsl"
-#include "HSLBarcodeReader.hsl"
+#include "Hamilton pH Module\\Hamilton pH Module.hsl"
+#include "Hamilton pH Module\\Hamilton pH Station Dryer Module.hsl"
+#include "Hamilton pH Module\\Hamilton pH Station Washer Module.hsl"
 /* {{ 2 "LibraryInsertLine" "" */ // }} ""
 // {{ 2 "TemplateIncludeBlock" ""
 #include "HSLMETEDLib.hs_"
@@ -54,6 +57,7 @@ function iSWAP_Get( device & ML_STAR, sequence & plateSequence, sequence & lidSe
 function iSWAP_Move( device & ML_STAR, sequence & destinationSequence, variable collisionControl, variable gripMode, variable & o_stepReturn ) void ;
 function iSWAP_Park( device & ML_STAR, variable showCollisionCheckDialog, variable & o_stepReturn ) void ;
 function iSWAP_Place( device & ML_STAR, sequence & plateSequence, sequence & lidSequence, variable sequenceCounting, variable movementType, variable transportMode, variable labwareOrientation, variable collisionControl, variable retractDistance, variable liftUpHeight, variable & o_stepReturn ) void ;
+function pH_Measure( variable i_intModuleID, variable i_fltTemperature, variable i_strProbePattern, variable & o_fltpHProbe_1, variable & o_fltpHProbe_2, variable & o_fltpHProbe_3, variable & o_fltpHProbe_4, variable & o_stepReturn ) void ;
 // }} ""
 function _InitLibrary() {
 // {{ 2 "AutoInitBlock" ""
@@ -1205,8 +1209,8 @@ function Initialize( device & ML_STAR, variable initializeAlways, variable & o_s
 // {{ 5 "Initialize" "InitLocals"
 o_stepReturn = 0;
 // }} ""
-// {{ 176 1 0 "9967a99d_7b6f_4194_8ba1f49c05de08c2" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
-onerror goto errLabel_ED69C1C4A5D948beA7B65C38D8B5B80A ;
+// {{ 176 1 0 "5e221a44_df82_4a4a_b132efe3882170c8" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_7F7620635658430dB82A7401CB5C158F ;
 err.Clear();
 // }} ""
 // {{ 177 1 0 "dc7838fc_172e_45b4_89099f664d6d452e" "ML_STAR:{1C0C0CB0-7C87-11D3-AD83-0004ACB1DCB2}"
@@ -1216,8 +1220,8 @@ err.Clear();
 	o_stepReturn = arrRetValues[2];
 }
 // }} ""
-// {{ 178 1 0 "9967a99d_7b6f_4194_8ba1f49c05de08c2" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
-errLabel_ED69C1C4A5D948beA7B65C38D8B5B80A : {}
+// {{ 178 1 0 "5e221a44_df82_4a4a_b132efe3882170c8" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_7F7620635658430dB82A7401CB5C158F : {}
 onerror goto 0;
 if (err.GetId() != 0)   /* skip handler if no error */
 {
@@ -1225,7 +1229,7 @@ if (err.GetId() != 0)   /* skip handler if no error */
 // {{{ 179 1 0 "6bd66132_cab8_473c_8437aa033b84ff48" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
 o_stepReturn = ErrGetDataAt(3);
 // }} ""
-// {{ 180 1 0 "9967a99d_7b6f_4194_8ba1f49c05de08c2" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+// {{ 180 1 0 "5e221a44_df82_4a4a_b132efe3882170c8" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 }   /* end if from skip handler if no error */
 // }} ""
 // {{{ 5 "Initialize" "End"
@@ -1560,8 +1564,40 @@ barcode = ErrGetDataAt(3);
 // {{{ 5 "BarcodeReader_Read" "End"
 }
 // }} ""
+// {{{ 5 "pH_Measure" "Begin"
+function pH_Measure( variable i_intModuleID, variable i_fltTemperature, variable i_strProbePattern, variable & o_fltpHProbe_1, variable & o_fltpHProbe_2, variable & o_fltpHProbe_3, variable & o_fltpHProbe_4, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Measure" "InitLocals"
+o_fltpHProbe_1 = 0;
+o_fltpHProbe_2 = 0;
+o_fltpHProbe_3 = 0;
+o_fltpHProbe_4 = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 305 1 0 "ed7e1393_5f74_4f7a_9f24134bcc79cfea" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_485A52AE45C346adA048E7F329D0C390 ;
+err.Clear();
+// }} ""
+// {{{ 306 1 0 "70294f1d_735f_43b0_bfff139b2e168d5d" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::Measure(i_intModuleID, i_fltTemperature, i_strProbePattern, o_fltpHProbe_1, o_fltpHProbe_2, o_fltpHProbe_3, o_fltpHProbe_4);
+// }} ""
+// {{ 307 1 0 "ed7e1393_5f74_4f7a_9f24134bcc79cfea" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_485A52AE45C346adA048E7F329D0C390 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 308 1 0 "b81f548d_2601_402a_9a291d45b6b50706" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 309 1 0 "ed7e1393_5f74_4f7a_9f24134bcc79cfea" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Measure" "End"
+}
+// }} ""
 /* {{ 2 "SubmethodInsertLine" "" */ // }} ""
 // {{{ 2 "LibraryNamespace" "End"
 } // library namespace
 // }} ""
-// $$author=stefa$$valid=0$$time=2021-06-17 12:44$$checksum=f9b2e9f5$$length=084$$
+// $$author=stefa$$valid=0$$time=2022-10-01 21:58$$checksum=e0e024f4$$length=084$$

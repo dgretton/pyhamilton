@@ -296,6 +296,43 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     'BarcodeReader_Read':('BC_READ',{
 
     }),
+    'pH_Initialize':('PH_INIT',{
+        'Comport' : '' , # (int)
+        'SimulationMode' : '' # (boolean)
+    }),
+    'pH_Request_Battery':('PH_REQ_BTRY',{
+        'ModuleID' : '' , # (int)
+    }),
+    'pH_measure':('PH_MEASURE',{
+        'ModuleID' : '' , # (int)
+        'Temperature' : '' , # (float)
+        'probePattern' : '' , # (string)
+    }),
+    'pH_Measure_Dynamically':('PH_MEASURE_DYN',{
+        'ModuleID' : '' , # (int)
+        'Temperature' : '' , # (float)
+        'Precision' : '' , # (float)
+        'Timeout' : '' , # (int)
+        'probePattern' : '' , # (string)
+    }),
+    'pH_Request_Calibration':('PH_REQ_CALIBRATION',{
+        'ModuleID' : '' , # (int)
+        'ProbeNumber' : '' , # (int)
+    }),
+    'pH_Request_Probe_Data':('PH_REQ_PROBE_DATA',{
+        'ModuleID' : '' , # (int)
+    }),
+    'pH_Request_Technical_Data':('PH_REQ_TECH_DATA',{
+        'ModuleID' : '' , # (int)
+        'HardwareNumber' : '' , # (int)
+    }),
+    'pH_Calibrate':('PH_CALIBRATE',{
+        'ModuleID' : '' , # (int)
+        'CalibrationLevel' : '' , # (int)
+        'CalibrationValue' : '' , # (flt)
+        'CalibrationTemperature' : '' , # (flt)
+        'probePattern' : '' , # (str)
+    }),
 }
 
 """All of the command names supported out of the box, mapped to their default params.

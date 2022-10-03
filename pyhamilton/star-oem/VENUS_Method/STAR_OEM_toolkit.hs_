@@ -1,6 +1,6 @@
 
 // this ALWAYS GENERATED file contains the sub-method library header
-// Generated at 6/17/2021 12:44:12 PM
+// Generated at 10/1/2022 9:58:23 PM
 
 #pragma once
 #ifndef HSL_RUNTIME
@@ -35,10 +35,11 @@ function iSWAP_Get( device & ML_STAR, sequence & plateSequence, sequence & lidSe
 function iSWAP_Move( device & ML_STAR, sequence & destinationSequence, variable collisionControl, variable gripMode, variable & o_stepReturn ) void { }
 function iSWAP_Park( device & ML_STAR, variable showCollisionCheckDialog, variable & o_stepReturn ) void { }
 function iSWAP_Place( device & ML_STAR, sequence & plateSequence, sequence & lidSequence, variable sequenceCounting, variable movementType, variable transportMode, variable labwareOrientation, variable collisionControl, variable retractDistance, variable liftUpHeight, variable & o_stepReturn ) void { }
+function pH_Measure( variable i_intModuleID, variable i_fltTemperature, variable i_strProbePattern, variable & o_fltpHProbe_1, variable & o_fltpHProbe_2, variable & o_fltpHProbe_3, variable & o_fltpHProbe_4, variable & o_stepReturn ) void { }
 } // namespace
 #endif
 
 #ifdef HSL_RUNTIME
 #include __filename__ ".hsi"
 #endif
-// $$author=stefa$$valid=0$$time=2021-06-17 12:44$$checksum=b40a14ba$$length=082$$
+// $$author=stefa$$valid=0$$time=2022-10-01 21:58$$checksum=12de3e06$$length=082$$

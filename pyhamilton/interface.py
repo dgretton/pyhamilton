@@ -420,7 +420,7 @@ class HamiltonInterface:
             self._block_until_sq_clear()
         return send_cmd_dict['id']
 
-    def wait_on_response(self, id, timeout=0, raise_first_exception=False, return_data=False):
+    def wait_on_response(self, id, timeout=0, raise_first_exception=False, return_data=None):
         """Wait and do not return until the response for the specified id comes back.
 
         When the command corresponding to `id` regards multiple distinct pipette channels
@@ -462,7 +462,7 @@ class HamiltonInterface:
             time.sleep(.1)
         self.log_and_raise(HamiltonTimeoutError('Timed out after ' + str(timeout) + ' sec while waiting for response id ' + str(id)))
 
-    def pop_response(self, id, raise_first_exception=False, return_data=False):
+    def pop_response(self, id, raise_first_exception=False, return_data = None):
         """Remove and return the response with the specified id from the response queue.
 
         If there is a response, remove it and return the Hamilton-formatted response
@@ -491,11 +491,11 @@ class HamiltonInterface:
         except KeyError:
             raise KeyError('No Hamilton interface response indexed for id ' + str(id))
         if return_data:
-            print(type(response))
-            print(response)
             response = json.loads(response)
-            response_data=response['step-return1']
-            return response_data
+            response_list = []
+            for field in return_data:
+                response_list.append(response[field])
+            return response_list
         errflag, blocks = self.parse_hamilton_return(response)
         err_map = {}
         if errflag:
