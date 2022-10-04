@@ -333,6 +333,60 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'CalibrationTemperature' : '' , # (flt)
         'probePattern' : '' , # (str)
     }),
+    'pH_Calibrate_Dynamically':('PH_CALIBRATE_DYN',{
+        'ModuleID' : '' , # (int)
+        'Variance' : '' , # (int)
+        'Timeout' : '' , # (int)
+        'CalibrationLevel' : '' , # (int)
+        'CalibrationValue' : '' , # (flt)
+        'CalibrationTemperature' : '' , # (flt)
+        'probePattern' : '' , # (str)
+    }),
+    
+    'pH_Sleep':('PH_SLEEP',{
+        'ModuleID' : '' , # (int)
+    }),
+    'pH_Terminate':('PH_TERM',{
+        'ModuleID' : '' , # (int)
+    }),
+    'pH_Wakeup':('PH_WAKEUP',{
+        'ModuleID' : '' , # (int)
+    }),
+    
+    'pH_Washer_Initialize':('PH_WASHER_INIT',{
+        'Comport' : '' , # (int)
+        'ModuleName' : '' , # (str)
+        'SimulationMode' : '' , # (bln)
+    }),
+    'pH_Washer_Set_Trace':('PH_WASHER_SET_TRC',{
+        'ModuleID' : '' , # (int)
+        'TraceLevel' : '' , # (int)
+    }),
+    'pH_Washer_Wash':('PH_WASHER_WASH',{
+        'ModuleID' : '' , # (int)
+        'CycleNumber' : '' , # (int)
+    }),
+    'pH_Washer_Terminate':('PH_WASHER_TERM',{
+        'ModuleID' : '' , # (int)
+    }),
+    'pH_Dryer_Initialize':('PH_DRYER_INIT',{
+        'Comport' : '' , # (int)
+        'ModuleName' : '' , # (str)
+        'SimulationMode' : '' , # (bln)
+    }),
+    'pH_Dryer_Set_Trace':('PH_DRYER_SET_TRC',{
+        'ModuleID' : '' , # (int)
+        'TraceLevel' : '' , # (int)
+    }),
+    'pH_Start_Drying':('PH_DRYER_START',{
+        'ModuleID' : '' , # (int)
+    }),
+    'pH_Stop_Drying':('PH_DRYER_STOP',{
+        'ModuleID' : '' , # (int)
+    }),
+    'pH_Dryer_Terminate':('PH_DRYER_TERM',{
+        'ModuleID' : '' , # (int)
+    }),
 }
 
 """All of the command names supported out of the box, mapped to their default params.

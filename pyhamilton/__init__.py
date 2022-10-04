@@ -30,6 +30,8 @@ LIBRARY_DIR = os.path.join(PACKAGE_DIR, 'library')
 TEMPLATE_DIR = os.path.join(PACKAGE_DIR, 'project-template')
 exe_http = os.path.join(PACKAGE_DIR, 'bin', 'Hamilton HSLHttp Library Installer Version 2.7.exe')
 exe_json = os.path.join(PACKAGE_DIR, 'bin', 'HSLJson Library v1.6 Installer.exe')
+exe_pH = os.path.join(PACKAGE_DIR, 'bin', 'Hamilton pH Module v2.2')
+
 
 
 def full_paths_list(directory_abs_path):
@@ -54,6 +56,7 @@ def autoconfig():
     print("Automatically configuring your PyHamilton installation")
     os.startfile(exe_http)
     os.startfile(exe_json)
+    os.startfile(exe_pH)
     
     hamilton_lib_dir = os.path.abspath('C:/Program Files (x86)/HAMILTON/Library')
     print("Copying files to Hamilton library")

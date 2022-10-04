@@ -10,7 +10,8 @@ from threading import Thread
 from .interface import HamiltonInterface
 
 from .interface import (PH_INIT, PH_REQ_BTRY, PH_MEASURE, PH_MEASURE_DYN, PH_REQ_CALIBRATION, PH_REQ_PROBE_DATA,
-                        PH_REQ_TECH_DATA, PH_CALIBRATE)
+                        PH_REQ_TECH_DATA, PH_CALIBRATE, PH_CALIBRATE_DYN, PH_TERM, PH_SLEEP, PH_WAKEUP, PH_WASHER_INIT,
+                        PH_WASHER_WASH, PH_WASHER_TERM, PH_DRYER_INIT, PH_DRYER_START, PH_DRYER_STOP, PH_DRYER_TERM)
 
 
 def ph_initialize(ham, comport, simulate, asynch=False):
@@ -66,3 +67,34 @@ def ph_calibrate(ham, module_id, cal_level, cal_value, cal_temperature, probe_pa
                            probePattern = probe_pattern)
     data = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
     return data
+
+def ph_washer_initialize(ham, comport, simulate):
+    cmd = ham.send_command(PH_WASHER_INIT, Comport = comport, SimulationMode = simulate)
+    module_id = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300, return_data=['step-return2'])
+    return module_id
+
+def ph_washer_wash(ham, module_id, cycle_num):
+    cmd = ham.send_command(PH_WASHER_WASH, ModuleID = module_id, CycleNumber = cycle_num)
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
+
+def ph_washer_terminate(ham, module_id):
+    cmd = ham.send_command(PH_WASHER_TERM, ModuleID = module_id)
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
+
+def ph_dryer_initialize(ham, comport, simulate):
+    cmd = ham.send_command(PH_DRYER_INIT, Comport = comport, SimulationMode = simulate)
+    module_id = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300, return_data=['step-return2'])
+    return module_id
+
+def ph_dryer_start(ham, module_id):
+    cmd = ham.send_command(PH_DRYER_START, ModuleID = module_id)
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
+
+def ph_dryer_stop(ham, module_id):
+    cmd = ham.send_command(PH_DRYER_STOP, ModuleID = module_id)
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
+
+def ph_dryer_terminate(ham, module_id):
+    cmd = ham.send_command(PH_DRYER_TERM, ModuleID = module_id)
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
+
