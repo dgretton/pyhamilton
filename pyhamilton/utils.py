@@ -12,7 +12,7 @@ from .interface import HamiltonInterface
 from .deckresource import LayoutManager, ResourceType, Plate24, Plate96, Tip96
 from .oemerr import PositionError
 from .interface import (INITIALIZE, PICKUP, EJECT, ASPIRATE, DISPENSE, ISWAP_GET, ISWAP_PLACE, HEPA,
-WASH96_EMPTY, PICKUP96, EJECT96, ASPIRATE96, DISPENSE96, ISWAP_MOVE, MOVE_SEQ)
+WASH96_EMPTY, PICKUP96, EJECT96, ASPIRATE96, DISPENSE96, ISWAP_MOVE, MOVE_SEQ, TILT_INIT, TILT_MOVE)
 
 
 def resource_list_with_prefix(layout_manager, prefix, res_class, num_ress, order_key=None, reverse=False):
@@ -223,6 +223,17 @@ def dispense_96(ham_int, plate96, vol, **more_options):
 
 def move_sequence(ham_int, sequence, xDisplacement=0, yDisplacement=0, zDisplacement=0):
     cid = ham_int.send_command(MOVE_SEQ, inputSequence=sequence, xDisplacement=xDisplacement, yDisplacement=yDisplacement, zDisplacement=zDisplacement)
+    ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+def tilt_module_initialize(ham_int, module_name, comport, trace_level, simulate):
+    cid = ham_int.send_command(TILT_INIT, ModuleName = module_name, 
+                         Comport = comport, 
+                         TraceLevel = trace_level, 
+                         Simulate = simulate)
+    ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
+    
+def tilt_module_move(ham_int, module_name, angle):
+    cid = ham_int.send_command(TILT_MOVE, ModuleName = module_name, Angle = angle)
     ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
 class StderrLogger:
