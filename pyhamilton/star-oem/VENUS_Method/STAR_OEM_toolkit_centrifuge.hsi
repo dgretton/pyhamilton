@@ -1,0 +1,142 @@
+// {{{ 2 "IncludeGuard" "PragmaOnce"
+#pragma once
+// }} ""
+#include "Hamilton Centrifuge\\Hamilton Centrifuge.hsl"
+#include "HSLBarcodeReader.hsl"
+#include "HSLErrLib.hsl"
+#include "HSLTrcLib.hsl"
+/* {{ 2 "LibraryInsertLine" "" */ // }} ""
+// {{ 2 "TemplateIncludeBlock" ""
+#include "HSLMETEDLib.hs_"
+#include "HSLMECCLib.hs_"
+// }} ""
+// {{{ 2 "LibraryNamespace" "Begin"
+namespace STAR_OEM_TOOLKIT_CENTRIFUGE {
+// }} ""
+/* {{ 2 "VariableInsertLine" "" */ // }} ""
+// {{{ 2 "SubmethodForwardDeclaration" ""
+function HamiltonCentrifuge_Centrifuge( variable i_strLabel, variable i_blnCloseCoverAtEnd, variable i_intPresentPosition, variable i_intDirection, variable & i_intArrSpeed[], variable & i_intArrAccelleration[], variable & i_intArrDuration[], variable i_intDecelleration, variable & o_stepReturn ) void ;
+function HamiltonCentrifuge_GetRotationStatus( variable i_strLabel, variable & o_blnRotorDriveRunning, variable & o_int_ProfileStatus, variable & o_intTimeLeft, variable & o_blnCurrentSpeed, variable & o_blnSpeedSensorTrip, variable & o_blnGravitySensorTrip, variable & o_blnTemperatureSensorTrip, variable & o_stepReturn ) void ;
+function HamiltonCentrifuge_Initialize( variable i_strLabel, variable i_strNodeName, variable i_blnSimulationMode, variable i_blnAlwaysInitialize, variable & o_stepReturn ) void ;
+function Sub1(  ) void ;
+// }} ""
+function _InitLibrary() {
+// {{ 2 "AutoInitBlock" ""
+// }} ""
+}
+function _ExitLibrary() {
+// {{ 2 "AutoExitBlock" ""
+// }} ""
+}
+// {{{ 5 "Sub1" "Begin"
+function Sub1(  ) void {
+// }} ""
+// {{ 5 "Sub1" "InitLocals"
+// }} ""
+// {{{ 5 "Sub1" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_Initialize" "Begin"
+function HamiltonCentrifuge_Initialize( variable i_strLabel, variable i_strNodeName, variable i_blnSimulationMode, variable i_blnAlwaysInitialize, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_Initialize" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 13 1 0 "8f396cc9_60f7_4219_ac1c9fe2276fd3d4" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_AB99818B6C9C4e01A2D3408A63DDB0B1 ;
+err.Clear();
+// }} ""
+// {{{ 14 1 0 "c61b809a_6951_4a41_92b162d30da0e530" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::Initialize(i_strLabel, i_strNodeName, i_blnSimulationMode, i_blnAlwaysInitialize);
+// }} ""
+// {{ 15 1 0 "8f396cc9_60f7_4219_ac1c9fe2276fd3d4" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_AB99818B6C9C4e01A2D3408A63DDB0B1 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 16 1 0 "d26c85f6_e647_41c0_808a53edea8c8982" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 17 1 0 "8f396cc9_60f7_4219_ac1c9fe2276fd3d4" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_Initialize" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_Centrifuge" "Begin"
+function HamiltonCentrifuge_Centrifuge( variable i_strLabel, variable i_blnCloseCoverAtEnd, variable i_intPresentPosition, variable i_intDirection, variable & i_intArrSpeed[], variable & i_intArrAccelleration[], variable & i_intArrDuration[], variable i_intDecelleration, variable & o_stepReturn ) void {
+// }} ""
+private variable CloseCover;
+private variable Direction;
+private variable IntPresentPosition;
+private variable Deceleration;
+private variable Label;
+private variable o_intArraySpeed[];
+private variable o_intArrayAcceleration[];
+private variable o_intArrayDuration[];
+// {{ 5 "HamiltonCentrifuge_Centrifuge" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 1 1 0 "d01bfc46_9e9c_4d7a_bd3fa6f791904929" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_A2C3EC70E5E846f58CD4FE2BBD93C9D9 ;
+err.Clear();
+// }} ""
+// {{{ 2 1 0 "f14d3090_673c_4c70_9da421f87af4d75f" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::Centrifuge(i_strLabel, i_blnCloseCoverAtEnd, i_intPresentPosition, i_intDirection, i_intArrSpeed, i_intArrAccelleration, i_intArrDuration, i_intDecelleration);
+// }} ""
+// {{ 3 1 0 "d01bfc46_9e9c_4d7a_bd3fa6f791904929" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_A2C3EC70E5E846f58CD4FE2BBD93C9D9 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 4 1 0 "c25dc277_d818_46fb_a5d49a65d6f867b7" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 5 1 0 "d01bfc46_9e9c_4d7a_bd3fa6f791904929" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_Centrifuge" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_GetRotationStatus" "Begin"
+function HamiltonCentrifuge_GetRotationStatus( variable i_strLabel, variable & o_blnRotorDriveRunning, variable & o_int_ProfileStatus, variable & o_intTimeLeft, variable & o_blnCurrentSpeed, variable & o_blnSpeedSensorTrip, variable & o_blnGravitySensorTrip, variable & o_blnTemperatureSensorTrip, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_GetRotationStatus" "InitLocals"
+o_blnRotorDriveRunning = 0;
+o_int_ProfileStatus = 0;
+o_intTimeLeft = 0;
+o_blnCurrentSpeed = 0;
+o_blnSpeedSensorTrip = 0;
+o_blnGravitySensorTrip = 0;
+o_blnTemperatureSensorTrip = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 7 1 0 "c30abb04_f50e_4df7_a1cfad44bbbf3bc5" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_419C19BCFC314cfc8125D61C4682527D ;
+err.Clear();
+// }} ""
+// {{{ 8 1 0 "dab46c43_7e7d_478a_a949dcf4ed01fcf3" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::GetRotationDriveStatus(i_strLabel, o_blnRotorDriveRunning, o_int_ProfileStatus, o_intTimeLeft, o_blnCurrentSpeed, o_blnSpeedSensorTrip, o_blnGravitySensorTrip, o_blnTemperatureSensorTrip);
+// }} ""
+// {{ 9 1 0 "c30abb04_f50e_4df7_a1cfad44bbbf3bc5" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_419C19BCFC314cfc8125D61C4682527D : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 10 1 0 "557851a9_1249_408d_9808213bccd348a2" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 11 1 0 "c30abb04_f50e_4df7_a1cfad44bbbf3bc5" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_GetRotationStatus" "End"
+}
+// }} ""
+/* {{ 2 "SubmethodInsertLine" "" */ // }} ""
+// {{{ 2 "LibraryNamespace" "End"
+} // library namespace
+// }} ""
+// $$author=stefa$$valid=0$$time=2022-10-09 22:46$$checksum=91ff812b$$length=084$$
