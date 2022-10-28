@@ -12,7 +12,8 @@ from .interface import HamiltonInterface
 from .deckresource import LayoutManager, ResourceType, Plate24, Plate96, Tip96
 from .oemerr import PositionError
 from .interface import (INITIALIZE, PICKUP, EJECT, ASPIRATE, DISPENSE, ISWAP_GET, ISWAP_PLACE, HEPA,
-WASH96_EMPTY, PICKUP96, EJECT96, ASPIRATE96, DISPENSE96, ISWAP_MOVE, MOVE_SEQ, TILT_INIT, TILT_MOVE)
+WASH96_EMPTY, PICKUP96, EJECT96, ASPIRATE96, DISPENSE96, ISWAP_MOVE, MOVE_SEQ, TILT_INIT, TILT_MOVE, GRIP_GET,
+GRIP_MOVE, GRIP_PLACE)
 
 
 def resource_list_with_prefix(layout_manager, prefix, res_class, num_ress, order_key=None, reverse=False):
@@ -221,6 +222,7 @@ def dispense_96(ham_int, plate96, vol, **more_options):
         **more_options), raise_first_exception=True)
 
 
+
 def move_sequence(ham_int, sequence, xDisplacement=0, yDisplacement=0, zDisplacement=0):
     cid = ham_int.send_command(MOVE_SEQ, inputSequence=sequence, xDisplacement=xDisplacement, yDisplacement=yDisplacement, zDisplacement=zDisplacement)
     ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
@@ -235,6 +237,26 @@ def tilt_module_initialize(ham_int, module_name, comport, trace_level, simulate)
 def tilt_module_move(ham_int, module_name, angle):
     cid = ham_int.send_command(TILT_MOVE, ModuleName = module_name, Angle = angle)
     ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+def get_plate_gripper_seq(ham, source_plate_seq,  gripHeight, gripWidth, openWidth, lid, tool_sequence, **more_options):
+    logging.info('get_plate: Getting plate ' + source_plate_seq )
+    
+    if lid:
+        cid = ham.send_command(GRIP_GET, plateSequence=source_plate_seq, transportMode=1, gripHeight=gripHeight, gripWidth=gripWidth, widthBefore=openWidth, toolSequence=tool_sequence)
+    else:
+        cid = ham.send_command(GRIP_GET, plateSequence=source_plate_seq, transportMode=0, gripHeight=gripHeight, gripWidth=gripWidth, widthBefore=openWidth, toolSequence=tool_sequence)
+    ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+def move_plate_gripper_seq(ham, dest_plate_seq, **more_options):
+    logging.info('move_plate: Moving plate ' + dest_plate_seq)
+    cid = ham.send_command(GRIP_MOVE, plateSequence=dest_plate_seq)
+    ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
+    
+def place_plate_gripper_seq(ham, dest_plate_seq, tool_sequence, **more_options):
+    logging.info('place_plate: Placing plate ' + dest_plate_seq )
+    cid = ham.send_command(GRIP_PLACE, plateSequence=dest_plate_seq, toolSequence=tool_sequence)
+    ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
 
 class StderrLogger:
     def __init__(self, level):

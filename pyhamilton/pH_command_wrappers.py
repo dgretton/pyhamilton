@@ -68,6 +68,22 @@ def ph_calibrate(ham, module_id, cal_level, cal_value, cal_temperature, probe_pa
     data = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
     return data
 
+def ph_calibrate_dynamically(ham, module_id, variance, timeout, cal_level, cal_value, cal_temperature, probe_pattern):
+    cmd = ham.send_command(PH_CALIBRATE_DYN, ModuleID = module_id, Variance = variance, Timeout = timeout,
+                           CalibrationLevel = cal_level, CalibrationValue = cal_value, 
+                           CalibrationTemperature=cal_temperature, probePattern = probe_pattern)
+    data = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
+    return data
+
+
+def ph_wakeup(ham, module_id):
+    cmd = ham.send_command(PH_WAKEUP, ModuleID = module_id)
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
+
+def ph_sleep(ham, module_id):
+    cmd = ham.send_command(PH_SLEEP, ModuleID = module_id)
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
+
 def ph_washer_initialize(ham, comport, simulate):
     cmd = ham.send_command(PH_WASHER_INIT, Comport = comport, SimulationMode = simulate)
     module_id = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300, return_data=['step-return2'])
