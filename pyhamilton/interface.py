@@ -491,7 +491,6 @@ class HamiltonInterface:
         except KeyError:
             raise KeyError('No Hamilton interface response indexed for id ' + str(id))
         response_dict = json.loads(response)
-        print(response_dict)
         if len(response_dict['step-return1']) == 1:
             if response_dict['step-return1'] != '1':
                 raise Exception("Error returned from Venus. Check the log for more information.")
