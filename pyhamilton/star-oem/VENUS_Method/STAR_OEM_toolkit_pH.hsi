@@ -722,8 +722,8 @@ o_stepReturn = 0;
 onerror goto errLabel_7FD13D87F8D74230A78B98C5B83581AE ;
 err.Clear();
 // }} ""
-// {{{ 163 1 0 "73832845_cea9_4136_b893d93437a02f00" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = Hamilton_pH_Station_Washer_Module::Initialize(ML_STAR, i_intComport, i_strModuleName, i_blnSimulationMode, o_intModuleID);
+// {{{ 163 1 0 "407cb5f5_2a38_472f_b4bf70af1717b0f3" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+Hamilton_pH_Station_Washer_Module::Initialize(ML_STAR, i_intComport, i_strModuleName, i_blnSimulationMode, o_intModuleID);
 // }} ""
 // {{ 164 1 0 "10f9829c_87f4_46c5_9b033ca5b5c71300" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_7FD13D87F8D74230A78B98C5B83581AE : {}
@@ -969,4 +969,4 @@ o_stepReturn = ErrGetDataAt(3);
 // {{{ 2 "LibraryNamespace" "End"
 } // library namespace
 // }} ""
-// $$author=stefa$$valid=0$$time=2022-10-28 20:30$$checksum=f397232e$$length=084$$
+// $$author=stefa$$valid=0$$time=2022-10-03 21:03$$checksum=596532a0$$length=084$$

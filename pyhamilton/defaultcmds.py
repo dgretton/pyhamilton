@@ -355,6 +355,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     
     'pH_Washer_Initialize':('PH_WASHER_INIT',{
         'Comport' : '' , # (int)
+        'ModuleName' : '' , # (str)
         'SimulationMode' : '' , # (bln)
     }),
     'pH_Washer_Set_Trace':('PH_WASHER_SET_TRC',{
@@ -370,6 +371,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     }),
     'pH_Dryer_Initialize':('PH_DRYER_INIT',{
         'Comport' : '' , # (int)
+        'ModuleName' : '' , # (str)
         'SimulationMode' : '' , # (bln)
     }),
     'pH_Dryer_Set_Trace':('PH_DRYER_SET_TRC',{
