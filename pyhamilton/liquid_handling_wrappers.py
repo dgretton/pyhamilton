@@ -257,6 +257,12 @@ def place_plate_gripper_seq(ham, dest_plate_seq, tool_sequence, **more_options):
     cid = ham.send_command(GRIP_PLACE, plateSequence=dest_plate_seq, toolSequence=tool_sequence)
     ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
+def move_plate_gripper(ham, dest_poss, **more_options):
+    labware_poss = compound_pos_str(dest_poss)
+    #logging.info('move_plate: Moving plate ' + dest_plate_seq)
+    cid = ham.send_command(GRIP_MOVE, plateLabwarePositions=labware_poss, **more_options)
+    ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
 
 class StderrLogger:
     def __init__(self, level):

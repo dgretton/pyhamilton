@@ -224,6 +224,9 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'plateSequence':'', # leave empty if you are going to provide specific plate labware-position below
         'xAcceleration':4, # (integer) 1-5 from slowest to fastest, where 4 is default
         'plateLabwarePositions':'', # leave empty if you don´t use lid or if you are going to provide specific plate labware-positions below or ejecting to default waste
+        'xDisplacement':0.0,
+        'yDisplacement':0.0,
+        'zDisplacement':0.0,
 
     }),
 
