@@ -17,6 +17,7 @@ from .interface import (PH_INIT, PH_REQ_BTRY, PH_MEASURE, PH_MEASURE_DYN, PH_REQ
 def ph_initialize(ham, comport, simulate, asynch=False):
     cmd = ham.send_command(PH_INIT, Comport = comport, SimulationMode = simulate)
     module_id = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300, return_data=['step-return2'])
+    module_id = int(module_id)
     return module_id
 
 def ph_req_battery_data(ham, module_id):
