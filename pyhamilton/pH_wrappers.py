@@ -18,12 +18,9 @@ DEFAULT_WAIT_ON_RESPONSE_TIMEOUT = 300  # seconds
 
 def ph_initialize(ham, comport, simulate, asynch=False, wait_on_response_timeout=DEFAULT_WAIT_ON_RESPONSE_TIMEOUT):
     cmd = ham.send_command(PH_INIT, Comport = comport, SimulationMode = simulate)
-<<<<<<< HEAD:pyhamilton/pH_wrappers.py
-    module_id = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300, return_data=['step-return2'])
-    module_id = int(module_id)
-=======
     module_id = ham.wait_on_response(cmd, raise_first_exception=True, timeout=wait_on_response_timeout, return_data=['step-return2'])
->>>>>>> bdcdc1e119ba5db65702eef8cea81daa467dc144:pyhamilton/pH_command_wrappers.py
+    module_id = int(module_id)
+
     return module_id
 
 def ph_req_battery_data(ham, module_id, wait_on_response_timeout=DEFAULT_WAIT_ON_RESPONSE_TIMEOUT):
