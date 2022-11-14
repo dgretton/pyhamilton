@@ -20,7 +20,6 @@ def ph_initialize(ham, comport, simulate, asynch=False, wait_on_response_timeout
     cmd = ham.send_command(PH_INIT, Comport = comport, SimulationMode = simulate)
     module_id = ham.wait_on_response(cmd, raise_first_exception=True, timeout=wait_on_response_timeout, return_data=['step-return2'])
     module_id = int(module_id)
-
     return module_id
 
 def ph_req_battery_data(ham, module_id, wait_on_response_timeout=DEFAULT_WAIT_ON_RESPONSE_TIMEOUT):
