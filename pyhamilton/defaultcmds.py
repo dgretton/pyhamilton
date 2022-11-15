@@ -388,7 +388,109 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     'pH_Dryer_Terminate':('PH_DRYER_TERM',{
         'ModuleID' : '' , # (int)
     }),
+    
+    'HHS_BeginMonitoring':('HHS_BEGIN_MONITORING',{
+        'deviceNumber' : '' , # (int)
+        'shakingToleranceRange' : '' , # (int)
+        'sampleInterval' : '' , # (int)
+        'action' : '' , # (int)
+    }),
+    'HHS_CreateStarDevice':('HHS_CREATE_STAR_DEVICE',{
+        'starDevice': '', # (str)
+        'usedNode': '' # (int [1,2])
+    }),
+    'HHS_CreateUSBDevice':('HHS_CREATE_USB_DEVICE',{
+        'usedNode': '' # (int [1,8])
+    }),
+    'HHS_EndMonitoring':('HHS_END_MONITORING', {
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_GetFirmwareVersion':('HHS_GET_FIRMWARE_VERSION', {
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_GetSerialNumber':('HHS_GET_SERIAL_NUM', {
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_GetShakerParameter':('HHS_GET_SHAKER_PARAM',{
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_GetShakerSpeed':('HHS_GET_SHAKER_SPEED',{
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_GetTempParameter':('HHS_GET_TEMP_PARAM', {
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_GetTemperature':('HHS_GET_TEMP', {
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_GetTemperatureState':('HHS_GET_TEMP_STATE', {
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_SendFirmwareCommand':('HHS_SEND_FIRMWARE_CMD', {
+        'deviceNumber': '', # (int)
+        'command': '', # (str)
+        'parameter': '' # (str)
+    }),
+    'HHS_SetPlateLock':('HHS_SET_PLATE_LOCK', {
+        'deviceNumber': '', #(int)
+        'plateLock': '' #(int_bool)
+    }),
+    'HHS_SetShakerParameter':('HHS_SET_SHAKER_PARAM', {
+        'deviceNumber': '', # (int)
+        'shakingDirection': '', # (int_bool)
+        'shakingAccRamp': '' # (int [630, 12500])
+    }),
+    'HHS_SetSimulation':('HHS_SET_SIMULATION', {
+        'simulate': '' # (int_bool)
+    }),
+    'HHS_SetTempParameter':('HHS_SET_TEMP_PARAM', {
+        'deviceNumber': '', #(int)
+        'startTimeout': '', # (int [1, 2500])
+        'toleranceRange': '', # (float [0.0, 105.0])
+        'securityRange': '' #(float [0.0, 100.0])
+    }),
+    'HHS_SetUSBTrace':('HHS_SET_USB_TRC', {
+        'trace': '' # (int_bool)
+    }),
+    'HHS_StartAllShaker':('HHS_START_ALL_SHAKER', {
+        'shakingSpeed': '', #(int [30, 2500])
+    }),
+    'HHS_StartAllShakerTimed':('HHS_START_ALL_SHAKER_TIMED', {
+        'shakingSpeed': '', # (int [30, 2500])
+        'shakingTime': '' # (int [1, 30000])
+    }),
+    'HHS_StartShaker':('HHS_START_SHAKER', {
+        'deviceNumber': '', #(int)
+        'shakingSpeed': '' # (int [30, 2500])
+    }),
+    'HHS_StartShakerTimed':('HHS_START_SHAKER_TIMED', {
+        'deviceNumber': '', # (int)
+        'shakingSpeed': '', # (int [30, 2500])
+        'shakingTime': '' #(int [1, 30000])
+    }),
+    'HHS_StartTempCtrl':('HHS_START_TEMP_CTRL', {
+        'deviceNumber': '', # (int)
+        'temperature': '', # (float [0.0, 105.0])
+        'waitForTempReached': '' #(int_bool)
+    }),
+    'HHS_StopAllShaker':('HHS_STOP_ALL_SHAKER', {
+    }),
+    'HHS_StopShaker':('HHS_STOP_SHAKER', {
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_StopTempCtrl':('HHS_STOP_TEMP_CTRL', {
+        'deviceNumber': '', #(int)
+    }),
+    'HHS_Terminate':('HHS_TERMINATE', {
+    }),
+    'HHS_WaitForShaker':('HHS_WAIT_FOR_SHAKER', {
+        'deviceNumber': '' # (int)
+    }),
+    'HHS_WaitForTempCtrl':('HHS_WAIT_FOR_TEMP_CTRL', {
+        'deviceNumber': '' #(int)
+    })
 }
+
 
 """All of the command names supported out of the box, mapped to their default params.
 
