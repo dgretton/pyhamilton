@@ -1,4 +1,9 @@
-import time, json, signal, os, requests, string, logging, subprocess, win32gui, win32con
+import sys
+
+if 'win32' in sys.platform:
+    import win32gui, win32con
+
+import time, json, signal, os, requests, string, logging, subprocess
 from http import server
 from threading import Thread
 from multiprocessing import Process
