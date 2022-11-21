@@ -4,6 +4,10 @@ if 'win32' in sys.platform:
     import win32gui, win32con
 
 import time, json, signal, os, requests, string, logging, subprocess
+from dataclasses import dataclass, field
+from enum import auto, Enum, unique
+from parse import parse
+from waiter import wait, suppress
 from http import server
 from threading import Thread
 from multiprocessing import Process
@@ -158,9 +162,7 @@ def _make_new_hamilton_serv_handler(resp_indexing_fn):
         @staticmethod
         def pop_response(idx):
             ir = HamiltonServerHandler.indexed_responses
-            if idx not in ir:
-                raise KeyError('No response received with index ' + str(idx))
-            return ir.pop(idx).decode()
+            return None if idx not in ir else ir.pop(idx).decode()
 
         def _set_headers(self):
             self.send_response(200)
@@ -220,10 +222,197 @@ def run_hamilton_process():
     except:
         pass
 
-_block_numfield = 'Num'
-_block_mainerrfield = 'MainErr'
-BLOCK_FIELDS = _block_numfield, _block_mainerrfield, 'SlaveErr', 'RecoveryBtnId', 'StepData', 'LabwareName', 'LabwarePos'
-_block_field_types = int, int, int, int, str, str, str
+@unique
+class HamiltonResponseStatus(Enum):
+    """
+    List of global Hamilton response status
+
+    Inheritance
+    -----------
+        Enum
+
+    Attributes
+    ----------
+    FAILED : enum.auto
+        command failure is reported or parsing error has been detected
+    SUCCESS : enum.auto
+        command and parsing successful
+    UNKNOWN : enum.auto
+        indecisive state
+    """
+    FAILED = auto()
+    SUCCESS = auto()
+    UNKNOWN = auto()
+
+@dataclass
+class HamiltonResponse:
+    """
+    A class to represent the Venus server response
+
+    Attributes
+    ----------
+    status: HamiltonResponseStatus
+        Response status (failed, success or unknown)
+    return_data: list | str
+        Extracted values from specific field response
+    moduleID: str
+        ID of module from "step-return2" field
+    parsed_return: any
+        Represent "step-return1" field value
+    raw: any
+        Original server response
+
+    Methods
+    -------
+    _compute_status()
+        Compute the status based on step-return1 field from raw response
+
+    _return_data()
+        Contain values of requested fields
+
+    _moduleID()
+        Return Module ID (step-return2)
+
+    _parse_return():
+        Parse values from "step-return1" field
+
+    digest(fields)
+        Populate this object's attributes
+
+    raise_first_exception()
+        Evaluate which exception to raise
+
+
+    Raises
+    ------
+        HamiltonStepError: Errors in steps executed by VENUS software
+        HamiltonReturnParseError: Server response parsing failed
+        InvalidErrCodeError: Unknown server response error code
+
+    """
+    status: HamiltonResponseStatus = HamiltonResponseStatus.UNKNOWN
+    return_data: list = field(default_factory=list)
+    moduleID: str = ""
+    parsed_return: any = None
+    raw: any = None
+
+    def _compute_status(self):
+        is_unknown = 'step-return1' not in self.raw
+        if is_unknown:
+            return HamiltonResponseStatus.UNKNOWN
+
+        response = json.loads(self.raw)['step-return1']
+
+        is_success = response == 1 or           \
+            (
+                isinstance(response, str) and   \
+                len(response) == 1 and          \
+                response[0] == '1'
+            ) or                                \
+            (
+                isinstance(response, str) and   \
+                len(response) > 1 and           \
+                response[0] == '0'
+            )
+        is_failed = response == 0 or            \
+            (
+                isinstance(response, str) and   \
+                len(response) == 1 and          \
+                response[0] != '1'
+            ) or                                \
+            (
+                isinstance(response, str) and   \
+                len(response.strip()) > 1 and   \
+                response.strip()[0] != '0'
+            )
+
+        if is_failed:
+            return HamiltonResponseStatus.FAILED
+
+        if is_success:
+            return HamiltonResponseStatus.SUCCESS
+
+        return HamiltonResponseStatus.UNKNOWN
+
+    def _return_data(self, fields):
+        response = json.loads(self.raw)
+        if not fields or (isinstance(fields, str) and fields not in response):
+            return []
+        if isinstance(fields, str) and fields in response:
+                return [response[fields]]
+
+        return [response[field] for field in fields if field in response]
+
+    def _moduleID(self):
+        moduleID_field_name = "step-return2"
+        if moduleID_field_name not in self.raw:
+            return ""
+        response = json.loads(self.raw)
+        return str(response[moduleID_field_name])
+
+    def _parse_return(self):
+        return_field = "step-return1"
+        return_field_min_len = 6  # [01,00,00,0,,Cos_96_DW_1mL_0002,A1
+        if return_field not in self.raw:
+            return None
+
+        response = json.loads(self.raw)[return_field]
+        block_available = isinstance(response, str) and '[' in response and ',' in response
+        blocks = []
+        if block_available:
+            blocks = [r for r in response.split('[')[1:] if r.count(',') == return_field_min_len]
+        parsed = None
+        if blocks:
+            parsed = [
+                 parse(
+                    "{numField:d},{mainErrField:d},{slaveErr:d},{recoveryBtnId:d},{stepData},{labwareName:w},{labwarePos:w}",
+                    block.replace(",,", ", ,")) for block in blocks
+                ]
+        if parsed:
+            if all([p is None for p in parsed]):
+                return None
+            return [p.named for p in parsed if parsed]
+        return None
+
+    def digest(self, fields=None):
+        self.status = self._compute_status()
+        self.return_data = self._return_data(fields=fields)
+        self.moduleID = self._moduleID()
+        self.parsed_return = self._parse_return()
+
+    def raise_first_exception(self):
+        isSuccessStatus = self.status == HamiltonResponseStatus.SUCCESS and '[' not in self.raw
+        if isSuccessStatus:
+            return
+
+        isHamiltonStepError = HamiltonResponseStatus.FAILED and '[' not in self.raw
+        if isHamiltonStepError:
+            raise HamiltonStepError('Hamilton step did not execute correctly; no error code given. ( response: ' + self.raw + ' )')
+
+        isHamiltonReturnParseError = '[' in self.raw and (self.parsed_return is None or self.parsed_return == [])
+        if isHamiltonReturnParseError:
+            raise HamiltonReturnParseError(self.raw)
+
+        reportedErrorCodes = [p['mainErrField'] for p in self.parsed_return if p['mainErrField'] != 0]
+        isSuccessStatus = self.status == HamiltonResponseStatus.SUCCESS and len(reportedErrorCodes) == 0
+        if isSuccessStatus:
+            return
+
+        isFailedStatusNoReportedErrorCode = self.status == HamiltonResponseStatus.FAILED and len(reportedErrorCodes) == 0
+        if isFailedStatusNoReportedErrorCode:
+            raise HamiltonReturnParseError('Hamilton step did not execute correctly; no error code found. ( response: ' + self.raw + ' )')
+
+        firstErrorCode = reportedErrorCodes[0]
+        isFirstExceptionKnown = firstErrorCode in HAMILTON_ERROR_MAP
+        if isFirstExceptionKnown:
+            raise HAMILTON_ERROR_MAP[firstErrorCode]()
+
+        if HamiltonResponseStatus.FAILED:
+            raise InvalidErrCodeError(f'Unknown error code: {firstErrorCode}')
+
+        if HamiltonResponseStatus.SUCCESS:
+            raise HamiltonReturnParseError('Inconsistency: Venus returns SUCCESS while error code {firstErrorCode} found! ( response: ' + self.raw + ' )')
+
 
 class HamiltonInterface:
     """Main class to automatically set up and tear down an interface to a Hamilton robot.
@@ -240,7 +429,7 @@ class HamiltonInterface:
       with HamiltonInterface() as ham_int:
           cmd_id = ham_int.send_command(INITIALIZE)
           ...
-          ham_int.wait_on_response(cmd_id)
+          response = ham_int.wait_on_response(cmd_id)
           ...
       ```
     """
@@ -391,7 +580,7 @@ class HamiltonInterface:
 
         Args:
           template (HamiltonCmdTemplate): Optional; a template to provide default
-            arguments not specified in `cmd_dict`. 
+            arguments not specified in `cmd_dict`.
           block_until_sent (bool): Optional; if `True`, wait for all queued messages,
             including this one, to get picked up by the local server and sent across
             the HTTP connection, before returning. Default is False.
@@ -425,7 +614,7 @@ class HamiltonInterface:
             self._block_until_sq_clear()
         return send_cmd_dict['id']
 
-    def wait_on_response(self, id, timeout=0, raise_first_exception=False, return_data=None):
+    def wait_on_response(self, id, timeout=60, raise_first_exception=False, return_data=None):
         """Wait and do not return until the response for the specified id comes back.
 
         When the command corresponding to `id` regards multiple distinct pipette channels
@@ -439,191 +628,56 @@ class HamiltonInterface:
         Args:
           id (str): The unique id of a previously sent command
           timeout (float): Optional; maximum time in seconds to wait before raising
-            `HamiltonTimeoutError`. Default is no timeout (forever).
+            `HamiltonTimeoutError`. Default is 60 seconds.
           raise_first_exception: Optional; if True, may raise if there is an error
             encoded in the response. Default is False.
+          return_data(list | str): Optional
+            field(s) value to extract (e.g: "step-result1")
 
         Returns:
-          The response dict from the hamilton interpreter.
+          HamiltonResponse
 
         Raises:
           `HamiltonTimeoutError`: after `timeout` seconds elapse with no response, if
           `timeout` was specified.
         """
 
-        if timeout:
-            start_time = time.time()
-        else:
-            start_time = float('inf')
+        delays = 1  # sec
+        server_response = None
+        for _ in wait(delays=delays, timeout=timeout):
+            server_response = self.server_thread.server_handler_class.pop_response(id)
+            if server_response is not None:
+                break
 
-        response_tup = None
-        while time.time() - start_time < timeout:
-            try:
-                response_tup = self.pop_response(id, raise_first_exception, return_data)
-            except KeyError:
-                pass
-            if response_tup is not None:
-                return response_tup
-            time.sleep(.1)
-        self.log_and_raise(HamiltonTimeoutError('Timed out after ' + str(timeout) + ' sec while waiting for response id ' + str(id)))
+        if server_response is None:
+            self.log_and_raise(HamiltonTimeoutError('Timed out after ' + str(timeout) + ' sec while waiting for response id ' + str(id)))
 
-    def pop_response(self, id, raise_first_exception=False, return_data = None):
-        """Remove and return the response with the specified id from the response queue.
+        return self.parse_response(server_response, raise_first_exception, return_data)
 
-        If there is a response, remove it and return the Hamilton-formatted response
-        dict, like that returned from `HamiltonInterface.parse_hamilton_return`. Otherwise, raise
-        `KeyError`.
+    def parse_response(self, server_response:str, raise_first_exception:bool=False, return_data:"list|str"=None):
+        """Parse the server response and return parsed response of type HamiltonResponse.
 
         Args:
-          id (str): Unique id of the command that initiated the response
+          server_response (str): Venus server response
           raise_first_exception (bool): Optional; forwarded to `wait_on_response`.
             Default is `False`.
+          return_data: field(s) value to extract (e.g: "step-result1")
 
         Returns:
-          A 2-tuple:
+          HamiltonResponse
 
-            1. parsed response block dict from Hamilton as in `parse_hamilton_return`
-            2. Error map, a dict mapping int keys (data block Num field) that had
-                exceptions, if any, to an exception that was coded in block;
-                `None` to any error not associated with a block. `{}` if no error
-
-        Raises:
-          KeyError: if `id` has no matching response in the queue.
         """
 
-        try:
-            response = self.server_thread.server_handler_class.pop_response(id)
-        except KeyError:
-            raise KeyError('No Hamilton interface response indexed for id ' + str(id))
-        response_dict = json.loads(response)
-        if type(response_dict['step-return1'])==str and len(response_dict['step-return1']) == 1:
-            if response_dict['step-return1'] != '1':
-                raise Exception("Error returned from Venus. Check the log for more information.")
-            return True
-        
-        if return_data:
-            response_list = []
-            for field in return_data:
-                response_list.append(response_dict[field])
-            return response_list
-        
-        
-        errflag, blocks = self.parse_hamilton_return(response)
-        err_map = {}
-        if errflag:
-            for blocknum in sorted(blocks.keys()):
-                errcode = blocks[blocknum][_block_mainerrfield]
-                if errcode != 0:
-                    self.log('Exception encoded in Hamilton return.', 'warn')
-                    try:
-                        decoded_exception = HAMILTON_ERROR_MAP[errcode]()
-                    except KeyError:
-                        self.log_and_raise(InvalidErrCodeError('Response returned had an unknown error code: ' + str(errcode)))
-                    self.log('Exception: ' + repr(decoded_exception), 'warn')
-                    if raise_first_exception:
-                        self.log('Raising first exception.', 'warn')
-                        raise decoded_exception
-                    err_map[blocknum] = decoded_exception
-            else:
-                unknown_exc = HamiltonStepError('Hamilton step did not execute correctly; no error code given.')
-                err_map[None] = unknown_exc
-                if raise_first_exception:
-                    self.log('Raising first exception; exception has no error code.', 'warn')
-                    raise unknown_exc
-        return blocks, err_map
+        hamiltonResponse = HamiltonResponse(raw=server_response)
+        hamiltonResponse.digest(fields=return_data)
+        if raise_first_exception:
+            hamiltonResponse.raise_first_exception()
+
+        return hamiltonResponse
 
     def _block_until_sq_clear(self):
         while HamiltonServerHandler.has_queued_cmds():
             pass
-
-    def parse_hamilton_return(self, return_str):
-        """
-        Return a 2-tuple:
-
-        - [0] errflag: any error code present in response
-
-        - [1] Block map: dict mapping int keys to dicts with str keys (MainErr, SlaveErr, RecoveryBtnId, StepData, LabwareName, LabwarePos)
-
-        Result value 3 is the field that is returned by the OEM interface.
-
-        "Result value 3 contains one error flag (ErrFlag) and the block data package."
-
-        ### Data Block Format Rules
-
-        - The error flag is set once only at the beginning of result value 3. The error flag
-        does not belong to the block data but may be used for a simpler error recovery.
-        If this flag is set, an error code has been set in any of the block data entries.
-
-        - Each block data package starts with the opening square bracket character '['
-
-        - The information within the block data package is separated by the comma delimiter ','
-
-        - Block data information may be empty; anyway a comma delimiter is set.
-
-        - The result value may contain more than one block data package.
-
-        - Block data packages are returned independent of Num value ( unsorted ).
-
-        ### Block data information
-
-        - Num 
-            - Step depended information (e.g. the channel number, a loading position etc.).
-
-            - Note: The meaning and data type for this information is described in the corresponding help of single step.
-
-        - MainErr
-            - Main error code which occurred on instrument.
-
-        - SlaveErr
-            - Detailed error code of depended slave (e.g. auto load, washer etc.).
-
-        - RecoveryBtnId
-            - Recovery which has been used to handle this error.
-
-        - StepData
-            - Step depended information, e.g. the barcode read, the volume aspirated etc.
-
-            - Note: The meaning and data type for this information is described in the corresponding help of single step.
-
-        - LabwareName
-            - Labware name of used labware.
-
-        - LabwarePos
-            - Used labware position.
-        """
-
-        def raise_parse_error():
-            msg = 'Could not parse response ' + repr(return_str)
-            self.log(msg, 'error')
-            raise HamiltonReturnParseError(msg)
-
-        try:
-            block_data_str = str(json.loads(return_str)['step-return1'])
-        except KeyError:
-            raise_parse_error()
-        blocks = block_data_str.split('[')
-        try:
-            errflag = int(blocks.pop(0)) != 0
-        except ValueError:
-            raise_parse_error()
-
-        blocks_by_blocknum = {}
-        any_error_code = False
-        for block_str in blocks:
-            field_vals = block_str.split(',')
-            if len(field_vals) != len(BLOCK_FIELDS):
-                raise_parse_error()
-            try:
-                block_contents = {field:cast(val) for field, cast, val in zip(BLOCK_FIELDS, _block_field_types, field_vals)}
-            except ValueError:
-                raise_parse_error()
-            if block_contents[_block_mainerrfield] != 0:
-                any_error_code = True
-            blocks_by_blocknum[block_contents.pop(_block_numfield)] = block_contents
-        if blocks and errflag != any_error_code:
-            raise_parse_error()
-
-        return errflag, blocks_by_blocknum
 
     def set_log_dir(self, log_dir):
         self.logger = logging.getLogger(__name__)
