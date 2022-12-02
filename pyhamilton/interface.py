@@ -352,27 +352,38 @@ class HamiltonResponse:
 
     def _parse_return(self):
         return_field = "step-return1"
-        return_field_min_len = 6  # [01,00,00,0,,Cos_96_DW_1mL_0002,A1
+        field_names = [
+            "{numField:d}",
+            "{mainErrField:d}",
+            "{slaveErr:d}",
+            "{recoveryBtnId:d}",
+            "{stepData}",
+            "{labwareName:w}",
+            "{labwarePos}"
+        ]
         if return_field not in self.raw:
             return None
 
         response = json.loads(self.raw)[return_field]
         block_available = isinstance(response, str) and '[' in response and ',' in response
-        blocks = []
-        if block_available:
-            blocks = [r for r in response.split('[')[1:] if r.count(',') == return_field_min_len]
-        parsed = None
-        if blocks:
-            parsed = [
-                 parse(
-                    "{numField:d},{mainErrField:d},{slaveErr:d},{recoveryBtnId:d},{stepData},{labwareName:w},{labwarePos:w}",
-                    block.replace(",,", ", ,")) for block in blocks
-                ]
-        if parsed:
-            if all([p is None for p in parsed]):
-                return None
-            return [p.named for p in parsed if parsed]
-        return None
+        if not block_available:
+            return None
+
+        blocks = [r for r in response.split('[')[1:]]
+        if not blocks:
+            return None
+
+        parsed = [
+            parse(
+                ",".join(field_names[:block.count(',') + 1]),
+                ",".join([' ' if item == '' else item for item in block.split(',') ])) for block in blocks
+        ]
+        if not parsed:
+            return None
+
+        if all([p is None for p in parsed]):
+            return None
+        return [p.named for p in parsed if p]
 
     def digest(self, fields=None):
         self.status = self._compute_status()

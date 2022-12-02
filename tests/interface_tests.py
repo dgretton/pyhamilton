@@ -11,6 +11,7 @@ from pyhamilton.interface import (
     HardwareError,
     ImproperDispensationError,
     InvalidErrCodeError,
+    HamiltonSyntaxError
 )
 
 TEST_DATA_TYPE = namedtuple(
@@ -55,12 +56,12 @@ TEST_DATA = [
     ),
     # 4
     TEST_DATA_TYPE(
-        "Server response with command failed and bad return format",
+        "Server response with command succeeded with short return format",
         '{"command": "STAR-return", "step-name": "command-1", "step-return1": "1[0,1,2,4[5,6,7", "step-return2": "", "step-return3": "", "step-return4": "", "id": "1" }',
         None,
         None,
-        None,
-        HamiltonReturnParseError,
+        [{'numField': 0, 'mainErrField': 1, 'slaveErr': 2, 'recoveryBtnId': 4}, {'numField': 5, 'mainErrField': 6, 'slaveErr': 7}],
+        HamiltonSyntaxError,
     ),
     # 5
     TEST_DATA_TYPE(
@@ -77,25 +78,16 @@ TEST_DATA = [
         '{"command": "STAR-return", "step-name": "command-1", "step-return1": "0[0,1,2,4,[5,6,7", "step-return2": "", "step-return3": "", "step-return4": "", "id": "1" }',
         None,
         None,
-        None,
+        [{'numField': 0, 'mainErrField': 1, 'slaveErr': 2, 'recoveryBtnId': 4, 'stepData': ' '}, {'numField': 5, 'mainErrField': 6, 'slaveErr': 7}],
         HamiltonReturnParseError,
     ),
     # 7
     TEST_DATA_TYPE(
         "one string field is requested",
-        '{"command": "STAR-return", "step-name": "command-1", "step-return1": "0[0,1,2,4[5,6,7", "step-return2": "", "step-return3": "", "step-return4": "", "id": "1" }',
-        "step-return1",
-        ["0[0,1,2,4[5,6,7"],
-        None,
-        HamiltonReturnParseError,
-    ),
-    # 8
-    TEST_DATA_TYPE(
-        "one list field is requested",
         '{"command": "STAR-return", "step-name": "command-1", "step-return1": "0[0,1,2,4,A[5,6,7", "step-return2": "", "step-return3": "", "step-return4": "", "id": "1" }',
-        ["step-return1"],
+        "step-return1",
         ["0[0,1,2,4,A[5,6,7"],
-        None,
+        [{'numField': 0, 'mainErrField': 1, 'slaveErr': 2, 'recoveryBtnId': 4, 'stepData': 'A'}, {'numField': 5, 'mainErrField': 6, 'slaveErr': 7}],
         HamiltonReturnParseError,
     ),
     # 8
@@ -104,7 +96,7 @@ TEST_DATA = [
         '{"command": "STAR-return", "step-name": "command-1", "step-return1": "0[0,1,2,4[5,6,7", "step-return2": "", "step-return3": "", "step-return4": "", "id": "1" }',
         "step-return11",
         [],
-        None,
+        [{'numField': 0, 'mainErrField': 1, 'slaveErr': 2, 'recoveryBtnId': 4}, {'numField': 5, 'mainErrField': 6, 'slaveErr': 7}],
         HamiltonReturnParseError,
     ),
     # 9
@@ -113,7 +105,7 @@ TEST_DATA = [
         '{"command": "STAR-return", "step-name": "command-1", "step-return1": "0[0,1,2,4[5,6,7", "step-return2": 3, "step-return3": "", "step-return4": "", "id": "1" }',
         ["step-return1", "step-return2"],
         ["0[0,1,2,4[5,6,7", 3],
-        None,
+        [{'numField': 0, 'mainErrField': 1, 'slaveErr': 2, 'recoveryBtnId': 4}, {'numField': 5, 'mainErrField': 6, 'slaveErr': 7}],
         HamiltonReturnParseError,
     ),
     # 10
@@ -122,7 +114,7 @@ TEST_DATA = [
         '{"command": "STAR-return", "step-name": "command-1", "step-return1": "0[0,1,2,4[5,6,7", "step-return2": "100", "step-return3": "", "step-return4": "", "id": "1" }',
         ["step-return2", "step-return12"],
         ["100"],
-        None,
+        [{'numField': 0, 'mainErrField': 1, 'slaveErr': 2, 'recoveryBtnId': 4}, {'numField': 5, 'mainErrField': 6, 'slaveErr': 7}],
         HamiltonReturnParseError,
     ),
     # 11
@@ -130,8 +122,8 @@ TEST_DATA = [
         "result is made of one block",
         '{"command": "STAR-return", "step-name": "command-1", "step-return1": "0[01,00,00,0,,Cos_96_DW_1mL_0002,A1", "id": "1" }',
         None,
-        None,
-        None,
+        [],
+        [{'numField': 1, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': ' ', 'labwareName': 'Cos_96_DW_1mL_0002', 'labwarePos': 'A1'}],
         None,
     ),
     # 12
@@ -140,7 +132,11 @@ TEST_DATA = [
         '{"command": "STAR-return", "step-name": "command-1", "step-return1": "0[01,00,00,0,0.0,HT_L_0001,1[02,00,00,0,0.0,HT_L_0001,2[03,00,00,0,0.0,HT_L_0001,3", "id": "1" }',
         None,
         None,
-        None,
+        [
+            {'numField': 1, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': '0.0', 'labwareName': 'HT_L_0001', 'labwarePos': '1'},
+            {'numField': 2, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': '0.0', 'labwareName': 'HT_L_0001', 'labwarePos': '2'},
+            {'numField': 3, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': '0.0', 'labwareName': 'HT_L_0001', 'labwarePos': '3'},
+        ],
         None,
     ),
     # 13
@@ -197,6 +193,24 @@ TEST_DATA = [
         None,
         InvalidErrCodeError,
     ),
+    # 19
+    TEST_DATA_TYPE(
+        "fix initialize() parse error",
+        '{"command": "STAR-return", "step-name": "command-1", "step-return1": "0[01,00,00,0,,Waste,[02,00,00,0,,Waste,[03,00,00,0,,Waste,[04,00,00,0,,Waste,[05,00,00,0,,Waste,[06,00,00,0,,Waste,[07,00,00,0,,Waste,[08,00,00,0,,Waste,", "step-return2": "", "step-return3": "", "step-return4": "", "id": "0xcbe0dc479b0" }',
+        None,
+        None,
+        [
+            {'numField': 1, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': ' ', 'labwareName': 'Waste', 'labwarePos': ' '},
+            {'numField': 2, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': ' ', 'labwareName': 'Waste', 'labwarePos': ' '},
+            {'numField': 3, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': ' ', 'labwareName': 'Waste', 'labwarePos': ' '},
+            {'numField': 4, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': ' ', 'labwareName': 'Waste', 'labwarePos': ' '},
+            {'numField': 5, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': ' ', 'labwareName': 'Waste', 'labwarePos': ' '},
+            {'numField': 6, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': ' ', 'labwareName': 'Waste', 'labwarePos': ' '},
+            {'numField': 7, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': ' ', 'labwareName': 'Waste', 'labwarePos': ' '},
+            {'numField': 8, 'mainErrField': 0, 'slaveErr': 0, 'recoveryBtnId': 0, 'stepData': ' ', 'labwareName': 'Waste', 'labwarePos': ' '},
+        ],
+        None,
+    ),
 ]
 
 
@@ -235,7 +249,8 @@ class Test_HamiltonInterface:
             pytest.param(
                 TEST_DATA[4].data,
                 HamiltonResponse(
-                    status=HamiltonResponseStatus.FAILED, raw=TEST_DATA[4].data
+                    status=HamiltonResponseStatus.FAILED, raw=TEST_DATA[4].data,
+                    parsed_return=TEST_DATA[4].parsed_result
                 ),
                 id=TEST_DATA[4].id,
             ),
@@ -249,7 +264,8 @@ class Test_HamiltonInterface:
             pytest.param(
                 TEST_DATA[6].data,
                 HamiltonResponse(
-                    status=HamiltonResponseStatus.SUCCESS, raw=TEST_DATA[6].data
+                    status=HamiltonResponseStatus.SUCCESS, raw=TEST_DATA[6].data,
+                    parsed_return=TEST_DATA[6].parsed_result
                 ),
                 id=TEST_DATA[6].id,
             ),
@@ -275,6 +291,7 @@ class Test_HamiltonInterface:
                     status=HamiltonResponseStatus.SUCCESS,
                     return_data=TEST_DATA[7].return_data,
                     raw=TEST_DATA[7].data,
+                    parsed_return=TEST_DATA[7].parsed_result
                 ),
                 id=TEST_DATA[7].id,
             ),
@@ -285,6 +302,7 @@ class Test_HamiltonInterface:
                     status=HamiltonResponseStatus.SUCCESS,
                     return_data=TEST_DATA[8].return_data,
                     raw=TEST_DATA[8].data,
+                    parsed_return=TEST_DATA[8].parsed_result
                 ),
                 id=TEST_DATA[8].id,
             ),
@@ -293,7 +311,9 @@ class Test_HamiltonInterface:
                 TEST_DATA[9].fields,
                 HamiltonResponse(
                     status=HamiltonResponseStatus.SUCCESS,
+                    moduleID="3",
                     return_data=TEST_DATA[9].return_data,
+                    parsed_return=TEST_DATA[9].parsed_result,
                     raw=TEST_DATA[9].data,
                 ),
                 id=TEST_DATA[9].id,
@@ -303,8 +323,9 @@ class Test_HamiltonInterface:
                 TEST_DATA[10].fields,
                 HamiltonResponse(
                     status=HamiltonResponseStatus.SUCCESS,
-                    moduleID="3",
+                    moduleID="100",
                     return_data=TEST_DATA[10].return_data,
+                    parsed_return=TEST_DATA[10].parsed_result,
                     raw=TEST_DATA[10].data,
                 ),
                 id=TEST_DATA[10].id,
@@ -314,9 +335,9 @@ class Test_HamiltonInterface:
                 TEST_DATA[11].fields,
                 HamiltonResponse(
                     status=HamiltonResponseStatus.SUCCESS,
-                    moduleID="100",
                     return_data=TEST_DATA[11].return_data,
                     raw=TEST_DATA[11].data,
+                    parsed_return=TEST_DATA[11].parsed_result
                 ),
                 id=TEST_DATA[11].id,
             ),
@@ -341,17 +362,7 @@ class Test_HamiltonInterface:
                 TEST_DATA[12].data,
                 HamiltonResponse(
                     status=HamiltonResponseStatus.SUCCESS,
-                    parsed_return=[
-                        {
-                            "numField": 1,
-                            "mainErrField": 0,
-                            "slaveErr": 0,
-                            "recoveryBtnId": 0,
-                            "stepData": " ",
-                            "labwareName": "Cos_96_DW_1mL_0002",
-                            "labwarePos": "A1",
-                        }
-                    ],
+                    parsed_return=TEST_DATA[12].parsed_result,
                     raw=TEST_DATA[12].data,
                 ),
                 id=TEST_DATA[12].id,
@@ -359,39 +370,20 @@ class Test_HamiltonInterface:
             pytest.param(
                 TEST_DATA[13].data,
                 HamiltonResponse(
-                    status=HamiltonResponseStatus.SUCCESS,
-                    parsed_return=[
-                        {
-                            "numField": 1,
-                            "mainErrField": 0,
-                            "slaveErr": 0,
-                            "recoveryBtnId": 0,
-                            "stepData": "0.0",
-                            "labwareName": "HT_L_0001",
-                            "labwarePos": "1",
-                        },
-                        {
-                            "numField": 2,
-                            "mainErrField": 0,
-                            "slaveErr": 0,
-                            "recoveryBtnId": 0,
-                            "stepData": "0.0",
-                            "labwareName": "HT_L_0001",
-                            "labwarePos": "2",
-                        },
-                        {
-                            "numField": 3,
-                            "mainErrField": 0,
-                            "slaveErr": 0,
-                            "recoveryBtnId": 0,
-                            "stepData": "0.0",
-                            "labwareName": "HT_L_0001",
-                            "labwarePos": "3",
-                        },
-                    ],
+                    status=HamiltonResponseStatus.FAILED,
+                    parsed_return=TEST_DATA[13].parsed_result,
                     raw=TEST_DATA[13].data,
                 ),
                 id=TEST_DATA[13].id,
+            ),
+            pytest.param(
+                TEST_DATA[19].data,
+                HamiltonResponse(
+                    status=HamiltonResponseStatus.SUCCESS,
+                    parsed_return=TEST_DATA[19].parsed_result,
+                    raw=TEST_DATA[19].data,
+                ),
+                id=TEST_DATA[19].id,
             ),
         ],
     )
