@@ -3,6 +3,6 @@ parse
 pytest
 pytest-mock
 pythonnet --pre
-pywin32==300
+pywin32==301
 pyserial
 waiter
