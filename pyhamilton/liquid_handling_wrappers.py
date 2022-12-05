@@ -279,11 +279,12 @@ def add_stderr_logging(logger_name=None):
     sys.stderr = StderrLogger(logger.error)
     
 def normal_logging(ham_int, method_local_dir):
+    #logger = logging.getLogger(__name__)
     local_log_dir = os.path.join(method_local_dir, 'log')
     if not os.path.exists(local_log_dir):
         os.mkdir(local_log_dir)
     main_logfile = os.path.join(local_log_dir, 'main.log')
-    logging.basicConfig(filename=main_logfile, level=logging.DEBUG, format='[%(asctime)s] %(name)s %(levelname)s %(message)s')
+    logging.basicConfig(filename=main_logfile, level=logging.DEBUG, format='[%(asctime)s] %(name)s %(levelname)s %(message)s', force=True)
     #add_robot_level_log()
     add_stderr_logging()
     import __main__
