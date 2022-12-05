@@ -8,7 +8,7 @@ PACKAGE_PATH = abspath(dirname(__file__))
 LAY_BACKUP_DIR = join(PACKAGE_PATH, 'LAY-BACKUP')
 if not os.path.exists(LAY_BACKUP_DIR):
     os.mkdir(LAY_BACKUP_DIR)
-OEM_STAR_PATH = join(PACKAGE_PATH, 'STAR-OEM')
+OEM_STAR_PATH = join(PACKAGE_PATH, 'star-oem')
 if not (os.path.exists(OEM_STAR_PATH)
 		and os.path.exists(os.path.join(OEM_STAR_PATH, 'RunHSLExecutor.dll'))
 		and os.path.exists(os.path.join(OEM_STAR_PATH, 'HSLHttp.dll'))):
