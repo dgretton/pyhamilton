@@ -178,7 +178,8 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'transportMode':0, # (integer) 0=Plate only, 1=Lid only ,2=Plate with lid
         'collisionControl':0, # (integer) 0=Off, 1=On
         'retractDistance':0.0, # (float) retract distance [mm] (only used if 'movement type' is set to 'complex movement')
-        'liftUpHeight':20.0 # (float) lift-up distance [mm] (only used if 'movement type' is set to 'complex movement')
+        'liftUpHeight':20.0, # (float) lift-up distance [mm] (only used if 'movement type' is set to 'complex movement')
+        'labwareOrientation':1
     }),
     'iSwapMove':('ISWAP_MOVE',{
         'plateSequence':'',
