@@ -1,7 +1,6 @@
 import sys
 
-if 'win32' in sys.platform:
-    import win32gui, win32con
+
 
 import time, json, signal, os, requests, string, logging, subprocess
 from dataclasses import dataclass, field
@@ -505,25 +504,29 @@ class HamiltonInterface:
         if self.active:
             return
         self.log('starting a Hamilton interface')
-        if self.simulate:
-            sim_window_handle = None
-            try:
-                sim_window_handle = win32gui.FindWindow(None, 'Hamilton Run Control - ' + os.path.basename(OEM_HSL_PATH))
-            except win32gui.error:
-                pass
-            if sim_window_handle:
-                try:
-                    win32gui.SendMessage(sim_window_handle, win32con.WM_CLOSE, 0, 0)
-                    os.system('taskkill /f /im HxRun.exe')
-                except win32gui.error:
-                    self.stop()
-                    self.log_and_raise(OSError('Simulator already open'))
-            subprocess.Popen([OEM_RUN_EXE_PATH, OEM_HSL_PATH])
-            self.log('started the oem application for simulation')
-        else:
-            self.oem_process = Process(target=run_hamilton_process, args=())
-            self.oem_process.start()
-            self.log('started the oem process')
+        #if self.simulate:
+        #    sim_window_handle = None
+        #    if 'win32' in sys.platform:
+        #       import win32gui, win32con
+        #    try:
+        #        sim_window_handle = win32gui.FindWindow(None, 'Hamilton Run Control - ' + os.path.basename(OEM_HSL_PATH))
+        #    except win32gui.error:
+        #        pass
+        #    if sim_window_handle:
+        #        try:
+        #            win32gui.SendMessage(sim_window_handle, win32con.WM_CLOSE, 0, 0)
+        #            os.system('taskkill /f /im HxRun.exe')
+        #        except win32gui.error:
+        #            self.stop()
+        #            self.log_and_raise(OSError('Simulator already open'))
+        #    subprocess.Popen([OEM_RUN_EXE_PATH, OEM_HSL_PATH])
+        #    self.log('started the oem application for simulation')
+        #else:
+        #sim_window_handle = win32gui.FindWindow(None, 'Hamilton Run Control - ' + os.path.basename(OEM_HSL_PATH))
+        subprocess.Popen([OEM_RUN_EXE_PATH, OEM_HSL_PATH])
+        self.oem_process = Process(target=run_hamilton_process, args=())
+        self.oem_process.start()
+        self.log('started the oem process')
         self.server_thread = HamiltonInterface.HamiltonServerThread(self.address, self.port)
         self.server_thread.start()
         self.log('started the server thread')
