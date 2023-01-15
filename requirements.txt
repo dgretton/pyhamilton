@@ -1,6 +1,5 @@
 requests
 parse
 pythonnet --pre
-pywin32==300
 pyserial
 waiter
