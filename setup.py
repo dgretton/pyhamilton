@@ -15,7 +15,7 @@ setup(
     license='MIT',
     description='Python for Hamilton liquid handling robots',
     long_description='Forthcoming due to markdown incompatibility',
-    install_requires=['requests', 'pythonnet', 'pywin32', 'pyserial', 'parse', 'waiter'],
+    install_requires=['requests', 'pythonnet', 'pyserial', 'parse', 'waiter'],
     package_data={'pyhamilton': ['star-oem/*', 'star-oem/VENUS_Method/*', 'bin/*','library/*','project-template/*',
                                  'library/HSLInhecoTEC/*','library/HSLAppsLib/*','library/ASWStandard/*',
                                  'library/ASWStandard/ASWGlobal/*','library/ASWStandard/TraceLevel/*',
