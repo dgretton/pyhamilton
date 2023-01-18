@@ -64,7 +64,7 @@ def wash_empty_refill(ham, asynch=False, **more_options):
     return cmd
 
 
-def move_plate(ham, source_plate, target_plate, gripHeight, gripWidth, gripMode, openWidth, CmplxGetDict = None, CmplxPlaceDict = None, try_inversions=None):
+def move_plate(ham, source_plate, target_plate, CmplxGetDict = None, CmplxPlaceDict = None, **more_options):
     
     logging.info('move_plate: Moving plate ' + source_plate.layout_name() + ' to ' + target_plate.layout_name())
     src_pos = labware_pos_str(source_plate, 0)
@@ -91,14 +91,11 @@ def move_plate(ham, source_plate, target_plate, gripHeight, gripWidth, gripMode,
         cid = ham.send_command(ISWAP_GET, 
                                plateLabwarePositions=src_pos, 
                                inverseGrip=inv, 
-                               gripHeight=gripHeight, 
-                               gripWidth=gripWidth, 
-                               widthBefore=openWidth, 
-                               gripMode=gripMode,
                                movementType = getCmplxMvmnt,
                                retractDistance = getRetractDist,
                                liftUpHeight = getLiftUpHeight,
                                labwareOrientation = getOrientation,
+                               **more_options
                                )
         try:
             ham.wait_on_response(cid, raise_first_exception=True, timeout=120)

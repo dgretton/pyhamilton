@@ -504,7 +504,7 @@ class HamiltonInterface:
         if self.active:
             return
         self.log('starting a Hamilton interface')
-        if self.simulation:
+        if self.simulate:
             subprocess.Popen([OEM_RUN_EXE_PATH, OEM_HSL_PATH])
             self.log('started the oem application for simulation')
         else:
