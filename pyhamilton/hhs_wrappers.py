@@ -21,39 +21,46 @@ def hhs_begin_monitoring(ham, device_number, tolerance_range, interval, action):
 def hhs_create_star_device(ham, used_node, star_device='ML_STAR'):
     return_field = ['step-return2']
     cmd = ham.send_command(HHS_CREATE_STAR_DEVICE, starDevice = star_device, usedNode = used_node)
-    device_number = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)[0]
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)
+    device_number = response.return_data[0]
     return device_number
 
 
 def hhs_create_usb_device(ham, used_node):
     cmd = ham.send_command(HHS_CREATE_USB_DEVICE, usedNode = used_node)
-    device_number = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])[0]
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])
+    device_number = response.return_data[0]
     return device_number
 
 def hhs_end_monitoring(ham, device_number):
     cmd = ham.send_command(HHS_END_MONITORING, deviceNumber = device_number)
-    monitor_result = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])[0]
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])
+    monitor_result = response.return_data[0]
     return monitor_result
 
 def hhs_get_firmware_version(ham, device_number):
     cmd = ham.send_command(HHS_GET_FIRMWARE_VERSION, deviceNumber = device_number)
-    firmware_version = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])[0]
-    return firmware_version
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])
+    monitor_result = response.return_data[0]
+    return monitor_result
 
 def hhs_get_serial_num(ham, device_number):
     cmd = ham.send_command(HHS_GET_SERIAL_NUM, deviceNumber = device_number)
-    serial_number = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])[0]
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])
+    serial_number = response.return_data[0]
     return serial_number
 
 def hhs_get_shaker_param(ham, device_number):
     return_fields = ['step-return2', 'step-return3']
     cmd = ham.send_command(HHS_GET_SHAKER_PARAM, deviceNumber = device_number)
-    data = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_fields)
-    return data
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_fields)
+    params = response.return_data[0:1]
+    return params
 
 def hhs_get_shaker_speed(ham, device_number):
     cmd = ham.send_command(HHS_GET_SHAKER_SPEED, deviceNumber = device_number)
-    shaker_speed = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])[0]
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])
+    shaker_speed = response.return_data[0]
     return shaker_speed
 
 def hhs_get_temp_param(ham, device_number):
@@ -65,12 +72,14 @@ def hhs_get_temp_param(ham, device_number):
 
 def hhs_get_temp(ham, device_number):
     cmd = ham.send_command(HHS_GET_TEMP, deviceNumber = device_number)
-    temp = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])[0]
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])
+    temp = response.return_data[0]
     return temp
 
 def hhs_get_temp_state(ham, device_number):
     cmd = ham.send_command(HHS_GET_TEMP_STATE, deviceNumber = device_number)
-    temp_state = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])[0]
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])
+    temp_state = response.return_data[0]
     return temp_state
 
 
