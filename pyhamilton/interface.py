@@ -649,7 +649,8 @@ class HamiltonInterface:
 
         if server_response is None:
             self.log_and_raise(HamiltonTimeoutError('Timed out after ' + str(timeout) + ' sec while waiting for response id ' + str(id)))
-
+        
+        print(server_response)
         return self.parse_response(server_response, raise_first_exception, return_data)
 
     def parse_response(self, server_response:str, raise_first_exception:bool=False, return_data:"list|str"=None):

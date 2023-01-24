@@ -22,6 +22,7 @@ from .oemerr import *
 from .pH_wrappers import *
 from .liquid_handling_wrappers import *
 from .hhs_wrappers import *
+from .odtc_wrappers import *
 
 
 this_file_dir = os.path.dirname(os.path.abspath(__file__))

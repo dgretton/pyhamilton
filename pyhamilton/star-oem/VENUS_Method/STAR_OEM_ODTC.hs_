@@ -1,30 +1,30 @@
 
 // this ALWAYS GENERATED file contains the sub-method library header
-// Generated at 1/22/2023 9:25:15 PM
+// Generated at 1/24/2023 12:33:43 AM
 
 #pragma once
 #ifndef HSL_RUNTIME
 namespace STAR_OEM_ODTC {
 function _InitLibrary() { }
 function _ExitLibrary() { }
-function Abort( variable i_intDeviceID, variable i_strLockID, variable o_intSiLAReturnValue, variable o_strSiLAMessage ) void { }
-function CloseDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void { }
-function Connect( variable i_strLocalIP, variable i_strDeviceIP, variable i_strDevicePort, variable i_blnSimulationMode, variable & o_intDeviceID, variable & o_strMessage ) void { }
-function DownloadProtocol( variable i_intDeviceID, variable i_strLockID, variable i_strProtocolFile, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void { }
-function EvaluateError( variable i_intErrorCode, variable & o_strErrorMessage ) void { }
-function ExecuteMethod( variable i_intDeviceID, variable i_strLockID, variable i_strMethodName, variable i_intPriority, variable & o_intDuration, variable & o_intRequestID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void { }
-function GetStatus( variable i_intDeviceID, variable & o_strDeviceID, variable & o_strState, variable & o_blnLocked, variable & o_strPMSId, variable & o_strCurrentTime, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void { }
-function Initialize( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void { }
-function OpenDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void { }
-function ReadActualTemperature( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_arrfltActualTemperatures[], variable & o_arrstrActualTemperatureNames[], variable & o_strTime ) void { }
-function Reset( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID ) void { }
-function StopMethod( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID ) void { }
-function Terminate( variable i_intDeviceID, variable & o_strSiLAMessage ) void { }
-function WaitForEndOfExecuteMethod( variable i_intDeviceID, variable i_intTimeOut, variable i_intRequestID, variable & o_intSilLAReturnValue, variable & o_strSiLAMessage ) void { }
+function Abort( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void { }
+function CloseDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void { }
+function Connect( variable i_strLocalIP, variable i_strDeviceIP, variable i_strDevicePort, variable i_blnSimulationMode, variable & o_intDeviceID, variable & o_strMessage, variable & o_stepReturn ) void { }
+function DownloadProtocol( variable i_intDeviceID, variable i_strLockID, variable i_strProtocolFile, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void { }
+function EvaluateError( variable i_intErrorCode, variable & o_strErrorMessage, variable & o_stepReturn ) void { }
+function ExecuteMethod( variable i_intDeviceID, variable i_strLockID, variable i_strMethodName, variable i_intPriority, variable & o_intDuration, variable & o_intRequestID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void { }
+function GetStatus( variable i_intDeviceID, variable & o_strDeviceID, variable & o_strState, variable & o_blnLocked, variable & o_strPMSId, variable & o_strCurrentTime, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void { }
+function Initialize( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void { }
+function OpenDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void { }
+function ReadActualTemperature( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_arrfltActualTemperatures[], variable & o_arrstrActualTemperatureNames[], variable & o_strTime, variable & o_stepReturn ) void { }
+function Reset( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID, variable & o_stepReturn ) void { }
+function StopMethod( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID, variable & o_stepReturn ) void { }
+function Terminate( variable i_intDeviceID, variable & o_strSiLAMessage, variable & o_stepReturn ) void { }
+function WaitForEndOfExecuteMethod( variable i_intDeviceID, variable i_intTimeOut, variable i_intRequestID, variable & o_intSilLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void { }
 } // namespace
 #endif
 
 #ifdef HSL_RUNTIME
 #include __filename__ ".hsi"
 #endif
-// $$author=stefa$$valid=0$$time=2023-01-22 21:25$$checksum=2a933a2b$$length=082$$
+// $$author=stefa$$valid=0$$time=2023-01-24 00:33$$checksum=c33564b5$$length=082$$

@@ -489,7 +489,68 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     }),
     'HHS_WaitForTempCtrl':('HHS_WAIT_FOR_TEMP_CTRL', {
         'deviceNumber': '' #(int)
-    })
+    }),
+    'ODTC_Abort':('ODTC_ABORT', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (integer); 
+    }),
+    'ODTC_Connect':('ODTC_CONNECT', {
+        'LocalIP':'', # (string)
+        'DeviceIP':'', # (string)
+        'DevicePort':'', # (string)
+        'SimulationMode':'', # (boolean)
+        
+    }),
+    'ODTC_Initialize':('ODTC_INIT', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (string); 
+    }),
+    'ODTC_CloseDoor':('ODTC_CLOSE', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (string); 
+    }),
+    'ODTC_DownloadProtocol':('ODTC_PRTCL', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (string); 
+    }),
+    'ODTC_EvaluateError':('ODTC_EVAL', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (string); 
+    }),
+    'ODTC_ExecuteMethod':('ODTC_EXCT', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (string);
+        'LockID':'', # (string); 
+        'MethodName':'', # (string)
+        'Priority':'', # (integer); 
+    }),
+    'ODTC_GetStatus':('ODTC_STATUS', {
+        'DeviceID':'', # (integer)
+    }),
+    'ODTC_OpenDoor':('ODTC_OPEN', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (string);
+    }),
+    'ODTC_ReadActualTemperature':('ODTC_READ', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (string); 
+    }),
+    'ODTC_Reset':('ODTC_RESET', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (string); 
+        'SimulationMode': '', # (boolean)
+        'TimeToWait': '', # 0=False, 1=True
+        'strDeviceID': '', # (string)
+        'PMSID': '', # (string)
+    }),
+    'ODTC_StopMethod':('ODTC_STOP', {
+        'DeviceID':'', # (integer)
+        'LockID':'', # (string); 
+    }),
+    'ODTC_Terminate':('ODTC_TERM', {
+        'DeviceID':'', # (integer)
+    }),
+
 }
 
 

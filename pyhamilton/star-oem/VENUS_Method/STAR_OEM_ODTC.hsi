@@ -14,20 +14,20 @@ namespace STAR_OEM_ODTC {
 // }} ""
 /* {{ 2 "VariableInsertLine" "" */ // }} ""
 // {{{ 2 "SubmethodForwardDeclaration" ""
-function Abort( variable i_intDeviceID, variable i_strLockID, variable o_intSiLAReturnValue, variable o_strSiLAMessage ) void ;
-function CloseDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void ;
-function Connect( variable i_strLocalIP, variable i_strDeviceIP, variable i_strDevicePort, variable i_blnSimulationMode, variable & o_intDeviceID, variable & o_strMessage ) void ;
-function DownloadProtocol( variable i_intDeviceID, variable i_strLockID, variable i_strProtocolFile, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void ;
-function EvaluateError( variable i_intErrorCode, variable & o_strErrorMessage ) void ;
-function ExecuteMethod( variable i_intDeviceID, variable i_strLockID, variable i_strMethodName, variable i_intPriority, variable & o_intDuration, variable & o_intRequestID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void ;
-function GetStatus( variable i_intDeviceID, variable & o_strDeviceID, variable & o_strState, variable & o_blnLocked, variable & o_strPMSId, variable & o_strCurrentTime, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void ;
-function Initialize( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void ;
-function OpenDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void ;
-function ReadActualTemperature( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_arrfltActualTemperatures[], variable & o_arrstrActualTemperatureNames[], variable & o_strTime ) void ;
-function Reset( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID ) void ;
-function StopMethod( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID ) void ;
-function Terminate( variable i_intDeviceID, variable & o_strSiLAMessage ) void ;
-function WaitForEndOfExecuteMethod( variable i_intDeviceID, variable i_intTimeOut, variable i_intRequestID, variable & o_intSilLAReturnValue, variable & o_strSiLAMessage ) void ;
+function Abort( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void ;
+function CloseDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void ;
+function Connect( variable i_strLocalIP, variable i_strDeviceIP, variable i_strDevicePort, variable i_blnSimulationMode, variable & o_intDeviceID, variable & o_strMessage, variable & o_stepReturn ) void ;
+function DownloadProtocol( variable i_intDeviceID, variable i_strLockID, variable i_strProtocolFile, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void ;
+function EvaluateError( variable i_intErrorCode, variable & o_strErrorMessage, variable & o_stepReturn ) void ;
+function ExecuteMethod( variable i_intDeviceID, variable i_strLockID, variable i_strMethodName, variable i_intPriority, variable & o_intDuration, variable & o_intRequestID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void ;
+function GetStatus( variable i_intDeviceID, variable & o_strDeviceID, variable & o_strState, variable & o_blnLocked, variable & o_strPMSId, variable & o_strCurrentTime, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void ;
+function Initialize( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void ;
+function OpenDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void ;
+function ReadActualTemperature( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_arrfltActualTemperatures[], variable & o_arrstrActualTemperatureNames[], variable & o_strTime, variable & o_stepReturn ) void ;
+function Reset( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID, variable & o_stepReturn ) void ;
+function StopMethod( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID, variable & o_stepReturn ) void ;
+function Terminate( variable i_intDeviceID, variable & o_strSiLAMessage, variable & o_stepReturn ) void ;
+function WaitForEndOfExecuteMethod( variable i_intDeviceID, variable i_intTimeOut, variable i_intRequestID, variable & o_intSilLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void ;
 // }} ""
 function _InitLibrary() {
 // {{ 2 "AutoInitBlock" ""
@@ -38,12 +38,12 @@ function _ExitLibrary() {
 // }} ""
 }
 // {{{ 5 "Abort" "Begin"
-function Abort( variable i_intDeviceID, variable i_strLockID, variable o_intSiLAReturnValue, variable o_strSiLAMessage ) void {
+function Abort( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
-private variable i_intTraceLevel;
-private variable i_intModuleID;
 // {{ 5 "Abort" "InitLocals"
+o_intSiLAReturnValue = 0;
+o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 1 1 0 "792db77a_e0a2_43ed_a641c8791760ea31" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_F9D5FD5CE0B048aa90976C5F1B9875B6 ;
@@ -68,16 +68,12 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "Connect" "Begin"
-function Connect( variable i_strLocalIP, variable i_strDeviceIP, variable i_strDevicePort, variable i_blnSimulationMode, variable & o_intDeviceID, variable & o_strMessage ) void {
+function Connect( variable i_strLocalIP, variable i_strDeviceIP, variable i_strDevicePort, variable i_blnSimulationMode, variable & o_intDeviceID, variable & o_strMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable i_intDeviceID;
-private variable o_strSiLAMessage;
-private variable o_stepReturn;
-private variable o_intSiLAReturnValue;
-private variable i_strLockID;
 // {{ 5 "Connect" "InitLocals"
 o_intDeviceID = 0;
 o_strMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 13 1 0 "2ce08ac5_7881_4789_b2fbe03a0e93e330" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_23FBC91941AF45aa97AE3BFF1A12A747 ;
@@ -102,19 +98,12 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "Initialize" "Begin"
-function Initialize( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void {
+function Initialize( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_intDeviceID;
-private variable i_strDevicePort;
-private variable i_strLocalIP;
-private variable o_strMessage;
-private variable o_stepReturn;
-private variable i_blnSimulationMode;
-private variable i_strDeviceIP;
-private variable i_strProtocolFile;
 // {{ 5 "Initialize" "InitLocals"
 o_intSiLAReturnValue = 0;
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 43 1 0 "a536d7eb_47fa_4de4_a1bd0b08c9399ad3" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_AD2FCC1AF1F2494cBE28A6971B5704FF ;
@@ -139,12 +128,12 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "CloseDoor" "Begin"
-function CloseDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void {
+function CloseDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "CloseDoor" "InitLocals"
 o_intSiLAReturnValue = 0;
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 7 1 0 "ccbbdc64_5f24_4d88_8705aa00ec1f2f5d" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_2A3B0A0084BA4a07BE5BB42184B59B59 ;
@@ -169,12 +158,12 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "DownloadProtocol" "Begin"
-function DownloadProtocol( variable i_intDeviceID, variable i_strLockID, variable i_strProtocolFile, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void {
+function DownloadProtocol( variable i_intDeviceID, variable i_strLockID, variable i_strProtocolFile, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "DownloadProtocol" "InitLocals"
 o_intSiLAReturnValue = 0;
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 19 1 0 "6f3bbe5d_d435_4cae_bfeacbab2ca334b7" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_FFA51897300143aa9AA62FE43AA5F1BC ;
@@ -199,11 +188,11 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "EvaluateError" "Begin"
-function EvaluateError( variable i_intErrorCode, variable & o_strErrorMessage ) void {
+function EvaluateError( variable i_intErrorCode, variable & o_strErrorMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "EvaluateError" "InitLocals"
 o_strErrorMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 25 1 0 "0fd8e6e6_20df_4c32_9f0b09cae9fb0b4c" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_715B8D695925477083289A562024E954 ;
@@ -228,14 +217,14 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "ExecuteMethod" "Begin"
-function ExecuteMethod( variable i_intDeviceID, variable i_strLockID, variable i_strMethodName, variable i_intPriority, variable & o_intDuration, variable & o_intRequestID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void {
+function ExecuteMethod( variable i_intDeviceID, variable i_strLockID, variable i_strMethodName, variable i_intPriority, variable & o_intDuration, variable & o_intRequestID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "ExecuteMethod" "InitLocals"
 o_intDuration = 0;
 o_intRequestID = 0;
 o_intSiLAReturnValue = 0;
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 31 1 0 "0567c84c_492b_4576_8489198190403e7f" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_BDDACCD6036E42fbBA416D02B81DF4AF ;
@@ -260,9 +249,8 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "GetStatus" "Begin"
-function GetStatus( variable i_intDeviceID, variable & o_strDeviceID, variable & o_strState, variable & o_blnLocked, variable & o_strPMSId, variable & o_strCurrentTime, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void {
+function GetStatus( variable i_intDeviceID, variable & o_strDeviceID, variable & o_strState, variable & o_blnLocked, variable & o_strPMSId, variable & o_strCurrentTime, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "GetStatus" "InitLocals"
 o_strDeviceID = 0;
 o_strState = 0;
@@ -271,6 +259,7 @@ o_strPMSId = 0;
 o_strCurrentTime = 0;
 o_intSiLAReturnValue = 0;
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 37 1 0 "5a4a9e28_0920_48d3_9b5e6118b2897902" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_A6252706DB6E47f1A1C8F059DB2074DE ;
@@ -295,12 +284,12 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "OpenDoor" "Begin"
-function OpenDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage ) void {
+function OpenDoor( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "OpenDoor" "InitLocals"
 o_intSiLAReturnValue = 0;
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 49 1 0 "72dfe05f_6413_49c3_92612d742857c02b" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_9FB694BC0C5C40ccB5BE71778E5D54C5 ;
@@ -325,15 +314,15 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "ReadActualTemperature" "Begin"
-function ReadActualTemperature( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_arrfltActualTemperatures[], variable & o_arrstrActualTemperatureNames[], variable & o_strTime ) void {
+function ReadActualTemperature( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable & o_arrfltActualTemperatures[], variable & o_arrstrActualTemperatureNames[], variable & o_strTime, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "ReadActualTemperature" "InitLocals"
 o_intSiLAReturnValue = 0;
 o_strSiLAMessage = 0;
 o_arrfltActualTemperatures.SetSize( 0);
 o_arrstrActualTemperatureNames.SetSize( 0);
 o_strTime = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 55 1 0 "a88c2dee_c5a5_4c09_83245ae59dc0256f" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_AD52608801714a2fBA7716430DEC1F40 ;
@@ -358,12 +347,12 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "Reset" "Begin"
-function Reset( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID ) void {
+function Reset( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "Reset" "InitLocals"
 o_intSiLAReturnValue = 0;
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 61 1 0 "92ba2c66_baeb_4ae6_8f5e51aedd9f4640" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_88AB86F9A69A486386F4EDC51F4349A7 ;
@@ -388,12 +377,12 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "StopMethod" "Begin"
-function StopMethod( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID ) void {
+function StopMethod( variable i_intDeviceID, variable i_strLockID, variable & o_intSiLAReturnValue, variable & o_strSiLAMessage, variable i_blnSimulateOnDeviceBase, variable i_intTimeToWait, variable i_strDeviceId, variable i_strPMSID, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "StopMethod" "InitLocals"
 o_intSiLAReturnValue = 0;
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 67 1 0 "f31f04dd_6589_4f7f_8221bbc6fd05839c" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_1DC28FD6D1624beaB4CF88AA0BA02FB6 ;
@@ -418,11 +407,11 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "Terminate" "Begin"
-function Terminate( variable i_intDeviceID, variable & o_strSiLAMessage ) void {
+function Terminate( variable i_intDeviceID, variable & o_strSiLAMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "Terminate" "InitLocals"
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 73 1 0 "87d1861b_2500_423c_ac9f4cadcad50c04" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_E7AA714265774e9fB42460A25D0EB8FE ;
@@ -447,12 +436,12 @@ o_stepReturn = ErrGetDataAt(3);
 }
 // }} ""
 // {{{ 5 "WaitForEndOfExecuteMethod" "Begin"
-function WaitForEndOfExecuteMethod( variable i_intDeviceID, variable i_intTimeOut, variable i_intRequestID, variable & o_intSilLAReturnValue, variable & o_strSiLAMessage ) void {
+function WaitForEndOfExecuteMethod( variable i_intDeviceID, variable i_intTimeOut, variable i_intRequestID, variable & o_intSilLAReturnValue, variable & o_strSiLAMessage, variable & o_stepReturn ) void {
 // }} ""
-private variable o_stepReturn;
 // {{ 5 "WaitForEndOfExecuteMethod" "InitLocals"
 o_intSilLAReturnValue = 0;
 o_strSiLAMessage = 0;
+o_stepReturn = 0;
 // }} ""
 // {{ 79 1 0 "5c0f134b_aaf9_41ae_a1ba66f3035a7416" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 onerror goto errLabel_074C9EA54DAD4530AA6998C876739917 ;
@@ -480,4 +469,4 @@ o_stepReturn = ErrGetDataAt(3);
 // {{{ 2 "LibraryNamespace" "End"
 } // library namespace
 // }} ""
-// $$author=stefa$$valid=0$$time=2023-01-22 21:25$$checksum=a9811dd0$$length=084$$
+// $$author=stefa$$valid=0$$time=2023-01-24 00:33$$checksum=77b298d1$$length=084$$
