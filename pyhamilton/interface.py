@@ -394,7 +394,7 @@ class HamiltonResponse:
         isSuccessStatus = self.status == HamiltonResponseStatus.SUCCESS and '[' not in self.raw
         if isSuccessStatus:
             return
-
+        
         isHamiltonStepError = HamiltonResponseStatus.FAILED and '[' not in self.raw
         if isHamiltonStepError:
             raise HamiltonStepError('Hamilton step did not execute correctly; no error code given. ( response: ' + self.raw + ' )')
@@ -650,7 +650,6 @@ class HamiltonInterface:
         if server_response is None:
             self.log_and_raise(HamiltonTimeoutError('Timed out after ' + str(timeout) + ' sec while waiting for response id ' + str(id)))
         
-        print(server_response)
         return self.parse_response(server_response, raise_first_exception, return_data)
 
     def parse_response(self, server_response:str, raise_first_exception:bool=False, return_data:"list|str"=None):
