@@ -512,6 +512,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     'ODTC_DownloadProtocol':('ODTC_PRTCL', {
         'DeviceID':'', # (integer)
         'LockID':'', # (string); 
+        'ProtocolFile':'',
     }),
     'ODTC_EvaluateError':('ODTC_EVAL', {
         'DeviceID':'', # (integer)
