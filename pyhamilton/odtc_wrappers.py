@@ -91,10 +91,14 @@ def odtc_open_door(ham, device_id, lock_id = ''):
     return result
 
 def odtc_read_actual_temperature(ham, device_id, lock_id = ''):
-    return_field = ['step-return2']
+    return_fields = ['step-return2', 'step-return3']
     cmd = ham.send_command(ODTC_READ, DeviceID=device_id, LockID=lock_id)
-    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)
-    result = response.return_data[0]
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_fields)
+    if ham.simulate:
+        return ['Simulation_mode_placeholder']*len(return_fields)
+    else:
+        result = response.return_data
+        return result
     return result
 
 def odtc_reset(ham, device_id, simulation_mode, timeout, str_device_id = '', pms_id = '', lock_id = ''):
