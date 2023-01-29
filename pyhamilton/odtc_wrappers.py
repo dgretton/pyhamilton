@@ -71,12 +71,17 @@ def odtc_execute_protocol(ham, device_id, method_name, priority, lock_id = ''):
     return result
 
 def odtc_get_status(ham, device_id):
+
     return_fields = ['step-return2', 'step-return3', 'step-return4', 'step-return5',
                      'step-return6', 'step-return7', 'step-return8']
     cmd = ham.send_command(ODTC_STATUS, DeviceID=device_id)
     response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_fields)
-    result = response.return_data[0]
-    return result
+    
+    if ham.simulate:
+        return ['Simulation_mode_placeholder']*len(return_fields)
+    else:
+        result = response.return_data
+        return result
 
 def odtc_open_door(ham, device_id, lock_id = ''):
     return_field = ['step-return2']
