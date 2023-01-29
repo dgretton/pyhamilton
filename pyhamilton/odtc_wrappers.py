@@ -99,7 +99,6 @@ def odtc_read_actual_temperature(ham, device_id, lock_id = ''):
     else:
         result = response.return_data
         return result
-    return result
 
 def odtc_reset(ham, device_id, simulation_mode, timeout, str_device_id = '', pms_id = '', lock_id = ''):
     return_field = ['step-return2']
