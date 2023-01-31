@@ -1,0 +1,17 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 1/30/2023 1:45:02 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace STAR_OEM_TOOLKIT_MPE {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function Sub1(  ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=stefa$$valid=0$$time=2023-01-30 13:45$$checksum=666585ec$$length=082$$

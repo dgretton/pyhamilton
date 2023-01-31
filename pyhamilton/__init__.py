@@ -23,12 +23,15 @@ from .pH_wrappers import *
 from .liquid_handling_wrappers import *
 from .hhs_wrappers import *
 from .odtc_wrappers import *
+from .centrifuge_wrappers import *
 
 
 this_file_dir = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_DIR = os.path.abspath(os.path.join(this_file_dir))
 LIBRARY_DIR = os.path.join(PACKAGE_DIR, 'library')
 TEMPLATE_DIR = os.path.join(PACKAGE_DIR, 'project-template')
+EXE_DIR = os.path.join(PACKAGE_DIR, 'bin')
+
 exe_http = os.path.join(PACKAGE_DIR, 'bin', 'Hamilton HSLHttp Library Installer Version 2.7.exe')
 exe_json = os.path.join(PACKAGE_DIR, 'bin', 'HSLJson Library v1.6 Installer.exe')
 exe_pH = os.path.join(PACKAGE_DIR, 'bin', 'Hamilton pH Module v2.2.exe')
@@ -56,9 +59,9 @@ def recursive_copy(source_dir, target_dir):
 
 def autoconfig():
     print("Automatically configuring your PyHamilton installation")
-    os.startfile(exe_http)
-    os.startfile(exe_json)
-    os.startfile(exe_pH)
+    for filename in os.listdir(EXE_DIR):
+        file_path = os.path.join(EXE_DIR, filename)
+        os.startfile(file_path)
     
     hamilton_lib_dir = os.path.abspath('C:/Program Files (x86)/HAMILTON/Library')
     print("Copying files to Hamilton library")

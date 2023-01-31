@@ -10,23 +10,18 @@ from threading import Thread
 
 from .interface import HamiltonInterface
 
-from .interface import (CENT_INIT, CENT_GET_STATUS, CENT_CENTRIFUGE)
+from .interface import (CENT_INIT, CENT_STATUS, CENT_CENT)
 
 
-def initialize_centrifuge(ham, label, node_name, simulate, always_init):
+def centrifuge_initialize(ham, label, node_name, simulate, always_init):
     cmd = ham.send_command(CENT_INIT, Label = label, NodeName = node_name,
                            SimulationMode = simulate, AlwaysInitialize = always_init)
     ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)
 
-def centrifuge_get_drive_status(ham, label):
-    return_fields = ['step-return2', 'step-return3', 'step-return4']
-    cmd = ham.send_command(CENT_GET_STATUS, Label = label)
-    outputs = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300, return_data = return_fields)
-    return outputs
 
 def centrifuge_get_drive_status(ham, label):
     return_fields = ['step-return2', 'step-return3', 'step-return4']
-    cmd = ham.send_command(CENT_GET_STATUS, Label = label)
+    cmd = ham.send_command(CENT_STATUS, Label = label)
     outputs = ham.wait_on_response(cmd, raise_first_exception=True, timeout=300, return_data = return_fields)
     return outputs
 
@@ -52,9 +47,9 @@ def centrifuge_set_run(ham, label, array_speed, array_acceleration,
     array_speed = ','.join(map(str, array_speed))
 
     
-    cmd = ham.send_command(CENT_CENTRIFUGE, Label = label, ArraySpeed = array_speed, 
+    cmd = ham.send_command(CENT_CENT, Label = label, ArraySpeed = array_speed, 
                            ArrayAcceleration = array_acceleration, ArrayDuration = array_duration,
-                           Deceleration = deceleration, CloseCover = close_cover, 
+                           Deceleration = deceleration, CloseCoverAtEnd = close_cover, 
                            Direction = direction, PresentPosition = present_position)
     
     ham.wait_on_response(cmd, raise_first_exception=True, timeout=300)

@@ -551,6 +551,46 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     'ODTC_Terminate':('ODTC_TERM', {
         'DeviceID':'', # (integer)
     }),
+    'Centrifuge_Initialize':('CENT_INIT', {
+        'Label':'', # (str)
+        'NodeName':'', # (str)
+        'SimulationMode':'', # (bln)
+        'AlwaysInitialize':'', # (bln)
+
+    }),
+    'Centrifuge_Centrifuge':('CENT_CENT', {
+        'Label':'', # (str)
+        'CloseCoverAtEnd':'', # (bln)
+        'PresentPosition':'', # (int)
+        'Direction':'', # (int)
+        'ArraySpeed':'', # (str)
+        'ArrayDuration':'', # (str)
+        'ArrayAcceleration':'', # (str)
+        'Deceleration':'', # (int)
+    }),
+    'Centrifuge_Open':('CENT_OPEN', {
+        'Label':'', # (str)
+    }),
+    'Centrifuge_Close':('CENT_CLOSE', {
+        'Label':'', # (str)
+    }),
+    'Centrifuge_Stop':('CENT_STOP', {
+        'Label':'', # (str)
+        'Deceleration':'', # (int)
+    }),
+    'Centrifuge_Terminate':('CENT_TERM', {
+        'Label':'', # (str)
+    }),
+    'Centrifuge_Start':('CENT_START', {
+        'Label':'', # (str)
+        'Direction':'', # (int)
+        'Speed':'', # (int)
+        'Deceleration':'', # (int)
+        'MaxRunTime':'', # (int)
+    }),
+    'Centrifuge_GetStatus':('CENT_STATUS', {
+        'Label':'', # (str)
+    }),
 
 }
 
