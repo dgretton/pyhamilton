@@ -17,10 +17,10 @@ from .interface import (ODTC_ABORT, ODTC_CONNECT, ODTC_INIT, ODTC_CLOSE,
 std_timeout = 5
 
 
-def odtc_abort(odtc, device_id, lock_id):
+def odtc_abort(ham, device_id, lock_id):
     return_field = ['step-return2']
-    cmd = odtc.send_command(ODTC_ABORT, DeviceID=device_id, LockID=lock_id)
-    response = odtc.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)
+    cmd = ham.send_command(ODTC_ABORT, DeviceID=device_id, LockID=lock_id)
+    response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)
     result = response.return_data[0]
     return result
 

@@ -480,10 +480,11 @@ class HamiltonInterface:
         def has_exited(self):
             return self.exited
 
-    def __init__(self, address=None, port=None, simulate=False):
+    def __init__(self, address=None, port=None, simulate=False, debug=False):
         self.address = HamiltonInterface.default_address if address is None else address
         self.port = HamiltonInterface.default_port if port is None else port
         self.simulate = simulate
+        self.debug = debug
         self.server_thread = None
         self.oem_process = None
         self.active = False
@@ -646,9 +647,12 @@ class HamiltonInterface:
             server_response = self.server_thread.server_handler_class.pop_response(id)
             if server_response is not None:
                 break
-
+            
         if server_response is None:
             self.log_and_raise(HamiltonTimeoutError('Timed out after ' + str(timeout) + ' sec while waiting for response id ' + str(id)))
+        
+        if self.debug:
+            print(server_response)
         
         return self.parse_response(server_response, raise_first_exception, return_data)
 

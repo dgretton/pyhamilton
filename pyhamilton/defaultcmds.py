@@ -591,6 +591,192 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     'Centrifuge_GetStatus':('CENT_STATUS', {
         'Label':'', # (str)
     }),
+    'HiG_Connect':('HIG_CONNECT', {
+        'DeviceID':'', # (str)
+        'AdapterDeviceID':'', # (str)
+        'SimulationMode':'', # (bln)
+    }),
+    'HiG_Disconnect':('HIG_DISCONNECT', {
+    }),
+    'HiG_Home':('HIG_HOME', {
+    }),
+    'HiG_Spin':('HIG_SPIN', {
+        'RotationalGs':'', # (flt)
+        'AccelPercent':'', # (flt)
+        'DecelPercent':'', # (flt)
+        'TimeSeconds':'', # (flt)
+    }),
+    'HiG_SpinAndWait':('HIG_SPINWAIT', {
+        'RotationalGs':'', # (flt)
+        'AccelPercent':'', # (flt)
+        'DecelPercent':'', # (flt)
+        'TimeSeconds':'', # (flt)
+    }),
+    'HiG_OpenShield':('HIG_OPEN', {
+        'BucketIndex':'', # (int)
+    }),
+    'HiG_CloseShield':('HIG_CLOSE', {
+    }),
+    'HiG_IsSpinning':('HIG_SPINNING', {
+    }),
+    'HiG_AbortSpin':('HIG_ABORT', {
+    }),
+    'MPE2_ConnectIP':('MPE2_IP', {
+        'InstrumentName':'', # (str)
+        'PortNumber':'', # (str)
+        'SimulationMode':'', # (bln)
+        'Options':'', # (int)
+    }),
+    'MPE2_ConnectCOM':('MPE2_COM', {
+        'ComPort':'', # (str)
+        'BaudRate':'', # (str)
+        'SimulationMode':'', # (bln)
+        'Options':'', # (int)
+    }),
+    'MPE2_ClampFilterPlate':('MPE2_CLAMP', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_CollectionPlatePlaced':('MPE2_COL_PLACED', {
+        'DeviceID':'', # (int)
+        'CollectionPlateHeight':'', # (flt)
+        'OffsetFromNozzles':'', # (flt)
+
+    }),
+    'MPE2_CollectionPlateRemoved':('MPE2_COL_REMOVED', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_Disconnect':('MPE2_DISCONNECT', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_Initialize':('MPE2_INIT', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_InitializeWithParams':('MPE2_INIT_PARAMS', {
+        'DeviceID':'', # (int)
+        'Smart':'', # (bln)
+        'WasteContainerID':'', # (int)
+        'VacuumRunTime':'', # (int)
+        'DisableVacuumCheck':'', # (bln)
+    }),
+    'MPE2_FilterPlatePlaced':('MPE2_FIL_PLACED', {
+        'DeviceID':'', # (int)
+        'FilterHeight':'', # (flt)
+        'NozzleHeight':'', # (flt)
+
+    }),
+    'MPE2_FilterPlateRemoved':('MPE2_FIL_REMOVED', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_ProcessFilterToCollectionPlate':('MPE2_FIL_TO_COL', {
+        'DeviceID':'', # (int)
+        'ControlPoints':'', # (str)
+        'ReturnPlateToIntegrationArea':'', # (bln)
+    }),
+    'MPE2_ProcessFilterToWasteContainer':('MPE2_FIL_TO_WASTE', {
+        'DeviceID':'', # (int)
+        'ControlPoints':'', # (str)
+        'ReturnPlateToIntegrationArea':'', # (bln)
+        'WasteContainerID':'', # (int)
+        'DisableVacuumCheck':'', # (bln)
+    }),
+    'MPE2_RetrieveFilterPlate':('MPE2_RETRIEVE_FIL', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_StartMPEVacuum':('MPE2_START_VAC', {
+        'DeviceID':'', # (int)
+        'WasteContainerID':'', # (int)
+        'DisableVacuumCheck':'', # (bln)
+    }),
+    'MPE2_StopVacuum':('MPE2_STOP_VAC', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_GetVacuumStatus':('MPE2_GET_VAC', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_GetPressureReadings':('MPE2_GET_PRESS', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_Dispense':('MPE2_DISPENSE', {
+        'DeviceID':'', # (int)
+        'SourceID':'', # (int)
+        'WellVolume':'', # (int)
+        'FlowRateAspirate':'', # (int)
+        'FlowRateDispense':'', # (int)
+        'NeedleOffset':'', # (int)
+    }),
+    'MPE2_Prime':('MPE2_PRIME', {
+        'DeviceID':'', # (int)
+        'SourceID':'', # (int)
+        'WellVolume':'', # (flt)
+        'FlowRate':'', # (flt)
+        'WasteContainerID':'', # (int)
+    }),
+    'MPE2_Flush':('MPE2_FLUSH', {
+        'DeviceID':'', # (int)
+        'WellVolume':'', # (flt)
+        'FlowRate':'', # (flt)
+        'WasteContainerID':'', # (int)
+    }),
+    'MPE2_Evaporate':('MPE2_EVAP', {
+        'DeviceID':'', # (int)
+        'PlateHeight':'', # (flt)
+        'NeedleOffset':'', # (flt)
+        'WellDepth':'', # (flt)
+        'EvaporatorTravelDistance':'', # (flt)
+        'EvaporateTime':'', # (flt)
+    }),
+    'MPE2_EvaporateWithRate':('MPE2_EVAP_RATE', {
+        'DeviceID':'', # (int)
+        'PlateHeight':'', # (flt)
+        'NeedleOffset':'', # (flt)
+        'WellDepth':'', # (flt)
+        'EvaporatorTravelDistance':'', # (flt)
+        'EvaporateTime':'', # (flt)
+        'FollowRate':'', # (flt)
+    }),
+    'MPE2_EvaporateEnd':('MPE2_EVAP_END', {
+        'DeviceID':'', # (int)
+        'Timeout':'', # (int)
+    }),
+    'MPE2_GetTemperatureRange':('MPE2_TEMP_RANGE', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_GetHeaterStatus':('MPE2_HEATER_STATUS', {
+        'DeviceID':'', # (int)
+        'Reset':'', # (bln)
+    }),
+    'MPE2_GetHeaterRange':('MPE2_TEMP_RANGE', {
+        'DeviceID':'', # (int)
+        'Reset':'', # (bln)
+    }),
+    'MPE2_GetSourceConfiguration':('MPE2_GET_SOURCE_CONFIG', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_SetSourceConfiguration':('MPE2_SET_SOURCE_CONFIG', {
+        'DeviceID':'', # (int)
+    }),
+    'MPE2_StartContainerCalibration':('MPE2_START_CAL', {
+        'DeviceID':'', # (int)
+        'SourceID':'', # (int)
+        'Volume':'', # (flt)
+    }),
+    'MPE2_GetContainerCalibration':('MPE2_GET_CAL', {
+        'DeviceID':'', # (int)
+        'SourceID':'', # (int)
+        'Volume':'', # (flt)
+    }),
+    'MPE2_MeasureEmptyContainer':('MPE2_MEAS_EMPTY', {
+        'DeviceID':'', # (int)
+        'SourceID':'', # (int)
+    }),
+    'MPE2_MeasureFullContainer':('MPE2_MEAS_FULL', {
+        'DeviceID':'', # (int)
+        'SourceID':'', # (int)
+    }),
+    'MPE2_SaveContainerCalibration':('MPE2_SAVE_CAL', {
+        'DeviceID':'', # (int)
+        'SourceID':'', # (int)
+    }),
 
 }
 
