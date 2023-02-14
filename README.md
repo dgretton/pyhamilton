@@ -8,8 +8,6 @@ Developed for Hamilton STAR and STARlet on Windows XP, Windows 7, and Windows 10
 
 Please post on [labautomation.io](https://forums.pylabrobot.org/) if you have any questions, comments, issues, or feedback!
 
-_Contact: contactpyhamilton@gmail.com for questions, ideas, or help with installation._
-
 **Disclaimer:** PyHamilton is not officially endorsed or supported by the Hamilton Company. Please direct any questions to the above email address, and not to Hamilton Company. 
 
 ## Example usage
