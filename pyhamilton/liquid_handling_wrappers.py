@@ -313,7 +313,6 @@ def add_stderr_logging(logger_name=None):
     
 def normal_logging(ham_int, method_local_dir):
     for handler in logging.root.handlers[:]:
-        print(handler)
         logging.root.removeHandler(handler)
     #logger = logging.getLogger(__name__)
     local_log_dir = os.path.join(method_local_dir, 'log')
@@ -324,6 +323,7 @@ def normal_logging(ham_int, method_local_dir):
     #add_robot_level_log()
     logger = logging.getLogger(__name__)
     add_stderr_logging()
+    logging.getLogger('parse').setLevel(logging.CRITICAL)
     import __main__
     for banner_line in log_banner('Begin execution of ' + __main__.__file__):
         logging.info(banner_line)
