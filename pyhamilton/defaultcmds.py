@@ -777,6 +777,73 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'DeviceID':'', # (int)
         'SourceID':'', # (int)
     }),
+    'pH_Controller_Initialize':('PHC_INIT', {
+        'PortNumber':'', # (int)
+    }),
+    'pH_Controller_Terminate':('PHC_TERM', {
+        'ModuleID':'', # (int)
+    }),
+    'pH_Controller_Calibrate':('PHC_CAL', {
+        'ModuleID':'', # (int)
+        'seqModule':'', # (str)
+        'seqCalibration1':'', # (str)
+        'seqCalibration2':'', # (str)
+        'seqReference':'', # (str)
+        'MeasureTime':'', # (int)
+        'CalibrationTime':'', # (int)
+        'MeasureHeight':'', # (flt)
+        'CalibrationValue1':'', # (flt)
+        'CalibrationValue2':'', # (flt)
+        'CalibrationValueRef':'', # (flt)
+        'TempSoln1':'', # (flt)
+        'TempSoln2':'', # (flt)
+        'TempSolnRef':'', # (flt)
+        'CalibrateDynamically':'', # (bln)
+    }),
+    'pH_Controller_MeasureCycle':('PHC_MEASURE_CYCLE', {
+        'ModuleID':'', # (int)
+        'seqMeasurement':'', # (str)
+        'MeasurePositions':'', # (str)
+        'MeasureHeight':'', # (flt)
+        'ProbePattern':'', # (str)
+        'MeasureTime':'', # (int)
+        'Temperature':'', # (flt)
+    }),
+    'pH_Controller_SetParameters':('PHC_SET_PARAMS', {
+        'ModuleID':'', # (int)
+        'seqGripper':'', # (str)
+        'seqWashPosition':'', # (flt)
+        'seqDryPosition':'', # (str)
+        'TransportChannel':'', # (int)
+        'WashCycles':'', # (int)
+        'DryCycles':'', # (int)
+        'DryTime':'', # (int)
+    }),
+
+    'pH_Controller_Dry':('PHC_DRY', {
+        'ModuleID':'', # (int)
+    }),
+    'pH_Controller_Wash':('PHC_WASH', {
+        'ModuleID':'', # (int)
+    }),
+    'pH_Controller_Pickup':('PHC_PICKUP', {
+        'ModuleID':'', # (int)
+        'seqModule':'', # (str)
+
+    }),
+    'pH_Controller_Park':('PHC_PARK', {
+        'ModuleID':'', # (int)
+        'seqModule':'', # (str)
+    }),
+    'pH_Controller_LoadLastConfig':('PHC_LOAD', {
+    }),
+    
+    'pH_Controller_SaveLastConfig':('PHC_SAVE', {
+        'BluetoothPort':'', # (int)
+        'NumWashCycles':'', # (int)
+        'NumDryCycles':'', # (int)
+        'DryTime':'', # (int)
+    }),
 
 }
 

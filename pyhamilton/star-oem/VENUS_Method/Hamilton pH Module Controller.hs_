@@ -1,0 +1,31 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 2/27/2023 12:46:19 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace HAMILTON_PH_MODULE_CONTROLLER {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function Calibrate( device & ML_STAR, variable i_intModuleID, sequence i_seqModule, sequence i_seqCalibrationPosition_1, sequence i_seqCalibrationPosition_2, sequence i_seqReferencePosition, variable i_intCalibrationTime, variable i_intMeasureTime, variable i_fltMeasureHeight, variable i_fltpH_Value_Calibration_Solution_1, variable i_fltpH_Value_Calibration_Solution_2, variable i_fltpH_Value_Reference_Solution, variable i_fltTemperature_Calibration_Solution_1, variable i_fltTemperature_Calibration_Solution_2, variable i_fltTemperature_Reference_Solution, variable i_blnCalibrateDynamically, variable & o_arrintCalibration_Slope_Ratios[], variable & o_arrfltpH_Values_Reference_Solution[] ) variable {  return (0); }
+function Dry( device & ML_STAR, variable i_intModuleID ) variable {  return (0); }
+function EnableExtendedLog(  ) void { }
+function Initialize( device & ML_STAR, variable i_intPortNumber, variable & o_fltDefaultTemperature, variable & o_intModuleID ) variable {  return (0); }
+function LastUsedConfigurationLoad( variable & o_intBluetoothPort, variable & o_intNumberOfWashCycles, variable & o_intNumberOfDryCycles, variable & o_intDryTime ) void { }
+function LastUsedConfigurationSave( variable i_intBluetoothPort, variable i_intNumberOfWashCycles, variable i_intNumberOfDryCycles, variable i_intDryTime ) void { }
+function Measure( device & ML_STAR, variable i_intModuleID, sequence i_seqMeasurement, variable i_fltMeasureHeight, variable i_strProbePattern, variable i_intMeasureTime, variable i_fltTemperature, variable & o_arrfltpHValues[] ) variable {  return (0); }
+function MeasureCycle( device & ML_STAR, variable i_intModuleID, sequence i_seqMeasurement, variable i_fltMeasureHeight, variable i_strProbePattern, variable i_intMeasureTime, variable i_fltTemperature, variable & o_arrfltpHValues[] ) variable {  return (0); }
+function ParkModule( device & ML_STAR, variable i_intModuleID, sequence i_seqModule ) variable {  return (0); }
+function PickupModule( device & ML_STAR, variable i_intModuleID, sequence & i_seqModule ) variable {  return (0); }
+function RequestBatteryData( variable i_intModuleID, variable & o_strReplacementDate, variable & o_intChargeCounter, variable & o_intActualCharge ) variable {  return (0); }
+function SetParameter( device & ML_STAR, sequence i_seqGripperPosition, sequence i_seqWashPosition, sequence i_seqDryPosition, variable i_intTransportChannel, variable i_intWashCycles, variable i_intDryCycles, variable i_intDryWaitTime ) variable {  return (0); }
+function Terminate( variable i_intModuleID ) variable {  return (0); }
+function Wash( device & ML_STAR, variable i_intModuleID ) variable {  return (0); }
+function _Measure( device & ML_STAR, variable i_intModuleID, sequence i_seqMeasurement, variable i_blnShiftPositionByProbe, variable i_fltMeasureHeight, variable i_strProbePattern, variable i_intMeasureTime, variable i_fltTemperature, variable i_strCallingFunctionName, variable & o_arrfltpHValues[] ) variable {  return (0); }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=stefa$$valid=0$$time=2023-02-27 12:46$$checksum=72151b8c$$length=082$$
