@@ -10,7 +10,7 @@ except(IOError, ImportError):
 
 setup(
     name='pyhamilton',
-    version='1.491.12',
+    version='1.491.13',
     packages=find_packages(exclude=['tests*', 'examples*']),
     license='MIT',
     description='Python for Hamilton liquid handling robots',

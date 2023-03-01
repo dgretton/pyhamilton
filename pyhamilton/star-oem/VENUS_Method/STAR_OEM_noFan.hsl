@@ -4578,8 +4578,8 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("MeasureTime"), Meas
 // {{{ 1352 1 0 "f8080019_d032_4f0c_9ef8429bde9ee7df" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
 JSON_GetFloatValue(Translate("Temperature"), Temperature);
 // }} ""
-// {{{ 1353 1 0 "3eba00c5_2412_4176_8ae72ed58cb63cf9" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
-o_stepReturn = HAMILTON_PH_MODULE_CONTROLLER::MeasureCycle(ML_STAR, ModuleID, ML_STAR.seqpH_Module_0001, MeasureHeight, ProbePattern, MeasureTime, Temperature, arrpHValues);
+// {{{ 1353 1 0 "83142ee1_d831_4ff1_a6734844fe789421" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = HAMILTON_PH_MODULE_CONTROLLER::MeasureCycle(ML_STAR, ModuleID, seq, MeasureHeight, ProbePattern, MeasureTime, Temperature, arrpHValues);
 // }} ""
 // {{{ 1354 1 0 "d4d4974a_23a2_43a2_851b478f0e7d24be" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
 ArrayToString(arrpHValues, flt_pHValues);
@@ -6758,4 +6758,4 @@ HAMILTON_PH_MODULE_CONTROLLER::_ExitLibrary();
 // }} ""
 
 
-// $$author=stefa$$valid=0$$time=2023-02-27 23:00$$checksum=017d39b8$$length=082$$
+// $$author=stefa$$valid=0$$time=2023-03-01 09:54$$checksum=cf201993$$length=082$$
