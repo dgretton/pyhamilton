@@ -51,17 +51,19 @@ def recursive_copy(source_dir, target_dir):
     source_list = full_paths_list(source_dir)
     for file in source_list:
         if os.path.isfile(file):
-            shutil.copy(file, target_dir + '//' + os.path.basename(file))
+            target_file = os.path.join(target_dir, os.path.basename(file))
+            if not os.path.exists(target_file):
+                shutil.copy(file, target_file)
         if os.path.isdir(file):
-            target = target_dir + '//' + os.path.basename(file)
-            print(target)
-            if not os.path.exists(target):
-                os.mkdir(target)
-            recursive_copy(source_dir + '//' + os.path.basename(file), target)            
+            target_subdir = os.path.join(target_dir, os.path.basename(file))
+            if not os.path.exists(target_subdir):
+                os.mkdir(target_subdir)
+            recursive_copy(file, target_subdir)
 
 
 def autoconfig():
-    print("Automatically configuring your PyHamilton installation")
+    input("\n This tool automatically configures your PyHamilton installation by copying library files from pyhamilton/library \
+          into C:/Program Files (x86)/HAMILTON/Library. Would you like to proceed?")
     for filename in os.listdir(EXE_DIR):
         file_path = os.path.join(EXE_DIR, filename)
         os.startfile(file_path)
