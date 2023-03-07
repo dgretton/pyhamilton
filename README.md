@@ -46,6 +46,8 @@ https://www.youtube.com/watch?v=G92neaVfvyw
     
 7. **Run the pyhamilton autoconfig tool from the command line.** 
 
+This will automatically execute all the installers in `pyhamilton/bin` and will copy all the files in `pyhamilton\library` to `C:/Program Files (x86)/HAMILTON/Library`. You are welcome to forgo this command and perform the steps manually if you are concerned about file overwriting.
+
     ```
     pyhamilton-configure
     ``` 
