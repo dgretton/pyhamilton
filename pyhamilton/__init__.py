@@ -62,8 +62,10 @@ def recursive_copy(source_dir, target_dir):
 
 
 def autoconfig():
-    input("\n This tool automatically configures your PyHamilton installation by copying library files from pyhamilton/library \
-          into C:/Program Files (x86)/HAMILTON/Library. Would you like to proceed?")
+    input("""\n This tool automatically configures your PyHamilton installation by copying library files from pyhamilton/library
+into C:/Program Files (x86)/HAMILTON/Library. It is recommended you back up your Hamilton installation
+folder in the rare event of  a file overwrite. Press enter to continue, or press ctrl+c to cancel the
+installation process.""")
     for filename in os.listdir(EXE_DIR):
         file_path = os.path.join(EXE_DIR, filename)
         os.startfile(file_path)
