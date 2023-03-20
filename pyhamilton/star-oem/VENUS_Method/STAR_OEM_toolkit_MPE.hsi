@@ -2,7 +2,6 @@
 #pragma once
 // }} ""
 #include "Hamilton MPE2\\HSLMPELib.hsl"
-#include "BioNex HiG\\HSLHiGCentrifugeLib.hsl"
 #include "HSLErrLib.hsl"
 /* {{ 2 "LibraryInsertLine" "" */ // }} ""
 // {{ 2 "TemplateIncludeBlock" ""
@@ -1300,4 +1299,4 @@ o_stepReturn = ErrGetDataAt(3);
 // {{{ 2 "LibraryNamespace" "End"
 } // library namespace
 // }} ""
-// $$author=stefa$$valid=0$$time=2023-02-12 22:25$$checksum=3275b568$$length=084$$
+// $$author=stefa$$valid=0$$time=2023-03-20 09:12$$checksum=f551040f$$length=084$$

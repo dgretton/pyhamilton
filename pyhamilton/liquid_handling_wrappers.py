@@ -316,6 +316,7 @@ def normal_logging(ham_int, method_local_dir):
         print(handler)
         logging.root.removeHandler(handler)
     #logger = logging.getLogger(__name__)
+    logging.getLogger('parse').setLevel(logging.CRITICAL)
     local_log_dir = os.path.join(method_local_dir, 'log')
     if not os.path.exists(local_log_dir):
         os.mkdir(local_log_dir)
