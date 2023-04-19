@@ -66,6 +66,26 @@ The easiest way to test your PyHamilton installation is by running the following
 
 9. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
 
+## AI Coding Assistant
+
+PyHamilton now comes with a project template for using an AI coding assistant that interprets natural language prompts into robot commands via the `assist()` function. To use this project, follow these instructions:
+
+1. From the command line, run:
+
+```
+mkdir ai_project
+cd ai_project
+pyhamilton-ai-project
+py robot_method.py
+```
+
+2. Press the green arrow in Run Control to start the method
+
+You now are inside an IPython terminal from which you can run any Python or PyHamilton code that will execute within your Venus session. Use `assist()` to convert a natural language prompt into a robot command. **Warning:** Do not use this outside of simulation mode until you are completely sure of how it works. 
+
+3. `[1]: assist('pick up tips from the eighth column of tips_0')` or `[1]: assist(voice_to_text())`
+
+
 ## Installation Troubleshooting
 1. If you encounter an error relating to HxFan (i.e., your robot does not have a fan), open pyhamilton/star-oem/VENUS_Method/STAR_OEM_Test.med, navigate to the "HxFan" grouping, and delete all commands under this grouping.
 
