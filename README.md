@@ -70,7 +70,11 @@ The easiest way to test your PyHamilton installation is by running the following
 
 PyHamilton now comes with a project template for using an AI coding assistant that interprets natural language prompts into robot commands via the `assist()` function. To use this project, follow these instructions:
 
-1. From the command line, run:
+1. Make an OpenAI account and get an API key. Set your key to an environment variable named `OPENAI_API_KEY`.
+
+2. `pip install IPython openai`
+
+3. From the command line, run:
 
 ```
 mkdir ai_project
@@ -79,11 +83,11 @@ pyhamilton-ai-project
 py robot_method.py
 ```
 
-2. Press the green arrow in Run Control to start the method
+4. Press the green arrow in Run Control to start the method
 
 You now are inside an IPython terminal from which you can run any Python or PyHamilton code that will execute within your Venus session. Use `assist()` to convert a natural language prompt into a robot command. **Warning:** Do not use this outside of simulation mode until you are completely sure of how it works. 
 
-3. `[1]: assist('pick up tips from the eighth column of tips_0')` or `[1]: assist(voice_to_text())`
+5. `[1]: assist('pick up tips from the eighth column of tips_0')` or `[1]: assist(voice_to_text())`
 
 
 ## Installation Troubleshooting
