@@ -32,7 +32,8 @@ from .mpe_wrappers import *
 this_file_dir = os.path.dirname(os.path.abspath(__file__))
 PACKAGE_DIR = os.path.abspath(os.path.join(this_file_dir))
 LIBRARY_DIR = os.path.join(PACKAGE_DIR, 'library')
-TEMPLATE_DIR = os.path.join(PACKAGE_DIR, 'project-template')
+TEMPLATE_DIR = os.path.join(PACKAGE_DIR, 'templates/basic_template')
+AI_TEMPLATE_DIR = os.path.join(PACKAGE_DIR, 'templates/ai_template')
 EXE_DIR = os.path.join(PACKAGE_DIR, 'bin')
 
 exe_http = os.path.join(PACKAGE_DIR, 'bin', 'Hamilton HSLHttp Library Installer Version 2.7.exe')
@@ -79,5 +80,10 @@ installation process.""")
 
 def create_project():
     current_dir = os.path.abspath(os.getcwd())
-    print("Automatically configuring your PyHamilton installation")
+    print("Creating project template")
     recursive_copy(TEMPLATE_DIR, current_dir)
+
+def create_ai_project():
+    current_dir = os.path.abspath(os.getcwd())
+    print("Creating AI assistant project template")
+    recursive_copy(AI_TEMPLATE_DIR, current_dir)

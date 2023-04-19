@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pyhamilton-new-project = pyhamilton.__init__:create_project',
+            'pyhamilton-ai-project = pyhamilton.__init__:create_ai_project',
             'pyhamilton-configure = pyhamilton.__init__:autoconfig'
         ],
     },
