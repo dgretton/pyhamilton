@@ -317,6 +317,7 @@ variable seqMeasure;
 variable ProbePattern;
 variable seqMeasurement;
 variable MeasurePositions;
+variable hssErrCode;
 /* {{ 2 "VariableInsertLine" "" */ // }} ""
 // {{ 2 "TemplateIncludeBlock" ""
  namespace _Method { #include "HSLMETEDLib.hs_" } 
@@ -357,7 +358,7 @@ return;
 }
 // }} ""
 // {{{ 6 1 0 "ee92e29b_e94c_46cf_a67851f3be61c805" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
-SendTextMessageToServer(Translate("Hi, I�m a VENUS method."));
+SendTextMessageToServer(Translate("Hi, Iï¿½m a VENUS method."));
 // }} ""
 // {{ 7 1 0 "b573bcbb_6bb4_4b28_b1ca14b0d3cad22e" "{B31F3532-5D80-11d4-A5EB-0050DA737D89}"
 {
@@ -5544,11 +5545,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("usedNode"), usedNod
 onerror goto errLabel_98100824AA704d26AB40A6BADEF39F48 ;
 err.Clear();
 // }} ""
-// {{{ 1659 1 0 "0cd1cef0_3091_48c3_b63490d3e80a5b45" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::CreateUsbDevice(usedNode, deviceNumber);
+// {{{ 1659 1 0 "6957e247_4f64_4971_8d90658c99adbb87" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::CreateUsbDevice(usedNode, deviceNumber);
 // }} ""
-// {{ 1660 1 0 "1823653c_5e02_428a_badd7ca34d3aabf1" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1660 1 0 "34cc8f4a_c310_4eb7_b936c63f8401c523" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1661 1 0 "d73b7db7_a16b_4297_bd217c5483596b0e" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_98100824AA704d26AB40A6BADEF39F48 : {}
@@ -5591,11 +5592,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("deviceNumber"), dev
 onerror goto errLabel_DE0DE7FF7B3F4304A0257A082FAC9714 ;
 err.Clear();
 // }} ""
-// {{{ 1673 1 0 "96f15f32_4117_4a09_85dceac0fa769b43" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::EndMonitoring(deviceNumber, monitorResult);
+// {{{ 1673 1 0 "dd7d7b00_1e95_4e45_97a425f03a18ab04" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::EndMonitoring(deviceNumber, monitorResult);
 // }} ""
-// {{ 1674 1 0 "9d9a3dcb_ddc9_47c5_a860665377ee3e86" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1674 1 0 "0021495f_472e_4321_9d1e81e8fbd43f0c" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1675 1 0 "fd2b7e6b_44e4_4ed5_b9b454f4c40ceb11" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_DE0DE7FF7B3F4304A0257A082FAC9714 : {}
@@ -5758,11 +5759,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("deviceNumber"), dev
 onerror goto errLabel_C342F6DC97064debAC7DC78E54AD4F78 ;
 err.Clear();
 // }} ""
-// {{ 1722 1 0 "949c257a_0d44_4a50_bb10d9b59e6a02c2" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1722 1 0 "c0166b97_c0ae_417b_85c90c5ef42e5fc6" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::GetShakerSpeed(deviceNumber, o_stepReturn2);
 // }} ""
-// {{{ 1723 1 0 "d7148e56_7fcc_471d_8c3a7abc2847db7e" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::GetShakerSpeed(deviceNumber, o_stepReturn2);
+// {{{ 1723 1 0 "73777071_2fd2_42b0_a7545c6a6a372194" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1724 1 0 "3be88632_8bc5_4dba_86df24bdde6a39e8" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_C342F6DC97064debAC7DC78E54AD4F78 : {}
@@ -5840,11 +5841,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("deviceNumber"), dev
 onerror goto errLabel_14A2AAD200434d69970AC483BD08B64F ;
 err.Clear();
 // }} ""
-// {{ 1746 1 0 "0bd6e3be_da2c_4500_973c9d6eae8e7ae6" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1746 1 0 "ecd6d069_96d7_4a72_9ffc0df77e7a1512" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::GetTemperature(deviceNumber, o_stepReturn2);
 // }} ""
-// {{{ 1747 1 0 "4187d732_0d13_4590_99fa08572e32e2f9" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::GetTemperature(deviceNumber, o_stepReturn2);
+// {{{ 1747 1 0 "b05c868f_c25f_47a9_b533b13ab05fc962" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1748 1 0 "f124fc79_0893_4e43_a35ce5c0273e16ce" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_14A2AAD200434d69970AC483BD08B64F : {}
@@ -5881,11 +5882,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("deviceNumber"), dev
 onerror goto errLabel_50485390A50647818ED2D3934FBC87E3 ;
 err.Clear();
 // }} ""
-// {{ 1758 1 0 "5b647db8_f1d6_4deb_9b859eb1dfda063d" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1758 1 0 "c99aa2b7_d8a6_4cee_a1fa1d731ef77d25" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::GetTemperatureState(deviceNumber, o_stepReturn2);
 // }} ""
-// {{{ 1759 1 0 "7f7e0bd7_bea9_474d_92bce5d21da9a2a6" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::GetTemperatureState(deviceNumber, o_stepReturn2);
+// {{{ 1759 1 0 "f2861b4d_28d2_4ee3_8b7c7763312067ab" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1760 1 0 "e53c9d52_7503_45f4_a5bcb3a1cb80bf77" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_50485390A50647818ED2D3934FBC87E3 : {}
@@ -5928,11 +5929,11 @@ HSLJsonLib::GetStringProperty(objJSONFromServer, Translate("parameter"), paramet
 onerror goto errLabel_84EE5E4228B140f599748D1271CBB0F3 ;
 err.Clear();
 // }} ""
-// {{ 1772 1 0 "ad365bf1_c5e9_4c85_b1b623b20be98474" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1772 1 0 "a650efc1_423b_4f75_9f0da083ee44ae9c" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::SendFirmwareCommand(deviceNumber, command, parameter);
 // }} ""
-// {{{ 1773 1 0 "b63ba349_9a52_43ca_aec17e40c17d231b" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::SendFirmwareCommand(deviceNumber, command, parameter);
+// {{{ 1773 1 0 "e1ef0806_8a47_46c1_972c9ed9e299eaad" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1774 1 0 "17f0f127_1d1a_4a85_a301da7690437397" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_84EE5E4228B140f599748D1271CBB0F3 : {}
@@ -5972,11 +5973,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("plateLock"), plateL
 onerror goto errLabel_0B4D6E9CB5BE4050BA49D894F0685FF4 ;
 err.Clear();
 // }} ""
-// {{ 1785 1 0 "f307f49e_48c2_428e_80c1d57693f85156" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1785 1 0 "b417b8ce_5117_450e_93a9a6243c6011d8" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::SetPlateLock(deviceNumber, plateLock);
 // }} ""
-// {{{ 1786 1 0 "27d47e3b_913b_4a0e_bdb50007a0e39d84" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::SetPlateLock(deviceNumber, plateLock);
+// {{{ 1786 1 0 "ed43cecb_7012_4fb9_a89d129de09bdadb" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1787 1 0 "b56b5fdf_2865_42da_a53e7fa445218646" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_0B4D6E9CB5BE4050BA49D894F0685FF4 : {}
@@ -6192,11 +6193,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("shakingSpeed"), sha
 onerror goto errLabel_02BDC1BFC12F4fafA3202E93EF422C02 ;
 err.Clear();
 // }} ""
-// {{ 1850 1 0 "dab3ac84_179e_4fd8_9b00ad14f3ef613e" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1850 1 0 "73be1c30_4bfe_4a0f_aa560c8df5b091fa" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::StartAllShaker(shakingSpeed);
 // }} ""
-// {{{ 1851 1 0 "7c8a1d8e_30e9_4256_b5cf96d93ff3f7d3" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::StartAllShaker(shakingSpeed);
+// {{{ 1851 1 0 "39ac643d_0305_4ec6_87fc196efe3d76f6" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1852 1 0 "2d39afd4_04dd_4243_b88cc3d1eb981212" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_02BDC1BFC12F4fafA3202E93EF422C02 : {}
@@ -6236,11 +6237,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("shakingTime"), shak
 onerror goto errLabel_90F21CFF24BE45c09A6A7000C5D99043 ;
 err.Clear();
 // }} ""
-// {{ 1863 1 0 "523b190e_f70f_4a28_b16582e7161b390a" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1863 1 0 "272104de_2e64_4a32_a88407b030437361" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::StartAllShakerTimed(shakingSpeed, shakingTime);
 // }} ""
-// {{{ 1864 1 0 "428d423d_1825_472f_a3aa303d028d0659" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::StartAllShakerTimed(shakingSpeed, shakingTime);
+// {{{ 1864 1 0 "1362f66b_0efd_4eb5_935e84586a427637" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1865 1 0 "b5262842_c6b4_4edc_9a59816098368c71" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_90F21CFF24BE45c09A6A7000C5D99043 : {}
@@ -6280,11 +6281,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("shakingSpeed"), sha
 onerror goto errLabel_264F4A7DEA214bd38D410C3AE5CAF482 ;
 err.Clear();
 // }} ""
-// {{ 1876 1 0 "e043b61a_b8c5_46d4_9bf331f7566a8911" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1876 1 0 "cf1b40c4_5e9a_48bf_9390f6eab212315f" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::StartShaker(deviceNumber, shakingSpeed);
 // }} ""
-// {{{ 1877 1 0 "a302e74e_d752_4ae6_b492a17f601bef41" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::StartShaker(deviceNumber, shakingSpeed);
+// {{{ 1877 1 0 "2e7a5304_5ce9_4afb_93a4a8276dc86d74" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1878 1 0 "25553bc8_2d53_47af_af9e6ada77cb8dfe" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_264F4A7DEA214bd38D410C3AE5CAF482 : {}
@@ -6327,11 +6328,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("shakingTime"), shak
 onerror goto errLabel_29447729262E4e0f8B347F6640716D96 ;
 err.Clear();
 // }} ""
-// {{ 1890 1 0 "10af5b65_9ddd_4a4b_b040d8f5b6e642cb" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1890 1 0 "4b29337f_c67c_4ecf_a205f4b70e60271a" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::StartShakerTimed(deviceNumber, shakingSpeed, shakingTime);
 // }} ""
-// {{{ 1891 1 0 "22e55b69_c018_47f9_8e3ac169c190d2de" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::StartShakerTimed(deviceNumber, shakingSpeed, shakingTime);
+// {{{ 1891 1 0 "40aad8b7_f42e_4ad1_b0f0c033ec666548" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1892 1 0 "987a961a_097c_4b2b_a1f6ce2a63df6759" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_29447729262E4e0f8B347F6640716D96 : {}
@@ -6374,11 +6375,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("waitForTempReached"
 onerror goto errLabel_764F491C76DA445383E5490AB126ADB4 ;
 err.Clear();
 // }} ""
-// {{ 1904 1 0 "497404d1_5fea_46f0_9598d8e1c1cb11ed" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1904 1 0 "dfb61f9c_103b_4c42_83e0779ea05cb180" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::StartTempCtrl(deviceNumber, temperature, waitForTempReached);
 // }} ""
-// {{{ 1905 1 0 "4ba75dd5_935f_4f2c_a15605eafa47b808" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::StartTempCtrl(deviceNumber, temperature, waitForTempReached);
+// {{{ 1905 1 0 "e4829da3_d8b6_453f_a2be82213303e9f3" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1906 1 0 "0f035a64_bd7b_4737_80275be46bdab48c" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_764F491C76DA445383E5490AB126ADB4 : {}
@@ -6412,11 +6413,11 @@ if (commandFromServer == "HHS_StopAllShaker")
 onerror goto errLabel_9B15E9F5E4BF4c8aB941EFAA3E5E122D ;
 err.Clear();
 // }} ""
-// {{ 1915 1 0 "d8b2a327_d63a_46f2_8c273b2eedb8cb34" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1915 1 0 "ee3103a2_d7f3_488f_b7a95e2f2b56770a" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::StopAllShaker();
 // }} ""
-// {{{ 1916 1 0 "d112da95_7f27_47a3_9e24bc801bcc9afc" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::StopAllShaker();
+// {{{ 1916 1 0 "a782313c_e15b_4340_bdda314f926e24cb" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1917 1 0 "089afd30_5056_443f_ba9176d0f19dc0ce" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_9B15E9F5E4BF4c8aB941EFAA3E5E122D : {}
@@ -6453,11 +6454,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("deviceNumber"), dev
 onerror goto errLabel_72372634E1DD46ff8400C9F993FCEFB9 ;
 err.Clear();
 // }} ""
-// {{ 1927 1 0 "9d792f4f_4c49_4998_b21fd7f7d6a58fce" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1927 1 0 "b5ecca33_fef4_4c14_9cf702c924839607" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::StopShaker(deviceNumber);
 // }} ""
-// {{{ 1928 1 0 "b811fcbc_7d95_47c6_9c33e18415810e13" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-HSLHamHeaterShaker::StopShaker(deviceNumber);
+// {{{ 1928 1 0 "49e72e72_8e49_49fd_8d212a6ccff1d2fa" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1929 1 0 "e30a5e2a_77e4_4fee_8d3eb484d6b9ea74" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_72372634E1DD46ff8400C9F993FCEFB9 : {}
@@ -6494,11 +6495,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("deviceNumber"), dev
 onerror goto errLabel_B5957B02990845739642D8C604B0B582 ;
 err.Clear();
 // }} ""
-// {{ 1939 1 0 "384c69b8_0ce8_4a27_af0a4060e6f1a01d" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1939 1 0 "d186dde8_c684_4550_a023d9023ff021d7" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::StopTempCtrl(deviceNumber);
 // }} ""
-// {{{ 1940 1 0 "3a29dc5b_78cc_4ed1_ab9cd631701715e4" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::StopTempCtrl(deviceNumber);
+// {{{ 1940 1 0 "af12e4a9_cc0f_4a82_b9593d2b489756a8" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1941 1 0 "c879beb6_9c82_4bf7_a1f57c52bba92317" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_B5957B02990845739642D8C604B0B582 : {}
@@ -6573,11 +6574,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("deviceNumber"), dev
 onerror goto errLabel_ED2BDC2CA5D245ccB96A6EDA80EBF4F6 ;
 err.Clear();
 // }} ""
-// {{ 1962 1 0 "6c68258f_f870_4c46_b358dc4391ced463" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1962 1 0 "3b2abeec_38f4_46a6_a30b0d0126280ebc" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::WaitForShaker(deviceNumber);
 // }} ""
-// {{{ 1963 1 0 "2eff956e_28cc_4094_8285d5ed00125a55" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::WaitForShaker(deviceNumber);
+// {{{ 1963 1 0 "c4e94e42_8405_438b_921cfe4ba73e9976" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1964 1 0 "a4b77c48_e39f_4f25_a624252a538e8407" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_ED2BDC2CA5D245ccB96A6EDA80EBF4F6 : {}
@@ -6614,11 +6615,11 @@ HSLJsonLib::GetIntegerProperty(objJSONFromServer, Translate("deviceNumber"), dev
 onerror goto errLabel_088C7630997A4749A400740DA66CBA0C ;
 err.Clear();
 // }} ""
-// {{ 1974 1 0 "f5db2a6b_8286_4195_844af45f48c61d3f" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = 1;
+// {{{ 1974 1 0 "5aa60a5a_db92_42e0_b3277a41cacb5336" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+hssErrCode = HSLHamHeaterShaker::WaitForTempCtrl(deviceNumber);
 // }} ""
-// {{{ 1975 1 0 "421a52eb_128a_4b6b_8baafb6548b66bd8" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-o_stepReturn = HSLHamHeaterShaker::WaitForTempCtrl(deviceNumber);
+// {{{ 1975 1 0 "49cd8e9e_91bd_468c_aec57e3af40280fe" "{7C4EF7A7-39BE-406a-897F-71F3A35B4093}"
+o_stepReturn = ConvertHSSErrCode(hssErrCode);
 // }} ""
 // {{ 1976 1 0 "45dc6d65_61ca_4b9a_ab05d7df9bec2b13" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_088C7630997A4749A400740DA66CBA0C : {}
@@ -6750,4 +6751,4 @@ HAMILTON_PH_MODULE_CONTROLLER::_ExitLibrary();
 // }} ""
 
 
-// $$author=stefa$$valid=0$$time=2023-03-08 11:14$$checksum=2e8407de$$length=082$$
+// $$author=Roboter$$valid=0$$time=2023-04-25 15:45$$checksum=6411032d$$length=084$$
