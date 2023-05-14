@@ -252,6 +252,16 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'yDisplacement':'',
         'zDisplacement':'',
     }),
+    'setAspirateParam':('SET_ASP_PARAM',{
+        'LiquidClass':'',
+        'Parameter':'',
+        'Value':'',
+    }),
+    'setDispenseParam':('SET_DISP_PARAM',{
+        'LiquidClass':'',
+        'Parameter':'',
+        'Value':'',
+    }),
     'TEC_Initialize':('TEC_INIT', {
 
         'ControllerID':'', # (integer)
