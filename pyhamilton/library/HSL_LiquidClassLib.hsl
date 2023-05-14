@@ -1,0 +1,878 @@
+// ====================================================================.
+// Copyright (C) by HAMILTON Reno, USA.
+// All rights reserved.
+// ----------------------------------------------------------------------
+// Library: HSL_LiquidClassLib.hsl
+// ======================================================================
+// 
+//
+//
+// Copyright (C) by HAMILTON Bonaduz AG, CH-7402 Bonaduz.
+// Modification History of MLSTAR_LiquidClassLib.hsl
+//    2009-04-02: Linus Jegher:  Creation
+//    2009-04-03: mdarin:        added function "GetLiquidDbName()"
+//    2009-04-06: Linus Jegher:  added function "GetLiquidDevices"
+//    2009-04-07: Linus Jegher:  added function "GetLiquidClassDescription"
+//    2009-04-07: mdarin:        added function "getTipTypesNames"
+//    2010-01-20: mdarin:        added function "SetStateOriginalLiquid"
+//                               Set state of the liquid-class (TRUE: Predefined / FALSE: user-defined)
+//    2016-Jun-13 acuevas: added function "SetLiquidClassAspirateParameter", "SetLiquidClassDispenseParameter"
+//    2016-Dec-14:  acuevas: Creation. Adapt MLSTAR_LiquidClassLib library to work on NIMBUS and ML_STAR
+//    2020-May-13 acuevas: added function "GetTADMToleranceBand" ,  "GetLiquidClassDesignHistory", and private "FormatDesignHistoryTime"
+//    2020-May-20 acuevas: added function "GetTADMVolumes", fix function "GetLiquidDevices"
+//    2020-June-11 acuevas: added function "GetLiquidNames" , "GetLiquidDevicesFromCfgFile", "GetLiquidDevicesFromLiquidClass"
+//    2021-October-21 acuevas: added function "GetLiquidChecksum"
+//// ======================================================================
+
+
+
+#pragma once
+
+#include "HslUtilLib.hsl"
+#include "HSLUtilLib2.hsl"
+#include "HSLStrLib.hsl" 
+#include "HSLArrLib.hsl"
+#include "HSLMthLib.hsl" 
+
+namespace LiquidClassLib
+{
+
+   namespace LIQUIDCLASSNAMES_FILTER
+   {
+      const variable NoLiquidDeviceFilter (-1);
+      const variable NoLiquidNameFilter( "");
+      const variable NoTipTypeFilter( -1);
+      const variable NoDispenseModeFilter( -1);
+   }
+   
+   namespace LIQUIDCLASS_DISPENSEMODE
+   {
+      const variable Undefined                 (-1);
+      const variable DispenseJet               (0);
+      const variable DispenseSurface           (1);
+      const variable DispenseJetPartVolume     (2);
+      const variable DispenseJetEmptyTip       (3);
+      const variable DispenseSurfacePartVolume (4);
+      const variable DispenseSurfaceEmptyTip   (5);
+   }
+                   
+   const variable HSL_TRUE    ( hslTrue ); // constant hslTrue
+   const variable HSL_FALSE   ( hslFalse); // constant hslFalse
+
+
+   namespace LIQUIDCLASS_PARAMS_ASP
+   {
+      const variable FlowRate              (-533331950);
+      const variable MixFlowRate           (-533331949);
+      const variable AirTransportVolume    (-533331948);
+      const variable BlowOutVolume         (-533331947);
+      const variable SwapSpeed             (-533331946);
+      const variable SettlingTime          (-533331945);
+      const variable OverAspirateVolume    (-533331936);
+      const variable ClotRetractHeight     (-533331935);
+   }
+
+   namespace LIQUIDCLASS_PARAMS_DISP
+   {
+      const variable FlowRate              (-533331950);
+      const variable MixFlowRate           (-533331949);
+      const variable AirTransportVolume    (-533331948);
+      const variable BlowOutVolume         (-533331947);
+      const variable SwapSpeed             (-533331946);
+      const variable SettlingTime          (-533331945);
+      const variable StopFlowRate          (-533331920);
+      const variable StopBackVolume        (-533331919);
+   }
+
+   namespace LIQUIDCLASS_PARAMS
+   {
+
+      // const variable DataDefVersion        (-533331968); ??
+      const variable LiquidVersion         (-533331967);
+      const variable LiquidName            (-533331966);
+      const variable TipType               (-533331965);
+      const variable DispenseMode          (-533331964);
+      const variable OriginalLiquid        (-533331963);
+      const variable Notes                 (-533331962);
+      const variable LiquidDevice          (-533331961); // object
+      const variable AspirateParameter     (-533331952); // object
+      const variable DispenseParameter     (-533331951); // object
+      const variable CorrectionCurve       (-533331904); // object
+      const variable PressureLLDSensitivity(-533331899);
+      const variable LLDMaxHeightDifference(-533331898);
+      const variable ValidationState       (-533331897);
+      const variable DesignHistory         (-533331896); // object
+      const variable MaxAspirateVolume     (-533331895);
+      const variable Tadm_Enabled          (-533331887); 
+      const variable TadmUpperToleranceBand(-533331872);  //array of x,y values of the TADM guard band.  Array even indexes (0,2,4...) are the X values,  odd indexes (1,3,5...) are the Y values
+      const variable TadmLowerToleranceBand(-533331871);  //array of x,y values of the TADM guard band.  Array even indexes (0,2,4...) are the X values,  odd indexes (1,3,5...) are the Y values
+      const variable TadmAspirateStep      (-533331728);
+      const variable TadmDispenseStep      (-533331727);
+   }
+
+
+   static global object LIQUIDCLASSLib_LiquidClass;
+
+   static variable Selected_LiquidClassName("");
+   static object   Selected_LiquidClassObject;
+   variable instClass;
+
+
+   static global function LIQUIDCLASSLib_Initialize(device instrument, variable iReadOnly) void
+   {
+      if (LIQUIDCLASSLib_LiquidClass.IsNull( ) == hslFalse)
+      {
+         return;
+      }
+      {
+         object HxRegistry;
+         
+
+         HxRegistry.CreateObject("HXREGLib.HxRegistry");
+         instClass = HxRegistry.InstClass(instrument.GetInstrumentName());
+         
+         LIQUIDCLASSLib_LiquidClass.CreateObject("Hamilton.HxCoreLiquidClass");
+         LIQUIDCLASSLib_LiquidClass.InitCoreLiquidClass(instClass, iReadOnly);
+      }
+   }
+
+   static function Check_IsInitialized() void
+   {
+      if (LIQUIDCLASSLib_LiquidClass.IsNull()) 
+         err.Raise( -1, "HAMILTON LiquidClassLib: Library is not initialized!\n\n> Use function LIQUIDCLASSLib::Initialize().\n");
+   }
+
+   // Diese funktion wirft eine Exception, wenn keine Liquidklasse selektiert ist.
+   // Das ist besser als die Fehlermeldung von HSL, die einfach nur 'Bad Argument' ist.
+   static function Check_IsSelected() void
+   {
+      if (Selected_LiquidClassObject.IsNull()) 
+         err.Raise( -1, "MLSTARLiquidClassLib: No Liquidclass is selected!\n\n> Use function MLSTAR_LIQUIDCLASSLib::SelectLiquidClass().\n");
+   }
+
+   function Initialize(device instrument,  variable iReadOnly) void
+   {
+      LIQUIDCLASSLib_Initialize(instrument, iReadOnly);
+   }
+
+   function GetLiquidClassNames( variable& outLiquidClassNames[]) variable
+   {
+      object parsLiquidClassNames;
+      parsLiquidClassNames.CreateObject("HXPARAMSLib.HxPars");
+
+      Check_IsInitialized();
+      LIQUIDCLASSLib_LiquidClass.GetLiquidClassNames( parsLiquidClassNames);
+      outLiquidClassNames = parsLiquidClassNames.GetKeys();
+
+      {
+         // sortiere das array. Dazu muss ein zweites array erstellt werden, 
+         // das aber in diesem Zusammenhang nicht benutzt wird.
+         variable dummyArray[]( outLiquidClassNames.GetSize());
+         Util::Sort( dummyArray, outLiquidClassNames);
+      }
+      return (outLiquidClassNames.GetSize());
+   }
+
+   // Returns an array of liquid class names filtered for the specified values for 
+   // liquid device id, liquid name, tip type id and dipsense mode. The array of liquid class names is sorted.
+   function GetLiquidClassNamesFiltered( 
+      variable liquidDeviceFilter, 
+      variable liquidNameFilter,
+      variable tipTypeFilter,
+      variable dispenseModeFilter,
+      variable& outLiquidClassNames[])  variable
+   {
+      object parsNames;
+      parsNames.CreateObject("HXPARAMSLib.HxPars");
+      
+      Check_IsInitialized();
+      LIQUIDCLASSLib_LiquidClass.GetFilteredLiquidClassNames( 
+         liquidDeviceFilter, 
+         liquidNameFilter,
+         dispenseModeFilter,
+         tipTypeFilter,
+         parsNames);
+      outLiquidClassNames = parsNames.GetKeys(); // Schlüssel sind Liquidklassennamen
+      
+      {
+         // sortiere das array. Dazu muss ein zweites array erstellt werden, 
+         // das aber in diesem Zusammenhang nicht benutzt wird.
+         variable dummyArray[]( outLiquidClassNames.GetSize());
+         Util::Sort( dummyArray, outLiquidClassNames);
+      }
+      return (outLiquidClassNames.GetSize()); // size of array
+   }
+
+   //
+   // Diese Funktion ladet die Daten einer Liquidklasse
+   //
+   function SelectLiquidClass( variable inLiquidClassName) void
+   {
+      object objectTemp;
+      variable i;
+      object s;
+      variable Array_Keys[];
+      Check_IsInitialized();
+
+      Selected_LiquidClassObject.ReleaseObject();
+      Selected_LiquidClassName = "";
+      objectTemp.CreateObject("HXPARAMSLib.HxPars");
+
+      LIQUIDCLASSLib_LiquidClass.GetLiquidClass(inLiquidClassName, objectTemp, hslFalse);
+      Selected_LiquidClassName = inLiquidClassName;
+      Selected_LiquidClassObject = objectTemp;
+   }
+
+   // Gibt die Korrekturpunkte der Kurve zurück. Die X-Werte werden im outXWerte-Array zurückgegeben.
+   // Im outYWerte-Array werden die Y-Werte zurückgegeben. Die Korrekturpunkte sind in den 
+   // Arrays nach X-Wert aufsteigend sortiert.
+   function GetCorrectionCurve( variable& outXWerte[], variable& outYWerte[]) variable
+   {
+      object parsCorrectionCurves;
+      
+      Check_IsSelected();
+      parsCorrectionCurves = Selected_LiquidClassObject.Item1( LIQUIDCLASS_PARAMS::CorrectionCurve);
+      parsCorrectionCurves.GetItems( outXWerte, outYWerte);
+
+      // wandle Zeichenkette in flieskomma Zahl
+      {
+         variable cItems;
+         variable iItem;
+         cItems = outXWerte.GetSize();
+         for (iItem = 0; iItem < cItems; ++iItem)
+         {
+            outXWerte[ iItem] = FVal( outXWerte.GetAt( iItem));
+         }
+      }
+
+      Util::Sort( outYWerte, outXWerte);
+      return (outXWerte.GetSize());
+   }
+
+   function UpdateCorrectionCurve( variable inXWerte[], variable inYWerte[]) void
+   {
+      // TODO: Überprüfen ob beide arrays gleich viel werte enthalten.
+      object parsCorrectionCurves;
+      
+      Check_IsSelected();
+      if (inXWerte.GetSize() != inYWerte.GetSize())
+      {
+         variable formatArgs;
+         formatArgs = "  inXWerte.Size: " + IStr( inXWerte.GetSize()) + "\n  inYWerte.Size: " + IStr( inYWerte.GetSize());
+         err.Raise( -1, "MLSTARLiquidClassLib::UpdateCorrectionCurve(): The arrays inXWerte and inYWerte have different size!\n" + formatArgs + "\n");
+      }
+      parsCorrectionCurves = Selected_LiquidClassObject.Item1( LIQUIDCLASS_PARAMS::CorrectionCurve);
+      parsCorrectionCurves.RemoveAll();
+
+      // die Korrekturkurven-Punkte werden neu erstellt.
+      {
+         variable cItems;
+         variable iItem;
+         cItems = inXWerte.GetSize();
+         for (iItem = 0; iItem < cItems; ++iItem)
+         {
+            parsCorrectionCurves.Add( inYWerte.GetAt( iItem), inXWerte.GetAt( iItem));
+         }
+      }
+      LIQUIDCLASSLib_LiquidClass.SetLiquidClass( Selected_LiquidClassName, Selected_LiquidClassObject);
+   }
+
+   function SetLiquidClassAspirateParameter (variable aspirateParameter, variable paramValue) void
+   {
+         object tempParam;
+         tempParam = Selected_LiquidClassObject.Item1(LIQUIDCLASS_PARAMS::AspirateParameter);
+         tempParam.Remove(aspirateParameter);
+         tempParam.Add(paramValue,aspirateParameter);
+         LIQUIDCLASSLib_LiquidClass.SetLiquidClass( Selected_LiquidClassName, Selected_LiquidClassObject);
+   }
+   
+   function SetLiquidClassDispenseParameter (variable dispenseParameter, variable paramValue) void
+   {
+         object tempParam;
+         tempParam = Selected_LiquidClassObject.Item1(LIQUIDCLASS_PARAMS::DispenseParameter);
+         tempParam.Remove(dispenseParameter);
+         tempParam.Add(paramValue,dispenseParameter);
+         LIQUIDCLASSLib_LiquidClass.SetLiquidClass( Selected_LiquidClassName, Selected_LiquidClassObject);
+   }
+
+
+   // Die funtion gibt den Wert des angegebenen Parameters aus dem Namensraum LIQUIDCLASS_PARAMS
+   function GetLiquidClassParameter( variable param) variable
+   {
+      Check_IsSelected();
+      return (Selected_LiquidClassObject.Item1( param));
+   }
+
+   // Die funtion gibt den Wert des angegebenen Parameters aus dem Namensraum LIQUIDCLASS_PARAMS
+   function GetLiquidClassParameter_Object( variable param, object& outObject) void
+   {
+      Check_IsSelected();
+      outObject = Selected_LiquidClassObject.Item1( param);
+   }
+
+   // Die funktion gibt den Wert des angegebenen Aspirations-Parameters aus dem Namensraum LIQUIDCLASS_PARAMS
+   function GetLiquidClassAspirateParameter( variable aspirateParameter) variable
+   {
+      Check_IsSelected();
+      return (Selected_LiquidClassObject.Item2( LIQUIDCLASS_PARAMS::AspirateParameter, aspirateParameter));
+   }
+
+   // Die funktion gibt den Wert des angegebenen Dispensations-Parameters aus dem Namensraum LIQUIDCLASS_PARAMS
+   function GetLiquidClassDispenseParameter( variable dispenseParameter) variable
+   {
+      Check_IsSelected();
+      return (Selected_LiquidClassObject.Item2( LIQUIDCLASS_PARAMS::DispenseParameter, dispenseParameter));
+   }
+
+   // Schaltet TADM für selektierte Liquidklasse ein, wenn es noch nocht ist.
+   function EnableTadm() void
+   {
+      variable tadmEnabled;
+
+      Check_IsSelected();
+      tadmEnabled = Selected_LiquidClassObject.Item1( LIQUIDCLASS_PARAMS::Tadm_Enabled);
+      if (tadmEnabled != hslTrue)
+      {
+         Selected_LiquidClassObject.Add( hslTrue, LIQUIDCLASS_PARAMS::Tadm_Enabled);
+         LIQUIDCLASSLib_LiquidClass.SetLiquidClass( Selected_LiquidClassName, Selected_LiquidClassObject);
+      }
+   }
+
+   // Gibt das aktuelle Datum formatiert als Zeitstempel. Es kann als Teil eines Dateinamen 
+   // benutzt werden. Beispiel: 2009-03-17_14-56-35 -
+   function GetTimeStamp() variable
+   {
+      variable date;
+      variable time;
+      time = GetTime( "%H-%M-%S");
+      date = GetDate( "%Y-%m-%d");
+      return (date + "_" + time);
+   }
+
+   // exportiert die selektierte Liquidklasse in die angegebene Datenbankdatei.
+   // Diese Datenbankdatei wird neu erstellt, falls sie schon existiert.
+   function ExportLiquidClass( variable liquidDbFile) void
+   {
+      object hxStarLiquid;
+
+      Check_IsSelected();
+      {
+         object hxRegistry;
+         variable instClassCfgFil;
+
+         hxRegistry.CreateObject("HXREGLib.HxRegistry");
+         hxStarLiquid.CreateObject("Hamilton.HxStarLiquidClass");
+         instClassCfgFil = hxRegistry.InstClassCfgFile(instClass);
+         hxStarLiquid.InitStarLiquidClass( instClassCfgFil, hslFalse, liquidDbFile, hslTrue);
+      }
+      hxStarLiquid.SetLiquidclass( Selected_LiquidClassName, Selected_LiquidClassObject);
+      hxStarLiquid.CloseDatabase();
+   }
+
+   //mdarin: 03.04.2009: function added
+   // get the name (file) of the Access-DB
+   function GetLiquidDbName() variable
+   {
+      return(LIQUIDCLASSLib_LiquidClass.GetLiquidDbName());
+   }
+
+   //mdarin: 06.04.2009: function added (with help from L. Jegher)
+   // alvaro cuevas: 2020-5-20  Modified. Original returned "Invalid Class" for HxStarLiquidDevices , added liquid class name as input , sort returned arrays.
+   function GetLiquidDevicesFromLiqClass(
+                              variable  i_liquidClassName,  // [In] string liquid class name
+                              variable& o_arrayDeviceIDs[], //[Out] array of int values of device IDs
+                              variable& o_arrayDeviceNames[] //[Out] array of strings with device view names.             
+   ) void
+      {  
+      object parsLiquidClassDevices;
+      object hxCoreDevices;
+      variable name;
+      variable deviceId;
+      variable deviceCount;
+      variable iItem;
+      variable cItems;
+      
+      SelectLiquidClass(i_liquidClassName);
+
+      o_arrayDeviceIDs.SetSize(0);
+      o_arrayDeviceNames.SetSize(0);
+
+      GetLiquidClassParameter_Object( LIQUIDCLASS_PARAMS::LiquidDevice, parsLiquidClassDevices);
+      
+      hxCoreDevices.CreateObject("Hamilton.HxCoreLiquidDevices");
+      hxCoreDevices.SetInstrumentClass(instClass);
+
+      o_arrayDeviceIDs = parsLiquidClassDevices.GetValues(); // values in array
+      cItems = o_arrayDeviceIDs.GetSize();
+
+
+         for (iItem = 0; iItem < cItems; ++iItem)
+         {
+             //Trace(o_arrayDeviceIDs.GetAt(iItem));
+             deviceId = o_arrayDeviceIDs[iItem];
+             o_arrayDeviceNames.AddAsLast(hxCoreDevices.GetViewName(deviceId));
+         }
+      
+      // sort arrays
+      Util::Sort( o_arrayDeviceIDs, o_arrayDeviceNames);
+   }
+
+
+  function GetLiquidDevicesFromCfgFile(
+                              variable& o_arrayDeviceIDs[], //[Out] array of int values of device IDs
+                              variable& o_arrayDeviceNames[] //[Out] array of strings with device view names.             
+   ) void
+      {  
+      object parsLiquidClassDevices;
+      object hxCoreDevices;
+      object parsObj;
+      object hxPar;
+      object enumerator;
+      object liqDevice;
+      variable name;
+      variable deviceId;
+      variable deviceCount;
+      variable iItem;
+      variable cItems;
+      
+      //SelectLiquidClass(i_liquidClassName);
+
+      o_arrayDeviceIDs.SetSize(0);
+      o_arrayDeviceNames.SetSize(0);
+
+      //GetLiquidClassParameter_Object( LIQUIDCLASS_PARAMS::LiquidDevice, parsLiquidClassDevices);
+
+      
+      parsObj.CreateObject("HXPARAMSLib.HxPars");
+      
+      hxCoreDevices.CreateObject("Hamilton.HxCoreLiquidDevices");
+      hxCoreDevices.SetInstrumentClass(instClass);
+
+      //hxCoreDevices.GetObject("IHxCoreLiquidDevices", parsObj);
+      hxCoreDevices.GetDevices(parsObj);
+
+
+      enumerator = parsObj._NewEnum;
+
+      while (enumerator.EnumNext(hxPar))
+      {
+         liqDevice = hxPar.Value;
+         
+         //Trace("TipType=", hxPar.Key, "  value=", hxPar.Value , " name=", liqDevice.Item1(1));
+          o_arrayDeviceNames.AddAsLast (liqDevice.Item1(1));
+          o_arrayDeviceIDs.AddAsLast (hxPar.Key);
+
+         hxPar.ReleaseObject();
+      }
+
+      // sort arrays
+      Util::Sort( o_arrayDeviceIDs, o_arrayDeviceNames);
+
+   
+   }
+
+
+
+   //-----------------------------------------------------------------------------------------
+
+   namespace DESCRIPTION_SECTIONS
+   {
+       static const variable None                   ( 0);
+       static const variable CommonParameters       ( 1);
+       static const variable LiquidParameters       ( 2);
+       static const variable CorrectionCurve        ( 4);
+       static const variable Notes                  ( 8);
+       static const variable TadmState              ( 16);
+       static const variable ToleranceBandVolumes   ( 32);
+       static const variable ToleranceBandDetails   ( 64);
+       static const variable All                    (CommonParameters+LiquidParameters+CorrectionCurve+Notes+TadmState+ToleranceBandVolumes+ToleranceBandDetails);
+   }
+
+   function GetLiquidClassDescription() variable
+   {
+      variable description;
+
+      Check_IsSelected();
+      
+      description = LIQUIDCLASSLib_LiquidClass.GetLiquidClassDescription( 
+                              Selected_LiquidClassName, 
+                              DESCRIPTION_SECTIONS::All);
+      return (description);
+   }
+
+
+// 07.04.2009: mdarin: created with claudio jörg
+// get tiptypes in array. (parallel-array)
+// get tip-name in array. (parallel-array)
+// tip-types depending on config-file!
+
+   function getTipTypesNames(variable& oArrTipID[], variable& oArrTipNames[]) variable
+   {
+      object objTmp;
+      object starTipTypes;
+      object parsPtr;
+      object enumerator;
+      object hxPar;
+      object parsOneTipType;
+
+      oArrTipID.SetSize(0);
+      oArrTipNames.SetSize(0);
+
+   	if ( 0 == objTmp.CreateObject("Hamilton.HxCoreTipTypes") ) // create temp object
+   	{
+   		Trace("ERROR: CreateObject(\"Hamilton.HxCoreTipTypes\")"); // error create object
+         return(hslFalse);
+   	}
+
+   	if ( 0 == objTmp.GetObject("IHxCoreTipTypes2", starTipTypes) ) // create temp object
+   	{
+   		Trace("ERROR: Query Interface to IHxCoreTipTypes2"); // error create object
+         return(hslFalse);
+   	}
+      //   Trace(starTipTypes);
+   	if ( 0 == parsPtr.CreateObject("HXPARAMSLib.HxPars") )
+   	{
+   		Trace("ERROR: parsPtr.CreateObject(\"HXPARAMSLib.HxPars\")");
+   		return(hslFalse);
+   	}
+
+      //Trace("Count = ", parsPtr.Count);
+      //Trace(starTipTypes);
+      starTipTypes.SetInstrumentClass(instClass);
+      starTipTypes.GetTipTypes(parsPtr);
+      // Trace("Count = ", parsPtr.Count);
+      enumerator = parsPtr._NewEnum;
+
+      while (enumerator.EnumNext(hxPar))
+      {
+         //Trace("TipType=", hxPar.Key, "  value=", hxPar.Value);
+      
+         parsOneTipType = hxPar.Value;
+         //Trace("ViewName=", parsOneTipType.Item1(1));
+
+         oArrTipID.AddAsLast(hxPar.Key);
+         oArrTipNames.AddAsLast(parsOneTipType.Item1(1));
+         //oArrTipNames.AddAsLast(parsOneTipType.Item1(starTipTypes.HxStarTipTypeKeys_ttViewName));
+         hxPar.ReleaseObject();
+      }
+
+   // sort arrays
+   Util::Sort( oArrTipID, oArrTipNames);
+
+   return(hslTrue);
+   }
+
+// function "SetStateOriginalLiquid", 2010-01-20, mdarin
+// Set state of the liquid-class (TRUE: Predefined / FALSE: user-defined)
+   function SetStateOriginalLiquid(
+                                    variable iState // hslTrue: set to "predefined", hslFalse: set to "user-defined"
+                                  ) void
+   {
+      variable actualState;
+
+      if (iState != HSL_TRUE && iState != HSL_FALSE)
+      {
+         Trace("ERROR: Wrong input-parameter. Only hslTrue or hslFalse allowed!");
+         err.Raise( -1, "ERROR: Wrong input-parameter. Only hslTrue or hslFalse allowed!");
+      }
+
+      Check_IsSelected(); // raise error if no LC is selected in previous
+      actualState = Selected_LiquidClassObject.Item1( LIQUIDCLASS_PARAMS::OriginalLiquid); // get actual state of LC
+
+      // Trace("actualState before update: ", actualState, " / iState: ", iState);
+
+      if (actualState != iState) // set only if "new state" is not equal to "existing state"
+      {
+         Selected_LiquidClassObject.Add( iState, LIQUIDCLASS_PARAMS::OriginalLiquid);
+         LIQUIDCLASSLib_LiquidClass.SetLiquidClass( Selected_LiquidClassName, Selected_LiquidClassObject);
+      }
+      // actualState = Selected_LiquidClassObject.Item1( LIQUIDCLASS_PARAMS::OriginalLiquid);
+      // Trace("actualState AFTER update: ", actualState);
+   }
+// ------------------------------------------------------------
+
+//Get the TADM Tolerance band x-axis(time in ms) and y-axis (pressure in Pa) data
+function GetTADMToleranceBand(
+                           variable i_strLiquidClassName,//[In] string liquidClassName
+                           variable i_fltVolume, //[In] float volume
+                           variable i_paramTadmAspOrDispStep , //[In]  stepType -->  TadmAspirating (-533331728) , TadmDispensing (-533331727)
+                           variable i_paramTadmUpperOrLowerBand , //[In] TadmLowerToleranceBand(-533331871) , TadmupperToleranceBand(-533331872)
+                           variable& o_x_TADMBand_time_ms[], //output array of x-axis values, time in ms
+                           variable& o_y_TADMBand_pressure_Pa[]  //output array of y-axis values, pressure in Pa             
+                          )void
+   {
+      object parsObj;
+      variable _arr_tmp[];
+      variable cItems;
+      variable iItem;
+      variable isEven;
+      variable tmpVal;
+      parsObj.CreateObject("HXPARAMSLib.HxPars");
+
+      o_x_TADMBand_time_ms.SetSize(0);
+      o_y_TADMBand_pressure_Pa.SetSize(0);
+      _arr_tmp.SetSize(0);
+
+      
+      LIQUIDCLASSLib_LiquidClass.GetToleranceBand(
+
+                              i_strLiquidClassName, //[In] string liquidClassName
+                              i_fltVolume,//[In] double volume
+                              i_paramTadmAspOrDispStep,//[In] HxCoreTadmStep stepType -->  tadmAspirating = -533331728 , tadmDispensing = -533331727
+                               parsObj, //[In] object resultPars
+                                 0     //[In] bool checkValidationState - if this boolean value is true, an error occures if the liquid class is not validated and the user has to work with validated liquid classes
+                     );
+
+    _arr_tmp = parsObj.Item1(i_paramTadmUpperOrLowerBand);
+    cItems = _arr_tmp.GetSize();
+    isEven = 1;
+    for (iItem = 0; iItem < cItems; ++iItem){
+            tmpVal = _arr_tmp.GetAt(iItem);
+            if(isEven==1){
+                //time value , multiply by 10 to convert to ms
+                tmpVal = tmpVal * 10;
+                o_x_TADMBand_time_ms.AddAsLast(tmpVal);
+                isEven = 0;
+
+            }
+            else {
+                //pressure value
+                o_y_TADMBand_pressure_Pa.AddAsLast(tmpVal);
+                isEven = 1;
+            }
+     }
+    
+    
+  }
+
+
+  //-----------------------------------------------------------
+//FormatDesignHistoryTime   Converts a given time in s in Unix/UTC format from the liquid design history and returns a human readable date.
+//the given number is in microsoft format cdbl  , where tcdbl return datetime in microsoft format. before comma date - number of days since 1 January 1900. After comma/dot the  time  is ---  24 hours = 1.  Multiply by 86400 to convert to seconds
+
+private function FormatDesignHistoryTime(variable i_flt_time  //cdbl time in days (Time since Jan 1, 1900 , 00:00:00)
+                                                              ) variable
+   {
+   
+   variable strScriptResult;
+   variable _strCmd;
+   variable _int_days;
+   variable _ftl_seconds;
+   variable _int_seconds;
+   
+   object objScriptControl;		
+   object objFileSystemObject;
+   
+   strScriptResult = "";
+   _int_days = MthFloor(i_flt_time);
+   _ftl_seconds = i_flt_time - _int_days;
+   _int_seconds = _ftl_seconds * 86400;
+   _int_seconds = MthRound(_int_seconds, 9);
+   _strCmd = StrConcat8(Translate("GetTimeReadable("), _int_days, ",", _int_seconds, ")", "", "", "");
+
+
+         //get directories
+         objFileSystemObject.CreateObject("Scripting.FileSystemObject");
+         objScriptControl.CreateObject("MSScriptControl.ScriptControl");
+
+         // - create script
+			objScriptControl.Language = "VBScript";
+			objScriptControl.AddObject("fso", objFileSystemObject);	
+         
+        			objScriptControl.AddCode
+			("																	\n\
+				Option Explicit											\n\
+																				\n\
+				Function GetTimeReadable(days, seconds)   \n\
+               Dim epochDays, epochSeconds  \n\
+               Dim tDays, t  						   \n\
+               Dim strDate          \n\
+               epochDays = DateDiff(\"d\", \"01/01/1900 00:00:00\", days)  \n\
+               tDays = DateAdd(\"d\", epochDays ,\"01/01/1900 00:00:00\")      \n\
+               t = DateAdd(\"s\", seconds ,tDays & \" 00:00:00\") \n\
+               strDate = Year(t) & \"-\" & _     \n\
+                         Right(\"0\" & Month(t),2)  & \"-\" & _        \n\
+                         Right(\"0\" & Day(t),2)  & \"_\" & _           \n\
+                         Right(\"0\" & Hour(t),2) & \":\" & _                   \n\
+                         Right(\"0\" & Minute(t),2) & \":\" & _                 \n\
+                         Right(\"0\" & Second(t),2)                     \n\
+               GetTimeReadable = 	CStr(strDate)     					   \n\
+				End Function												\n\
+			");
+
+         // - execute script      
+		   strScriptResult = objScriptControl.Eval(_strCmd);
+          
+         //Trace(strScriptResult) ;       
+
+         // - clean up
+         objScriptControl.ReleaseObject();
+         objFileSystemObject.ReleaseObject();
+ 
+      return (strScriptResult);
+   
+   
+   }
+
+//-----------------------------------------------------------
+//Get Liquid Class Design History. 
+//Returns arrays with info of the changes:
+//- o_arr_designHistory_user  :     User that made the change
+//- o_arr_designHistory_description :  Change description
+//- o_arr_designHistory_formattedTime:   Change time in YYYY-MM-DD HH:MM:SS
+//- o_arr_designHistory_unixTime   :  Change time in unix format (days since Jan 1, 1900 00:00:00 GMT)
+
+function GetLiquidClassDesignHistory (variable i_liquidClassName ,                    //[in] string,  liquid class name
+                                      variable& o_arr_designHistory_user[],           //[out]   User that made the change
+                                      variable& o_arr_designHistory_description[],    //  Change description
+                                      variable& o_arr_designHistory_formattedTime[],  //   Change time in YYYY-MM-DD HH:MM:SS
+                                      variable& o_arr_designHistory_unixTime[])       //  Change time in unix format (days since Jan 1, 1900 00:00:00 GMT)
+
+      {
+
+         object objDH;
+         variable arrVals[];
+         variable arrKeys[];
+         variable arr_tmp_timestamps[];
+         variable cItems;
+         variable iItem;
+         object obj2; 
+         variable cItems2;
+         variable iItem2;
+         variable arrKeys2[];
+         variable arrVals2[];
+
+         SelectLiquidClass (i_liquidClassName);
+         GetLiquidClassParameter_Object(LIQUIDCLASS_PARAMS::DesignHistory, objDH);
+         arrKeys.SetSize(0);
+         arrVals.SetSize(0);
+         o_arr_designHistory_user.SetSize(0);
+         o_arr_designHistory_description.SetSize(0);
+         o_arr_designHistory_unixTime.SetSize(0);
+         o_arr_designHistory_formattedTime.SetSize(0);
+
+         objDH.GetItems( arrKeys, arrVals);
+         cItems = arrKeys.GetSize();
+         for (iItem = 0; iItem < cItems; ++iItem)
+         {
+            obj2 = objDH.Item1(arrKeys.GetAt(iItem)); 
+            obj2.GetItems(arrKeys2, arrVals2);
+            cItems2 = arrKeys2.GetSize();
+            for (iItem2 = 0; iItem2 < cItems2; ++iItem2)
+            {
+               
+               
+              // Trace( iItem2 , ">> Key: " , arrKeys2.GetAt(iItem2) , " Value:",   arrVals2.GetAt(iItem2));
+               if(iItem2==1) o_arr_designHistory_description.AddAsLast(arrVals2.GetAt(iItem2));
+               if(iItem2==2) o_arr_designHistory_user.AddAsLast(arrVals2.GetAt(iItem2));
+               if(iItem2==3) {
+                  o_arr_designHistory_unixTime.AddAsLast(arrVals2.GetAt(iItem2));
+                  o_arr_designHistory_formattedTime.AddAsLast(FormatDesignHistoryTime(arrVals2.GetAt(iItem2)));
+                  }
+            }   
+         }         
+
+
+      arr_tmp_timestamps=o_arr_designHistory_unixTime;
+      Util::Sort(o_arr_designHistory_formattedTime, arr_tmp_timestamps);
+      arr_tmp_timestamps=o_arr_designHistory_unixTime;
+      //Util::Sort( values[], keys[]) .. It sorts by keys.
+      Util::Sort(o_arr_designHistory_user, arr_tmp_timestamps);
+      Util::Sort(o_arr_designHistory_description, o_arr_designHistory_unixTime); 
+      //Util2::Debug::TraceArray_4(Translate("Arrays"), o_arr_designHistory_unixTime, o_arr_designHistory_user, o_arr_designHistory_description, o_arr_designHistory_formattedTime);
+
+
+   }
+
+function GetTADMVolumes(
+                        variable i_liquidClassName ,                    //[in] string,  liquid class name 
+                        variable& o_arrayTADM_Asp_Volumes[] , //[In]  stepType -->  TadmAspirating (-533331728) , TadmDispensing (-533331727)
+                        variable& o_arrayTADM_Disp_Volumes[] ){     //[Out] array of TADM volumes
+           
+
+      object parsObj;
+         variable arrVals[];
+         variable arrKeys[];
+         variable cItems;
+         variable iItem;
+         object obj2; 
+         variable cItems2;
+         variable iItem2;
+         variable arrKeys2[];
+         variable arrVals2[];
+         variable volume;
+         variable aspOrDisp;
+      parsObj.CreateObject("HXPARAMSLib.HxPars");
+
+      o_arrayTADM_Asp_Volumes.SetSize(0);
+      o_arrayTADM_Disp_Volumes.SetSize(0);
+
+      LIQUIDCLASSLib_LiquidClass.GetVolumes(i_liquidClassName, parsObj);
+      
+         arrKeys.SetSize(0);
+         arrVals.SetSize(0);
+
+         parsObj.GetItems(arrKeys, arrVals);
+         cItems = arrKeys.GetSize();
+         for (iItem = 0; iItem < cItems; ++iItem)
+         {
+           
+            aspOrDisp = IVal(arrKeys.GetAt(iItem));
+             //Trace("//// aspOrDisp=", aspOrDisp);
+            obj2 = parsObj.Item1(arrKeys.GetAt(iItem)); 
+            obj2.GetItems(arrKeys2, arrVals2);
+            cItems2 = arrKeys2.GetSize();
+            for (iItem2 = 0; iItem2 < cItems2; ++iItem2)
+            {
+                volume = arrVals2.GetAt(iItem2);
+         
+               if (aspOrDisp == LIQUIDCLASS_PARAMS::TadmAspirateStep){o_arrayTADM_Asp_Volumes.AddAsLast(volume);}
+               if (aspOrDisp == LIQUIDCLASS_PARAMS::TadmDispenseStep){o_arrayTADM_Disp_Volumes.AddAsLast(volume);}
+               
+               //Trace( "item=",iItem , " iItem2=", iItem2 , ">> Key: " , arrKeys2.GetAt(iItem2) , " Value:",   arrVals2.GetAt(iItem2));
+ 
+            }   
+         }  
+
+    }
+
+function GetLiquidNames(variable o_liquidNames[])
+{
+   object parsObj;
+   object hxPar;
+   object enumerator;
+   object obj;
+   variable dummyArray[];
+   parsObj.CreateObject("HXPARAMSLib.HxPars");
+   LIQUIDCLASSLib_LiquidClass.GetLiquidNames(parsObj);
+
+   o_liquidNames.SetSize(0);
+
+       enumerator = parsObj._NewEnum;
+
+      while (enumerator.EnumNext(hxPar))
+      {
+         //Trace("TipType=", hxPar.Key, "  value=", hxPar.Value);
+         o_liquidNames.AddAsLast(hxPar.Value);
+         hxPar.ReleaseObject();
+      }
+
+      //Sort( values[], keys[]) .. It sorts by keys.
+      dummyArray.SetSize(o_liquidNames.GetSize());
+      Util::Sort(dummyArray, o_liquidNames);
+
+}
+
+function GetLiqClassChecksum(variable i_liquidClassName, variable o_int_checksum , variable i_bln_trace ){
+ Check_IsInitialized();
+ LIQUIDCLASSLib_LiquidClass.GetLiquidClassCheckSum (i_liquidClassName, o_int_checksum);
+ if(i_bln_trace==1){ 
+   Trace("Liquid Class = ", i_liquidClassName, " , Checksum=", o_int_checksum);  
+ }
+   
+}
+
+
+}
+
+// $$author=Cuevas_A$$valid=0$$time=2021-10-21 14:43$$checksum=9bcb11a0$$length=085$$
