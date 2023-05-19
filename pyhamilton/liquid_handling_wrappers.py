@@ -3,6 +3,7 @@
 Created on Wed Mar  9 12:01:01 2022
 
 @author: stefa
+@author: yang
 """
 
 import sys, os, time, logging, importlib
@@ -14,7 +15,7 @@ from .oemerr import PositionError
 from .interface import (INITIALIZE, PICKUP, EJECT, ASPIRATE, DISPENSE, ISWAP_GET, ISWAP_PLACE, HEPA,
 WASH96_EMPTY, PICKUP96, EJECT96, ASPIRATE96, DISPENSE96, ISWAP_MOVE, MOVE_SEQ, TILT_INIT, TILT_MOVE, GRIP_GET,
 GRIP_MOVE, GRIP_PLACE, SET_ASP_PARAM, SET_DISP_PARAM)
-from .liquid_class_dict import liquidclass_params_asp
+from .liquid_class_dict import liquidclass_params_asp, liquidclass_params_dsp
 
 def resource_list_with_prefix(layout_manager, prefix, res_class, num_ress, order_key=None, reverse=False):
     def name_from_line(line):
@@ -260,7 +261,7 @@ def set_aspirate_parameter(ham_int, LiquidClass, Parameter, Value):
     ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
 def set_dispense_parameter(ham_int, LiquidClass, Parameter, Value):
-    param_key = liquidclass_params_asp[Parameter]
+    param_key = liquidclass_params_dsp[Parameter]
     cid = ham_int.send_command(SET_DISP_PARAM, LiquidClass = LiquidClass, Parameter = param_key, Value = Value)
     ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
