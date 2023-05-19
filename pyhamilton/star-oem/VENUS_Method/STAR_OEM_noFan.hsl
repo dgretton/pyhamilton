@@ -320,7 +320,6 @@ variable hssErrCode;
 variable LiqClassParameterName;
 variable LiqClassParameterValue;
 variable LiquidClassName;
-variable LiquidClassParameterValue;
 /* {{ 2 "VariableInsertLine" "" */ // }} ""
 // {{ 2 "TemplateIncludeBlock" ""
  namespace _Method { #include "HSLMETEDLib.hs_" } 
@@ -2127,8 +2126,8 @@ err.Clear();
 // {{{ 560 1 0 "b471ff31_4fdd_4a9f_87431e5741a9b969" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
 LiquidClassLib::SelectLiquidClass(LiquidClassName);
 // }} ""
-// {{{ 561 1 0 "1478809d_e829_4040_a50d7b3a44944f4a" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
-LiquidClassLib::SetLiquidClassAspirateParameter(LiqClassParameterName, LiqClassParameterValue);
+// {{{ 561 1 0 "8f401b71_156d_43b5_892982e8478456f8" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+LiquidClassLib::SetLiquidClassDispenseParameter(LiqClassParameterName, LiqClassParameterValue);
 // }} ""
 // {{ 562 1 0 "2b0f0071_b3f4_427c_89691e712bb58085" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
 o_stepReturn = 1;
@@ -6857,4 +6856,4 @@ HAMILTON_PH_MODULE_CONTROLLER::_ExitLibrary();
 // }} ""
 
 
-// $$author=stefa$$valid=0$$time=2023-05-14 14:31$$checksum=726c0442$$length=082$$
+// $$author=Hamilton$$valid=0$$time=2023-05-18 19:52$$checksum=6686a57d$$length=085$$
