@@ -26,6 +26,7 @@ from .odtc_wrappers import *
 from .centrifuge_wrappers import *
 from .hig_wrappers import *
 from .mpe_wrappers import *
+from .tec_wrappers import *
 
 
 

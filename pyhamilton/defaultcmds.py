@@ -265,7 +265,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     'TEC_Initialize':('TEC_INIT', {
 
         'ControllerID':'', # (integer)
-        'SimulationMode':False, # 0=False, 1=True; 
+        'SimulationMode':'', # 0=False, 1=True; 
     }),
     'TEC_StartTempControl':('TEC_START', {
 
@@ -285,7 +285,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     }),
     'TEC_Terminate':('TEC_TERMINATE', {
 
-        'StopAllDevices':1, # 0=False, 1=True
+        'StopAllDevices':'', # 0=False, 1=True
     }),
     'TiltModule_Initialize':('TILT_INIT', {
 
