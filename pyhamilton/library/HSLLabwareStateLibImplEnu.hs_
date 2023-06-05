@@ -1,0 +1,79 @@
+// ======================================================================
+// This is a part of the HSL Labware State Library.
+// Copyright (C) by HAMILTON Bonaduz AG, CH-7402 Bonaduz.
+// All rights reserved.
+// ======================================================================
+//
+// Modification History
+// 2005-05-03  mhosang : Initial file creation
+//
+// Remarks: Don't translate placeholders like '%s', '%s1', '%s2', '%d' etc;
+//
+// ======================================================================
+
+function StringTable()
+{
+	// IDE
+	Insert(IDE::noError,													"No error."																				);
+	Insert(IDE::fatalError,												"Fatal error."																			);
+	Insert(IDE::invalidParameter,										"Invalid parameter."																	);
+	Insert(IDE::sampleTrackingDisabled,								"Sample tracking is disabled."													);
+	Insert(IDE::invalidLabwareLevel,									"Invalid labware level."															);
+	Insert(IDE::invalidBarcodeListType,								"Invalid barcode list type."														);
+	Insert(IDE::invalidBarcode,										"Invalid barcode. The barcode must be a string."							);
+	Insert(IDE::invalidBarcodeMask,									"Invalid barcode mask. The barcode mask must be a string."				);
+	Insert(IDE::invalidSummaryState,									"Invalid summary state."															);
+	Insert(IDE::invalidNumberOfProcessedSteps,					"Invalid number of processed steps. It must be a positive integer."	);
+	Insert(IDE::invalidVolume,											"Invalid volume. It must be a positive number."								);
+	Insert(IDE::invalidVisibility,									"Invalid visibility. It must be a boolean."									);
+	Insert(IDE::invalidSequencePosition,							"Invalid current position in given sequence."								);
+	Insert(IDE::noCarrierFound,										"There is now carrier available for the given sequence."					);
+	
+	// IDS
+	Insert(IDS::helpFileName,											"HSLLabwareStateLibEnu.chm"														);
+	Insert(IDS::traceSource, 											"SYSTEM"																					);
+	Insert(IDS::traceActionGetLabwareID,							"HSLLabwState::GetLabwareID"														);
+	Insert(IDS::traceActionGetLabwareBarcode,						"HSLLabwState::GetLabwareBarcode"												);
+	Insert(IDS::traceActionSetLabwareBarcode,						"HSLLabwState::SetLabwareBarcode"												);
+	Insert(IDS::traceActionGetLabwareBarcodeMask,				"HSLLabwState::GetLabwareBarcodeMask"											);
+	Insert(IDS::traceActionSetLabwareBarcodeMask,				"HSLLabwState::SetLabwareBarcodeMask"											);
+	Insert(IDS::traceActionGetLabwareSourceBarcodes,			"HSLLabwState::GetLabwareSourceBarcodes"										);
+	Insert(IDS::traceActionGetLabwareLastSourceBarcode,		"HSLLabwState::GetLabwareLastSourceBarcode"									);
+	Insert(IDS::traceActionAddLabwareSourceBarcode,				"HSLLabwState::AddLabwareSourceBarcode"										);
+	Insert(IDS::traceActionSetLabwareSummaryState,				"HSLLabwState::SetLabwareSummaryState"											);
+	Insert(IDS::traceActionGetLabwareSummaryState,				"HSLLabwState::GetLabwareSummaryState"											);
+	Insert(IDS::traceActionGetLabwareLastActionState,			"HSLLabwState::GetLabwareLastActionState"										);
+	Insert(IDS::traceActionSetLabwareExpNumOfProcSteps,		"HSLLabwState::SetLabwareExpNumOfProcSteps"									);
+	Insert(IDS::traceActionGetLabwareExpNumOfProcSteps,		"HSLLabwState::GetLabwareExpNumOfProcSteps"									);
+	Insert(IDS::traceActionGetLabwareNumOfProcSteps,			"HSLLabwState::GetLabwareNumOfProcSteps"										);
+	Insert(IDS::traceActionSetLabwareVolume,						"HSLLabwState::SetLabwareVolume"													);
+	Insert(IDS::traceActionGetLabwareVolume,						"HSLLabwState::GetLabwareVolume"													);
+	Insert(IDS::traceActionGetLabwareRelation,					"HSLLabwState::GetLabwareRelation"												);
+	Insert(IDS::traceActionSetLabwareVisibility,					"HSLLabwState::SetLabwareVisibility"											);
+	Insert(IDS::traceActionGetLabwareVisibility,					"HSLLabwState::GetLabwareVisibility"											);
+	Insert(IDS::traceActionIsLabwareConnected,					"HSLLabwState::IsLabwareConnected"												);
+
+	Insert(IDS::enableSampleTracking,								"To use this function, sample tracking must be enabled."					);
+
+	Insert(IDS::functionGetLabwareIDFailed,						" > Could not determine labware id"												);
+	Insert(IDS::functionGetLabwareBarcodeFailed,					" > Could not determine labware barcode"										);
+	Insert(IDS::functionSetLabwareBarcodeFailed,					" > Could not set labware barcode"												);
+	Insert(IDS::functionGetLabwareBarcodeMaskFailed,			" > Could not determine labware barcode mask"								);
+	Insert(IDS::functionSetLabwareBarcodeMaskFailed,			" > Could not set labware barcode mask"										);
+	Insert(IDS::functionGetLabwareSourceBarcodesFailed,		" > Could not determine labware source barcodes"							);
+	Insert(IDS::functionGetLabwareLastSourceBarcodeFailed,	" > Could not determine labware's last source barcode"					);
+	Insert(IDS::functionAddLabwareSourceBarcodeFailed,			" > Could not add source barcode to labware"									);
+	Insert(IDS::functionSetLabwareSummaryStateFailed,			" > Could not set labware's summary state"									);
+	Insert(IDS::functionGetLabwareSummaryStateFailed,			" > Could not determine labware's summary state"							);
+	Insert(IDS::functionGetLabwareLastActionStateFailed,		" > Could not determine labware's last action state"						);
+	Insert(IDS::functionSetLabwareExpNumOfProcStepsFailed,	" > Could not set labware's expected number of processed steps"		);
+	Insert(IDS::functionGetLabwareExpNumOfProcStepsFailed,	" > Could not determine the expected number of processed steps"		);
+	Insert(IDS::functionGetLabwareNumOfProcStepsFailed,		" > Could not determine the number of procecssed steps"					);
+	Insert(IDS::functionSetLabwareVolumeFailed,					" > Could not set labware's volume"												);
+	Insert(IDS::functionGetLabwareVolumeFailed,					" > Could not determine labware's volume"										);
+	Insert(IDS::functionGetLabwareRelationFailed,				" > Could not determine labware relation"										);
+	Insert(IDS::functionSetLabwareVisibilityFailed,				" > Could not set the visibility of the labware"							);
+	Insert(IDS::functionGetLabwareVisibilityFailed,				" > Could not determine the visibility of the labware"					);
+	Insert(IDS::functionIsLabwareConnectedFailed,				" > Could not determine if labware is connected"							);
+}
+// $$author=wbarmettler$$valid=1$$time=2017-03-09 07:27$$checksum=beba9f55$$length=090$$

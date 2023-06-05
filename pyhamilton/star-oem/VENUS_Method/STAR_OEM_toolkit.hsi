@@ -1452,8 +1452,8 @@ err.Clear();
 // {{{ 165 1 0 "53a1b499_97d8_49ce_85f583fb81241149" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
 o_stepReturn = HSLInhecoTECLib::StopTemperatureControl(ControllerID, DeviceID, ErrorCode);
 // }} ""
-// {{ 166 1 0 "dd49b5d1_ca6e_4f0a_93641a54b773750a" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = Translate("0");
+// {{ 166 1 0 "6663219d_f732_4334_ac9149ef5e378f41" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
+o_stepReturn = Translate("1");
 // }} ""
 // {{ 167 1 0 "c29a0f01_2391_485c_a95211df9c9b7272" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_E3152496BDA74f1681473505DC2B3A3E : {}
@@ -1483,8 +1483,8 @@ err.Clear();
 // {{{ 172 1 0 "3239a113_7650_4023_a9fad336d668211f" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
 o_stepReturn = HSLInhecoTECLib::Terminate(StopAllDevices);
 // }} ""
-// {{ 173 1 0 "a6af6ca2_ed30_416d_b8c9860b3c044870" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
-o_stepReturn = Translate("0");
+// {{ 173 1 0 "3b263a00_9a60_41fc_9972731eef692e35" "{B31F3543-5D80-11d4-A5EB-0050DA737D89}"
+o_stepReturn = Translate("1");
 // }} ""
 // {{ 174 1 0 "6f9054f4_5e87_4236_a046d345d0972e98" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
 errLabel_202B4C8C5EE24700B8BB7F3204BFB6ED : {}
@@ -1611,4 +1611,4 @@ o_stepReturn = ErrGetDataAt(3);
 // {{{ 2 "LibraryNamespace" "End"
 } // library namespace
 // }} ""
-// $$author=stefa$$valid=0$$time=2023-06-01 16:22$$checksum=290af602$$length=084$$
+// $$author=stefa$$valid=0$$time=2023-06-01 18:17$$checksum=fcfea369$$length=084$$

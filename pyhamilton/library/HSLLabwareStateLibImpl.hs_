@@ -1,0 +1,2194 @@
+// ======================================================================
+// This is a part of the HSL Labware State Library.
+// Copyright (C) by HAMILTON Bonaduz AG, CH-7402 Bonaduz.
+// All rights reserved.
+// ======================================================================
+//
+// Modification History
+// 2005-05-04  mhosang : Initial file creation
+// 2006-09-04  ljegher : Adapt implementation for VectorDb
+// 2009-12-10  mhosang : Updated SetLabwareVisibility() to match HxLabwr3
+//                       implementation
+//
+// ======================================================================
+
+// include guard
+#pragma once
+
+// necessary includes
+#ifndef __HSLStrLib_hsl__
+#include "HSLStrLib.hsl"
+#endif
+
+#ifndef __HSLSynLib_hsl__
+#include "HSLSynLib.hsl"
+#endif
+
+#ifndef __HSLUtilLib_hsl__
+#include "HSLUtilLib.hsl"
+#endif
+
+#ifndef __HSLSeqLib_hsl__
+#include "HSLSeqLib.hsl"
+#endif
+
+#ifndef __HSLMthLib_hsl__
+#include "HSLMthLib.hsl"
+#endif
+
+// --------------------------------------------------------------------------------------
+// Implementation of the HSL Labware State Library
+// --------------------------------------------------------------------------------------
+namespace HSLLabwState
+{
+	#ifndef __HSLStringTableLib_hsl__
+	#include "HSLStringTableLib.hs_"
+	#endif
+
+	// --------------------------------------------------------------------------------------
+	// Library Data
+	// --------------------------------------------------------------------------------------
+
+	//declaration of global member data
+	global variable mg_HSLLabwState_IsSampleTrackingEnabled(hslFalse);	// false, if sample tracking is OFF
+	global object mg_HSLLabwState_trackerObject;									// the one and only sample tracker object, instantiated from executor
+	global variable mg_HSLLabwState_cs(0);											// critical section
+
+	//declaration of member data valid within namespace of process
+	variable m_initializedLib(hslFalse);											// initialization state of the HSL Mapping Report library
+	
+	// --------------------------------------------------------------------------------------
+	// Debugging
+	// --------------------------------------------------------------------------------------
+
+	//#define _DEBUG		1																// specifies the debug version of the library
+
+	// --------------------------------------------------------------------------------------
+	// Labware Levels
+	// --------------------------------------------------------------------------------------
+	namespace LabwareLevels
+	{
+		// the labware levels must be in the following order:
+		// min  <----------------------> max
+		// deck <----------------------> container
+		const variable deck(100);
+		const variable template(200);
+		const variable rack(300);
+		const variable container(400);
+	}
+
+	// --------------------------------------------------------------------------------------
+	// Interfaces
+	// --------------------------------------------------------------------------------------
+	namespace Interfaces
+	{
+		// these are the used interfaces
+		const variable IEditLabware	("IEditLabware6");
+		const variable IRectRack		("IRectRack2");
+	}
+
+	// --------------------------------------------------------------------------------------
+	// Tracing
+	// --------------------------------------------------------------------------------------
+	namespace TraceStatus
+	{
+		const variable start													(1);					// action status for formatted trace
+		const variable complete												(2);					// action status for formatted trace
+		const variable error_												(3);					// action status for formatted trace
+		const variable progress												(4);					// action status for formatted trace
+		const variable completeWithError									(5);					// action status for formatted trace
+	}
+
+	// --------------------------------------------------------------------------------------
+	// Error Ids
+	// --------------------------------------------------------------------------------------
+	namespace IDE
+	{
+		const variable first													(0);					// guard
+		const variable noError												(first);				// No error.
+		const variable fatalError											(first + 1);		// General unspecific error
+		const variable invalidParameter									(first + 2);		// Invalid parameter
+		const variable sampleTrackingDisabled							(first + 3);		// Sample tracking is disabled.
+		const variable invalidLabwareLevel								(first + 4);		// Invalid labware level.
+		const variable invalidBarcodeListType							(first + 5);		// Invalid barcode list type.
+		const variable invalidBarcode										(first + 6);		// Invalid barcode.
+		const variable invalidBarcodeMask								(first + 7);		// Invalid barcode mask.
+		const variable invalidSummaryState								(first + 8);		// Invalid summary state.
+		const variable invalidNumberOfProcessedSteps					(first + 9);		// Invalid number of processed steps.
+		const variable invalidVolume										(first + 10);		// Invalid volume.
+		const variable invalidVisibility									(first + 11);		// Invalid visibility.
+		const variable invalidSequencePosition							(first + 12);		// Invalid sequence position.
+		const variable noCarrierFound										(first + 13);		//	No carrier found for the given sequence.
+		const variable last													(first + 13);		// guard
+	}
+
+	// --------------------------------------------------------------------------------------
+	// String Ids
+	// --------------------------------------------------------------------------------------
+	namespace IDS
+	{
+		//private
+		const variable first													(IDE::last + 1);	// guard
+		const variable helpFileName										(first);				// help file name
+		const variable traceSource											(first + 1);		// trace source
+		const variable traceActionGetLabwareID							(first + 2);		// GetLabwareID
+		const variable traceActionGetLabwareBarcode					(first + 3);		// GetLabwareBarcode
+		const variable traceActionSetLabwareBarcode					(first + 4);		// SetLabwareBarcode
+		const variable traceActionGetLabwareBarcodeMask				(first + 5);		// GetLabwareBarcodeMask
+		const variable traceActionSetLabwareBarcodeMask				(first + 6);		// SetLabwareBarcodeMask
+		const variable traceActionGetLabwareSourceBarcodes			(first + 7);		// GetLabwareSourceBarcodes
+		const variable traceActionGetLabwareLastSourceBarcode		(first + 8);		// GetLabwareLastSourceBarcode
+		const variable traceActionAddLabwareSourceBarcode			(first + 9);		// AddLabwareSourceBarcode
+		const variable traceActionSetLabwareSummaryState			(first + 10);		// SetLabwareSummaryState
+		const variable traceActionGetLabwareSummaryState			(first + 11);		// GetLabwareSummaryState
+		const variable traceActionGetLabwareLastActionState		(first + 12);		// GetLabwareLastActionState
+		const variable traceActionSetLabwareExpNumOfProcSteps		(first + 13);		// SetLabwareExpNumOfProcSteps
+		const variable traceActionGetLabwareExpNumOfProcSteps		(first + 14);		// GetLabwareExpNumOfProcSteps
+		const variable traceActionGetLabwareNumOfProcSteps			(first + 15);		// GetLabwareNumOfProcSteps
+		const variable traceActionSetLabwareVolume					(first + 16);		// SetLabwareVolume
+		const variable traceActionGetLabwareVolume					(first + 17);		// GetLabwareVolume
+		const variable traceActionGetLabwareRelation					(first + 18);		// GetLabwareRelation
+		const variable traceActionSetLabwareVisibility				(first + 19);		// SetLabwareVisibility
+		const variable traceActionGetLabwareVisibility				(first + 20);		// GetLabwareVisibility
+		const variable traceActionIsLabwareConnected					(first + 21);		// IsLabwareConnected
+
+		const variable enableSampleTracking								(first + 22);		// Sample tracking must be enabled
+
+		const variable functionGetLabwareIDFailed						(first + 24);		// Could not determine labware id
+		const variable functionGetLabwareBarcodeFailed				(first + 25);		// Could not determine labware barcode
+		const variable functionSetLabwareBarcodeFailed				(first + 26);		// Could not set labware barcode
+		const variable functionGetLabwareBarcodeMaskFailed			(first + 27);		// Could not determine labware barcode mask
+		const variable functionSetLabwareBarcodeMaskFailed			(first + 28);		// Could not set labware barcode mask
+		const variable functionGetLabwareSourceBarcodesFailed		(first + 29);		// Could not determine labware source barcodes
+		const variable functionGetLabwareLastSourceBarcodeFailed	(first + 30);		// Could not determine labware's last source barcode
+		const variable functionAddLabwareSourceBarcodeFailed		(first + 31);		// Could not add source barcode to labware
+		const variable functionSetLabwareSummaryStateFailed		(first + 32);		// Could not set labware's summary state
+		const variable functionGetLabwareSummaryStateFailed		(first + 33);		// Could not determine labware's summary state
+		const variable functionGetLabwareLastActionStateFailed	(first + 34);		// Could not determine labware's last action state
+		const variable functionSetLabwareExpNumOfProcStepsFailed	(first + 35);		// Could not set labware's expected number of processed steps
+		const variable functionGetLabwareExpNumOfProcStepsFailed	(first + 36);		// Could not determine the expected number of processed steps
+		const variable functionGetLabwareNumOfProcStepsFailed		(first + 37);		// Could not determine the number of procecssed steps
+		const variable functionSetLabwareVolumeFailed				(first + 38);		// Could not set labware's volume
+		const variable functionGetLabwareVolumeFailed				(first + 39);		// Could not determine labware's volume
+		const variable functionGetLabwareRelationFailed				(first + 40);		// Could not determine labware relation
+		const variable functionSetLabwareVisibilityFailed			(first + 41);		// Could not set the visibility of the labware
+		const variable functionGetLabwareVisibilityFailed			(first + 42);		// Could not determine the visibility of the labware
+		const variable functionIsLabwareConnectedFailed				(first + 43);		// Could not determine if labware is connected
+		const variable last													(first + 43);		// guard
+	}
+
+	// --------------------------------------------------------------------------------------
+	// String constants
+	// --------------------------------------------------------------------------------------
+	namespace StrConst
+	{
+		const variable libraryImplFileName		("HSLLabwareStateLibImpl");			// Library implementation file name
+		const variable libraryImplFullFileName	("HSLLabwareStateLibImp.hs_");
+
+		const variable templateDefaultName		("default");								// template default name
+		
+		const variable elementNameDivider		("\\");
+
+		const variable emptyString					("");
+		const variable blank							(" ");
+		const variable underscore					("_");	
+		const variable semicolon					(";");
+		
+	}
+
+	// --------------------------------------------------------------------------------------
+	// Number constants
+	// --------------------------------------------------------------------------------------
+	namespace STrackerConst
+	{
+		// action states
+		const variable actionState_NoError	(0);
+		const variable actionState_Fatal		(1);
+		const variable actionState_Error		(2);
+		const variable actionState_Warning	(3);
+
+		// element actions
+		const variable elementAction_Load										(100);
+		const variable elementAction_Remove										(101);
+		const variable elementAction_Move										(102);
+		const variable elementAction_Import										(103);
+		const variable elementAction_Overlap									(104);
+		const variable elementAction_VolumeMove								(105);
+		const variable elementAction_VolumeSet									(106);
+		const variable elementAction_BarcodeSet								(107);
+		const variable elementAction_NameSet									(108);
+		const variable elementAction_Wash										(109);
+		const variable elementAction_SummaryStateSet							(110);
+		const variable elementAction_ExpectedNumberOfProcessedStepsSet	(111);
+		const variable elementAction_AddElementVariables					(112);
+		const variable elementAction_AddElementTrackerVariables			(113);
+
+		// shape of racktype
+		const variable shape_Rectangular	(0);
+		const variable shape_Circular		(1);
+		const variable shape_Irregular	(2);
+
+		// directions
+		const variable direction_ByRows		(0);
+		const variable direction_ByColumns	(1);
+		const variable direction_Irregular	(2);
+
+		// first position
+		const variable firstPosition_InBack		(0);
+		const variable firstPosition_InFront	(1);
+
+		// parameters
+		const variable parameter_SampleTrackerInternal	 (0);
+		const variable parameter_ActionState				 (1);
+		const variable parameter_SourceAccessName			 (2);
+		const variable parameter_TargetAccessName			 (3);
+		const variable parameter_ActionVolume				 (4);
+		const variable parameter_UseMixing					 (5);
+		const variable parameter_MixVolume					 (6);
+		const variable parameter_SourceVolume				 (7);
+		const variable parameter_TargetVolume				 (8);
+		const variable parameter_BaseName					 (9);
+		const variable parameter_ElementNames				(10);
+		const variable parameter_Rows							(11);
+		const variable parameter_Columns						(12);
+		const variable parameter_FirstPosition				(13);
+		const variable parameter_Direction					(14);
+		const variable parameter_Shape						(15);
+		const variable parameter_ElementType				(16);
+		const variable parameter_Barcode						(17);
+		const variable parameter_AltAccessName				(18);
+		const variable parameter_DisplayName				(19);
+		const variable parameter_SummaryState				(20);
+		const variable parameter_ExpectedNumberOfProcessedSteps	(21);
+		const variable parameter_ActionID					(22);
+		const variable parameter_ActionSubID				(23);
+		const variable parameter_ElementAction				(24);
+		const variable parameter_AdditionalVariables		(25);
+
+		// summary states
+		const variable summaryState_NoError	(0);
+		const variable summaryState_Error	(3);
+		const variable summaryState_Warning	(4);
+		const variable summaryState_NotUsed	(5);
+
+		// barcode list types
+		const variable barcodeListType_Full			(0);
+		const variable barcodeListType_Simplified	(1);
+
+
+		// element type2
+		const variable elementType2_Undefined					(0);
+		const variable elementType2_Rack							(1);
+		const variable elementType2_TipRack						(2);
+		const variable elementType2_ConnectedContainerRack	(3);
+		const variable elementType2_ConnectedContainer		(4);
+	}
+
+	namespace LabwareConst
+	{
+		const variable barcodeValue	("Labwr_Barcode");
+		const variable positionID		("Labwr_PosId");
+	}
+
+	// --------------------------------------------------------------------------------------
+	// Exception Handling
+	// --------------------------------------------------------------------------------------
+	namespace Error
+	{
+		static function Raise(														// raises a runtime error
+			variable errorId,															// [in] error id, one of IDE
+			variable& fileName,														// [in] file name
+			variable& funcName,														// [in] function name
+			variable& lineNumber)													// [in] line number
+		{
+			variable description("");
+
+			// set error description
+			description = fileName + " (" + lineNumber + ") : " + funcName + "()\n" + StringTable::Load(errorId);
+			err.SetDescription(description);
+
+			// raise error
+			err.Raise(errorId, err.GetDescription(), StringTable::Load(IDS::helpFileName));
+		}
+
+		function RaiseEx(																// raises a runtime error
+			variable errorId,															// [in] error id, one of IDE
+			variable errorDesc,														// [in] error description
+			variable& fileName,														// [in] file name
+			variable& funcName,														// [in] function name
+			variable& lineNumber)													// [in] line number
+		{
+			variable description("");
+
+			// set error description
+			if ("" == funcName)
+				description = fileName + " (" + lineNumber + ") : " + errorDesc;
+			else
+				description = fileName + " (" + lineNumber + ") : " + funcName + "()\n" + errorDesc;
+			err.SetDescription(description);
+
+			// raise error
+			err.Raise(errorId, err.GetDescription(), StringTable::Load(IDS::helpFileName));
+		}
+
+		function RaiseLast()															// re-throws the last runtime error
+		{
+			// re-raise error
+			err.Raise();
+		}
+	}
+
+	// --------------------------------------------------------------------------------------
+	// Declaration of static functions
+	// --------------------------------------------------------------------------------------
+
+	static function InitLabwareStateLibrary();
+
+	static function IsSampleTrackerOn();			// returns hslTrue, if sample tracker is switched ON
+
+	static function IsValidLabwareLevel(			// returns hslTrue, if labware level is valid, else hslFalse
+		variable&	LabwareLevel,
+		variable&	minLabwareLevel);
+
+	static function IsValidBarcodeListType(		// returns hslTrue, if list type is valid, else hslFalse
+		variable&	ListType);
+
+	static function IsValidBarcode(					// returns hslTrue, if barcode is valid, else hslFalse
+		variable&	Barcode);
+
+	static function IsValidBarcodeMask(				// returns hslTrue, if barcode mask is valid, else hslFalse
+		variable&	BarcodeMask);
+
+	static function IsValidSummaryState(			// returns hslTrue, if summary state is valid, else hslFalse
+		variable&	SummaryState);
+
+	static function IsValidNumOfProcSteps(			// returns hslTrue, if number of processed steps is valid, else hslFalse
+		variable&	NumOfProcSteps);
+
+	static function IsValidVolume(					// returns hslTrue, if volume is valid, else hslFalse
+		variable&	Volume);
+
+	static function IsValidVisibility(				// returns hslTrue, if visibility is valid, else hslFalse
+		variable&	Visibility);
+
+	static function IsValidSequencePosition(		// returns hslTrue, if the current position of the sequence is valid, else hslFalse
+		sequence&	Sequence);
+
+	static function NormalizeVolume(					// normalizes the given volume from 1 ul to 0.1 ul
+		variable&	Volume);
+
+	static function DeNormalizeVolume(				// de-normalizes the given volume from 0.1 ul to 1 ul
+		variable&	Volume);
+
+	static function GetLabwareHierarchy(
+		device&		device_,
+		sequence&	sequence_,
+		variable&	labwareLevel_);
+
+	// --------------------------------------------------------------------------------------
+	// Implementation of static functions
+	// --------------------------------------------------------------------------------------
+
+	static function InitLabwareStateLibrary()
+	{
+		// initialize the HSL Labware State library once only
+		if (!m_initializedLib)
+		{
+			// load string table
+			StringTable::Init(StrConst::libraryImplFileName);
+			
+			#ifdef _DEBUG
+				StringTable::Dump();
+			#endif
+
+			if(0 == mg_HSLLabwState_cs)
+				mg_HSLLabwState_cs = SynInitializeCriticalSection();
+
+			if(mg_HSLLabwState_trackerObject.IsNull())
+				mg_HSLLabwState_trackerObject = GetVectorDbTrackerObject();
+
+			mg_HSLLabwState_IsSampleTrackingEnabled = IsSampleTrackerOn();
+
+			m_initializedLib = hslTrue;
+		}
+		return(m_initializedLib);
+	}
+
+	static function IsSampleTrackerOn()
+	{
+
+		variable retVal (hslFalse);
+		variable sampleTrackerOn (0);
+
+		// test, if already initialized
+		if (m_initializedLib == hslTrue)
+		{
+			// return cached setting
+			retVal = mg_HSLLabwState_IsSampleTrackingEnabled;
+		}
+		else
+		{
+			// get the setting from the sample tracker object
+			sampleTrackerOn = mg_HSLLabwState_trackerObject.Enabled();
+
+			if (sampleTrackerOn == 1)
+				retVal = hslTrue;
+			else
+				retVal = hslFalse;
+		}
+		return (retVal);
+	}
+
+	static function IsValidLabwareLevel(
+		variable& LabwareLevel,
+		variable& minLabwareLevel)
+	{
+		variable isValid (hslFalse);
+
+		// test, if labware level is an integer
+		if (Util::IsInteger(LabwareLevel) == hslTrue)
+		{
+			// test, if labware level is in specified range
+			if (minLabwareLevel <= LabwareLevel)
+			{
+				// test, if labware level is valid
+				if (  (LabwareLevel == LabwareLevels::deck)
+					|| (LabwareLevel == LabwareLevels::template)
+					|| (LabwareLevel == LabwareLevels::rack)
+					|| (LabwareLevel == LabwareLevels::container)
+					)
+				{
+					// labware level is valid
+					isValid = hslTrue;
+				}
+			}
+		}
+
+		return (isValid);
+	}
+
+	static function IsValidBarcodeListType(
+		variable& ListType)
+	{
+		variable isValid (hslFalse);
+
+		// test, if barcode list type is an integer
+		if (Util::IsInteger(ListType) == hslTrue)
+		{
+			// test, if barcode list type is valid
+			if (  (ListType == STrackerConst::barcodeListType_Full)
+				|| (ListType == STrackerConst::barcodeListType_Simplified)
+				)
+			{
+				// barcode list type is valid
+				isValid = hslTrue;
+			}
+		}
+		return (isValid);
+	}
+
+	static function IsValidBarcode(
+		variable& Barcode)
+	{
+		variable isValid (hslFalse);
+
+		// test, if barcode is a string
+		if (Util::IsString(Barcode) == hslTrue)
+		{
+			// barcode is valid
+			isValid = hslTrue;
+		}
+		return (isValid);
+	}
+
+	static function IsValidBarcodeMask(
+		variable& BarcodeMask)
+	{
+		variable isValid (hslFalse);
+
+		// test, if barcode mask is a string
+		if (Util::IsString(BarcodeMask) == hslTrue)
+		{
+			// barcode mask is valid
+			isValid = hslTrue;
+		}
+		return (isValid);
+	}
+
+	static function IsValidSummaryState(
+		variable& SummaryState)
+	{
+		variable isValid (hslFalse);
+
+		// test, if summary state is an integer
+		if (Util::IsInteger(SummaryState) == hslTrue)
+		{
+			// test, if summary state is valid
+			if (  (SummaryState == STrackerConst::summaryState_NoError)
+				|| (SummaryState == STrackerConst::summaryState_Error)
+				|| (SummaryState == STrackerConst::summaryState_Warning)
+				|| (SummaryState == STrackerConst::summaryState_NotUsed)
+				)
+			{
+				// summary state is valid
+				isValid = hslTrue;
+			}
+		}
+		return (isValid);
+	}
+
+	static function IsValidNumOfProcSteps(
+		variable& NumOfProcSteps)
+	{
+		variable isValid (hslFalse);
+
+		// test, if number of processed steps is an integer
+		if (Util::IsInteger(NumOfProcSteps) == hslTrue)
+		{
+			// test, if number of processed steps is positive
+			if (Util::IsNegative(NumOfProcSteps) == hslFalse)
+			{
+				// number of processed steps is valid
+				isValid = hslTrue;
+			}
+		}
+		return (isValid);
+	}
+
+	static function IsValidVolume(
+		variable& Volume)
+	{
+		variable isValid (hslFalse);
+
+		// test, if volume is a number
+		if (Util::IsNumber(Volume) == hslTrue)
+		{
+			// test, if volume is positive
+			if (Util::IsNegative(Volume) == hslFalse)
+			{
+				// volume is valid
+				isValid = hslTrue;
+			}
+		}
+		return (isValid);
+	}
+
+	static function IsValidVisibility(
+		variable& Visibility)
+	{
+		variable isValid (hslFalse);
+
+		// test, if visibility is an integer
+		if (Util::IsInteger(Visibility) == hslTrue)
+		{
+			// test, if visibility is a valid boolean
+			if (  (Visibility == hslFalse)
+				|| (Visibility == hslTrue)
+				)
+			{
+				// value is a valid boolean
+				isValid = hslTrue;
+			}
+		}
+		return (isValid);
+	}
+
+	static function IsValidSequencePosition(
+		sequence& Sequence)
+	{
+		variable isValid (hslFalse);
+
+		// test, if current position is valid
+		if (Sequence.GetCurrentPosition() > 0)
+		{
+			// current position is valid
+			isValid = hslTrue;
+		}
+		return (isValid);
+	}
+
+	static function NormalizeVolume(
+		variable&	Volume)
+	{
+		// implementation taken from HxGruCommand
+		variable retVolume (0);
+		variable tmpVolume (0.0);
+
+		if (Volume > 0)
+			tmpVolume = Volume + 0.005;
+		else
+			tmpVolume = Volume - 0.005;
+
+		retVolume = MthFloor(((tmpVolume * 100) / 10));
+		
+		return (retVolume);
+	}
+
+	static function DeNormalizeVolume(
+		variable&	Volume)
+	{
+		// implementation taken from HxGruCommand
+		variable retVolume (0.0);
+
+		// round to one decimal place to prevent errors
+		retVolume = MthRound((Volume / 10.0), 1);
+
+		return (retVolume);
+	}
+
+	static function GetLabwareHierarchy(
+		device&		device_,
+		sequence&	sequence_,
+		variable&	labwareLevel_)
+	{
+		variable templateNames[];
+		variable labwareNames[];
+		variable instrumentName			("");
+		variable labware_id_Carrier	("");
+		variable labware_id_Plate		("");
+		variable labware_id_Well		("");
+		variable size						(0);
+		variable index						(0);
+		variable labwareHierarchie		("");
+
+		if (IsValidLabwareLevel(labwareLevel_, LabwareLevels::deck) == hslFalse)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, "", GetLineNumber());
+
+		labware_id_Well = SeqGetPositionId(sequence_);
+		labware_id_Plate = SeqGetLabwareId(sequence_);
+
+		// Search Template name depending on the labware_id_Plate
+		device_.GetTemplateLabwareNames(templateNames, labwareNames);
+		size = labwareNames.GetSize();
+		for (index = 0; index < size; index ++)
+			if (labwareNames.GetAt(index) == labware_id_Plate)
+				break;
+
+		// if labware name exist
+		if (index < size)
+		{
+			labware_id_Carrier = templateNames[index];		// Assign template name
+			instrumentName = device_.GetInstrumentName();	// Get instrument name
+
+
+			if (labwareLevel_ == LabwareLevels::deck)
+			{
+				labwareHierarchie = instrumentName;
+			}
+			else if (labwareLevel_ == LabwareLevels::template)
+			{
+				if (labware_id_Carrier == StrConst::templateDefaultName)
+				{
+					Error::RaiseEx(IDE::noCarrierFound, StringTable::Load(IDE::noCarrierFound), StrConst::libraryImplFullFileName, "", GetLineNumber());
+				}
+				else
+				{
+					labwareHierarchie = instrumentName + StrConst::elementNameDivider + labware_id_Carrier;
+				}
+			}
+			else if (labwareLevel_ == LabwareLevels::rack)
+			{
+				if (labware_id_Carrier == StrConst::templateDefaultName)
+				{
+					labwareHierarchie = instrumentName + StrConst::elementNameDivider + labware_id_Plate;
+				}
+				else
+				{
+					labwareHierarchie = instrumentName + StrConst::elementNameDivider + labware_id_Carrier + StrConst::elementNameDivider + labware_id_Plate;
+				}
+			}
+			else if (labwareLevel_ == LabwareLevels::container)
+			{
+				if (labware_id_Carrier == StrConst::templateDefaultName)
+				{
+					labwareHierarchie = instrumentName + StrConst::elementNameDivider + labware_id_Plate + StrConst::elementNameDivider + labware_id_Well;
+				}
+				else
+				{
+					labwareHierarchie = instrumentName + StrConst::elementNameDivider + labware_id_Carrier + StrConst::elementNameDivider + labware_id_Plate + StrConst::elementNameDivider + labware_id_Well;
+				}
+			}
+		}
+		else
+		{
+			// the labware could not be found on the deck, maybe it's an alias
+			labwareHierarchie = labware_id_Plate;
+		}
+		return (labwareHierarchie);
+	}
+
+	static function GetDummyCharacters(						// function returns a string of given characters and length
+		variable nbrOfCharcters,								//  [in] the length of the string as integer
+		string character)											//  [in] the wished character
+	{
+		variable i;
+		string s;
+
+		for (i = 0; i < nbrOfCharcters; i++)
+		{
+			s = s + character;
+		}
+
+		return (s);
+	}
+
+	// --------------------------------------------------------------------------------------
+	// Interface functions
+	// --------------------------------------------------------------------------------------
+	
+	function GetLabwareID(
+		device&		Device,
+		sequence&	Sequence)
+	{
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareID);
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (SeqGetLabwareId(Sequence));
+
+		Unexpected:
+		{
+
+			traceInfo = StringTable::Load(IDS::functionGetLabwareIDFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareBarcode(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel)
+	{
+		variable accessName ("");
+		variable labwBarcode ("");
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareBarcode);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidLabwareLevel(LabwareLevel, LabwareLevels::template) == hslFalse)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevel);
+
+		labwBarcode = mg_HSLLabwState_trackerObject.GetLabwareBarcode(accessName);
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (labwBarcode);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareBarcodeFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function SetLabwareBarcode(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel,
+		variable&	Barcode)
+	{
+		variable accessName ("");
+		object pars;
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionSetLabwareBarcode);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidLabwareLevel(LabwareLevel, LabwareLevels::template) == hslFalse)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidBarcode(Barcode) == hslFalse)
+			Error::RaiseEx(IDE::invalidBarcode, StringTable::Load(IDE::invalidBarcode), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevel);
+
+		pars.CreateObject("HXPARAMSLib.HxPars");
+		pars.Add( 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_ActionCount);
+      pars.Add( accessName,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Target);
+      pars.Add( mg_HSLLabwState_trackerObject.HxVectorDbLabwareHandling_IfNotExists_Error, // handling as in old library
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_TargetLabwareHandling);
+      pars.Add( Barcode,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Barcode);
+      pars.Add( STrackerConst::actionState_NoError,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_ActionState);
+      pars.Add( hslFalse,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_ErrorAvailable);
+		          
+		mg_HSLLabwState_trackerObject.TrackAction_SetBarcode( pars);
+		pars.ReleaseObject();
+		
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return;
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareBarcodeFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareBarcodeMask(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel)
+	{
+		object decklayout;
+		object labware;
+		object editLabware;
+		object pars;
+		variable barcodeMask ("");
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareBarcodeMask);
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidLabwareLevel(LabwareLevel, LabwareLevels::rack) == hslFalse)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		decklayout = Device.GetDeckLayoutObject();
+		
+		if ( !decklayout.IsNull() )
+		{
+			labware = decklayout.Labware(SeqGetLabwareId(Sequence));
+			if ( !labware.IsNull() )
+			{
+				labware.GetObject(Interfaces::IEditLabware, editLabware);
+				if ( !editLabware.IsNull() )
+				{
+					pars.CreateObject("HXPARAMSLib.HxPars");
+					if ( !pars.IsNull() )
+					{
+						pars.Add("", LabwareConst::barcodeValue);
+						if (LabwareLevel == LabwareLevels::container)
+							pars.Add(SeqGetPositionId(Sequence), LabwareConst::positionID);
+						editLabware.GetBarcodeProperties(pars);
+						barcodeMask = pars.Item1(LabwareConst::barcodeValue);
+						pars.ReleaseObject();
+					}
+					else
+					{
+						Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+					}
+					editLabware.ReleaseObject();
+				}
+				else
+				{
+					Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+				}
+				labware.ReleaseObject();
+			}
+			else
+			{
+				Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+			}
+			decklayout.ReleaseObject();
+		}
+		else
+		{
+			Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+		}
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (barcodeMask);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareBarcodeMaskFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function SetLabwareBarcodeMask(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel,
+		variable&	BarcodeMask)
+	{
+		object decklayout;
+		object labware;
+		object editLabware;
+		object pars;
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionSetLabwareBarcodeMask);
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidLabwareLevel(LabwareLevel, LabwareLevels::rack) == hslFalse)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidBarcodeMask(BarcodeMask) == hslFalse)
+			Error::RaiseEx(IDE::invalidBarcodeMask, StringTable::Load(IDE::invalidBarcodeMask), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+
+		decklayout = Device.GetDeckLayoutObject();
+
+		if ( !decklayout.IsNull() )
+		{
+			labware = decklayout.Labware(SeqGetLabwareId(Sequence));
+			if ( !labware.IsNull() )
+			{
+				labware.GetObject(Interfaces::IEditLabware, editLabware);
+				if ( !editLabware.IsNull() )
+				{
+					pars.CreateObject("HXPARAMSLib.HxPars");
+					if ( !pars.IsNull() )
+					{
+						pars.Add(BarcodeMask, LabwareConst::barcodeValue);
+						if (LabwareLevel == LabwareLevels::container)
+							pars.Add(SeqGetPositionId(Sequence), LabwareConst::positionID);
+						editLabware.SetBarcodeProperties(pars);
+						pars.ReleaseObject();
+					}
+					else
+					{
+						Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+					}
+					editLabware.ReleaseObject();
+				}
+				else
+				{
+					Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+				}
+				labware.ReleaseObject();
+			}
+			else
+			{
+				Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+			}
+			decklayout.ReleaseObject();
+		}
+		else
+		{
+			Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+		}
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+		
+		return;
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionSetLabwareBarcodeMaskFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareSourceBarcodes(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	ListType)
+	{
+		variable accessName ("");
+		variable size;
+		variable index;
+		variable barcode;
+		variable sourceBarcodes[];
+		variable vectorDbListType;                      // mapping the enum value to HxVectorDbSourceBarcodeListType
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareSourceBarcodes);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidBarcodeListType(ListType) == hslFalse)
+			Error::RaiseEx(IDE::invalidBarcodeListType, StringTable::Load(IDE::invalidBarcodeListType), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		// map the Barcode List Type to HxVectorDbSourceBarcodeListType
+		if (ListType == STrackerConst::barcodeListType_Full) {
+			vectorDbListType = mg_HSLLabwState_trackerObject.HxVectorDbSourceBarcodeListType_Full;
+		}
+		else if (ListType == STrackerConst::barcodeListType_Simplified) {
+			vectorDbListType = mg_HSLLabwState_trackerObject.HxVectorDbSourceBarcodeListType_Simplified;
+		}
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+
+		sourceBarcodes = mg_HSLLabwState_trackerObject.GetLabwareSourceBarcodeList(accessName, vectorDbListType);
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (sourceBarcodes);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareSourceBarcodesFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareLastSourceBarcode(
+		device&		Device,
+		sequence&	Sequence)
+	{
+		variable accessName ("");
+		variable lastSourceBarcode ("");
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareLastSourceBarcode);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+		lastSourceBarcode = mg_HSLLabwState_trackerObject.GetLabwareLastSourceBarcode(accessName);
+		
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (lastSourceBarcode);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareLastSourceBarcodeFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function AddLabwareSourceBarcode(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	Barcode)
+	{
+		variable accessName ("");
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+		object   pars;
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionAddLabwareSourceBarcode);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidBarcode(Barcode) == hslFalse)
+			Error::RaiseEx(IDE::invalidBarcode, StringTable::Load(IDE::invalidBarcode), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+
+		pars.CreateObject("HXPARAMSLib.HxPars");
+		pars.Add( 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_ActionCount);
+      pars.Add( accessName,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Target);
+      pars.Add( mg_HSLLabwState_trackerObject.HxVectorDbLabwareHandling_IfNotExists_Error, // handling as in old library
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_TargetLabwareHandling);
+      pars.Add( Barcode,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Barcode);
+      pars.Add( hslFalse,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_ErrorAvailable);
+		mg_HSLLabwState_trackerObject.TrackAction_AddSourceBarcode( pars);
+		pars.ReleaseObject();
+		
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return;
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionAddLabwareSourceBarcodeFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function SetLabwareSummaryState(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	SummaryState)
+	{
+		variable accessName ("");
+		object pars;
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionSetLabwareSummaryState);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSummaryState(SummaryState) == hslFalse)
+			Error::RaiseEx(IDE::invalidSummaryState, StringTable::Load(IDE::invalidSummaryState), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+
+		pars.CreateObject("HXPARAMSLib.HxPars");
+		pars.Add( 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_ActionCount);
+      pars.Add( accessName,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Target);
+      pars.Add( mg_HSLLabwState_trackerObject.HxVectorDbLabwareHandling_IfNotExists_Error, // handling as in old library
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_TargetLabwareHandling);
+      pars.Add( SummaryState,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_LabwareState);
+      pars.Add( hslFalse,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_ErrorAvailable);
+		mg_HSLLabwState_trackerObject.TrackAction_SetLabwareState( pars);
+		pars.ReleaseObject();
+		
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return;
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionSetLabwareSummaryStateFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareSummaryState(
+		device&		Device,
+		sequence&	Sequence)
+	{
+		variable accessName ("");
+		variable summaryState (STrackerConst::summaryState_Error);
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+	
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareSummaryState);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+		summaryState = mg_HSLLabwState_trackerObject.GetLabwareState(accessName);
+		
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (summaryState);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareSummaryStateFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareLastActionState(
+		device&		Device,
+		sequence&	Sequence)
+	{
+		variable accessName ("");
+		variable lastActionState (STrackerConst::actionState_Fatal);
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareLastActionState);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+		lastActionState = mg_HSLLabwState_trackerObject.GetLabwareLastActionState(accessName);
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (lastActionState);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareLastActionStateFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function SetLabwareExpNumOfProcSteps(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	NumOfProcSteps)
+	{
+		variable accessName ("");
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionSetLabwareExpNumOfProcSteps);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidNumOfProcSteps(NumOfProcSteps) == hslFalse)
+			Error::RaiseEx(IDE::invalidNumberOfProcessedSteps, StringTable::Load(IDE::invalidNumberOfProcessedSteps), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+		mg_HSLLabwState_trackerObject.SetLabwareExpectedNumberOfProcessedSteps(accessName, NumOfProcSteps);
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return;
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionSetLabwareExpNumOfProcStepsFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareExpNumOfProcSteps(
+		device&		Device,
+		sequence&	Sequence)
+	{
+		variable accessName ("");
+		variable expNumOfProcSteps (0);
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareExpNumOfProcSteps);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+		expNumOfProcSteps = mg_HSLLabwState_trackerObject.GetLabwareExpectedNumberOfProcessedSteps(accessName);
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (expNumOfProcSteps);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareExpNumOfProcStepsFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareNumOfProcSteps(
+		device&		Device,
+		sequence&	Sequence)
+	{
+		variable accessName ("");
+		variable numOfProcSteps (0);
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareNumOfProcSteps);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+		numOfProcSteps = mg_HSLLabwState_trackerObject.GetLabwareNumberOfProcessedSteps(accessName);
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (numOfProcSteps);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareNumOfProcStepsFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function SetLabwareVolume(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	Volume)
+	{
+		variable accessName ("");
+		object pars;
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionSetLabwareVolume);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidVolume(Volume) == hslFalse)
+			Error::RaiseEx(IDE::invalidVolume, StringTable::Load(IDE::invalidVolume), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+		pars.CreateObject("HXPARAMSLib.HxPars");
+		pars.Add( 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_ActionCount);
+      pars.Add( accessName,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Target);
+      pars.Add( mg_HSLLabwState_trackerObject.HxVectorDbLabwareHandling_IfNotExists_Error, // handling as in old library
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_TargetLabwareHandling);
+      pars.Add( Volume,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_LabwareVolume);
+      pars.Add( hslFalse,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_Actions,
+					 1,
+					 mg_HSLLabwState_trackerObject.HxVectorDbParsKey_ActionPars_ErrorAvailable);
+
+		mg_HSLLabwState_trackerObject.TrackAction_SetVolume( pars);
+		pars.ReleaseObject();
+		
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return;
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionSetLabwareVolumeFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareVolume(
+		device&		Device,
+		sequence&	Sequence)
+	{
+		variable accessName ("");
+		variable volume (0.0);
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareVolume);
+
+		if (IsSampleTrackerOn() == hslFalse)
+			Error::RaiseEx(IDE::sampleTrackingDisabled, StringTable::Load(IDE::sampleTrackingDisabled), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		accessName = GetLabwareHierarchy(Device, Sequence, LabwareLevels::container);
+		volume = mg_HSLLabwState_trackerObject.GetLabwareVolume(accessName);
+		
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (volume);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareVolumeFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareRelation(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel)
+	{
+		variable labware ("");
+
+		variable instrumentName;
+		variable templateNames[];
+		variable labwareNames[];
+		variable labware_id_Carrier;
+		variable labware_id_Plate;
+		variable labware_id_Well;
+		variable size;
+		variable index;
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareRelation);
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidLabwareLevel(LabwareLevel, LabwareLevels::deck) == hslFalse)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		instrumentName = Device.GetInstrumentName();
+		labware_id_Plate = SeqGetLabwareId(Sequence);
+		labware_id_Well = SeqGetPositionId(Sequence);
+
+		Device.GetTemplateLabwareNames(templateNames, labwareNames);
+		size = labwareNames.GetSize();
+
+		for (index = 0; index < size; index ++)
+			if (labwareNames.GetAt(index) == labware_id_Plate)
+				break;
+
+		// if Labware exist
+		if (index < size)
+		{
+			labware_id_Carrier = templateNames[index];	// Assign Template Name
+		}
+
+		if (LabwareLevel == LabwareLevels::deck)
+			labware = instrumentName;
+		else if (LabwareLevel == LabwareLevels::template)
+			labware = labware_id_Carrier;
+		else if (LabwareLevel == LabwareLevels::rack)
+			labware = labware_id_Plate;
+		else if (LabwareLevel == LabwareLevels::container)
+			labware = labware_id_Well;
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (labware);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareRelationFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function SetLabwareVisibility(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel,
+		variable&	Visibility)
+	{
+		object decklayout;
+		//object labware;
+		//object editLabware;
+      object parsPackage;
+
+		variable templateNames[];
+		variable labwareNames[];
+		variable labware_id_Carrier;
+		variable labware_id_Plate;
+		variable labware_id_Well;
+		variable size;
+		variable index;
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionSetLabwareVisibility);
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidLabwareLevel(LabwareLevel, LabwareLevels::template) == hslFalse)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		// not possible to make a well invisible - only full plates are possible
+		if (LabwareLevel == LabwareLevels::container)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidVisibility(Visibility) == hslFalse)
+			Error::RaiseEx(IDE::invalidVisibility, StringTable::Load(IDE::invalidVisibility), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		decklayout = Device.GetDeckLayoutObject();
+		labware_id_Plate = SeqGetLabwareId(Sequence);
+		labware_id_Well = SeqGetPositionId(Sequence);
+
+		Device.GetTemplateLabwareNames(templateNames, labwareNames);
+		size = labwareNames.GetSize();
+
+		for (index = 0; index < size; index ++)
+			if (labwareNames.GetAt(index) == labware_id_Plate)
+				break;
+
+		// if Labware exist
+		if (index < size)
+		{
+			labware_id_Carrier = templateNames[index];	// Assign Template Name
+		}
+
+		if ( !decklayout.IsNull() )
+		{
+			if (LabwareLevel == LabwareLevels::template)
+			{
+            parsPackage.CreateObject("HXPARAMSLib.HxPars");
+            if (Visibility == hslTrue)
+               parsPackage.Add(/*decklayout.CommonLoadState_lwclsLoaded*/ 1, labware_id_Carrier);
+            else
+            {
+               parsPackage.Add(/*decklayout.CommonLoadState_lwclsUnloaded*/ 0, labware_id_Carrier);
+
+
+               for (index = 0; index < size; index ++)
+               {
+                  if (templateNames.GetAt(index) == labware_id_Carrier)
+                     parsPackage.Add(/*decklayout.CommonLoadState_lwclsUnloaded*/ 0, labwareNames.GetAt(index));
+               }
+            }
+
+            decklayout.LoadedLabware = parsPackage;
+            parsPackage.ReleaseObject();
+			}
+			else if (LabwareLevel == LabwareLevels::rack)
+			{
+            parsPackage.CreateObject("HXPARAMSLib.HxPars");
+            if (Visibility == hslTrue)
+               parsPackage.Add(/*decklayout.CommonLoadState_lwclsLoaded*/ 1, labware_id_Plate);
+            else
+               parsPackage.Add(/*decklayout.CommonLoadState_lwclsUnloaded*/ 0, labware_id_Plate);
+
+            decklayout.LoadedLabware = parsPackage;
+            parsPackage.ReleaseObject();
+			}
+			decklayout.RequestRefresh();
+			decklayout.ReleaseObject();
+		}
+		else
+		{
+			Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+		}
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return;
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionSetLabwareVisibilityFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw last error
+			Error::RaiseLast();
+		}
+	}
+
+	function GetLabwareVisibility(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel)
+	{
+		object decklayout;
+		object labware;
+		object editLabware;
+		variable tempVisibility (hslFalse);
+		variable visibility (hslFalse);
+
+		variable templateNames[];
+		variable labwareNames[];
+		variable labware_id_Carrier;
+		variable labware_id_Plate;
+		variable labware_id_Well;
+		variable size;
+		variable index;
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionGetLabwareVisibility);
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		if (IsValidLabwareLevel(LabwareLevel, LabwareLevels::template) == hslFalse)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		// not possible to get the visibility of a well - only full plates are possible
+		if (LabwareLevel == LabwareLevels::container)
+			Error::RaiseEx(IDE::invalidLabwareLevel, StringTable::Load(IDE::invalidLabwareLevel), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		decklayout = Device.GetDeckLayoutObject();
+		labware_id_Plate = SeqGetLabwareId(Sequence);
+		labware_id_Well = SeqGetPositionId(Sequence);
+
+		Device.GetTemplateLabwareNames(templateNames, labwareNames);
+		size = labwareNames.GetSize();
+
+		for (index = 0; index < size; index ++)
+			if (labwareNames.GetAt(index) == labware_id_Plate)
+				break;
+
+		// if Labware exist
+		if (index < size)
+		{
+			labware_id_Carrier = templateNames[index];	// Assign Template Name
+		}
+
+		if ( !decklayout.IsNull() )
+		{
+			if (LabwareLevel == LabwareLevels::template)
+			{
+				// we are interested in the visibility of the carrier
+				labware = decklayout.Labware(labware_id_Carrier);
+			}
+			else if (LabwareLevel == LabwareLevels::rack)
+			{
+				// we are interested in the visibility of the plate
+				labware = decklayout.Labware(labware_id_Plate);
+			}
+
+			if ( !labware.IsNull() )
+			{
+				labware.GetObject(Interfaces::IEditLabware, editLabware);
+
+				if ( !editLabware.IsNull() )
+				{
+					tempVisibility = editLabware.Visible;
+					if (tempVisibility == 1)
+						visibility = hslTrue;
+					else
+						visibility = hslFalse;
+					
+					editLabware.ReleaseObject();
+				}
+				else
+				{
+					Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+				}
+				labware.ReleaseObject();
+			}
+			else
+			{
+				Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+			}
+			decklayout.ReleaseObject();
+		}
+		else
+		{
+			Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+		}
+
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (visibility);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionGetLabwareVisibilityFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw error
+			Error::RaiseLast();
+		}
+	}
+
+	function IsLabwareConnected(
+		device&		Device,
+		sequence&	Sequence)
+	{
+		object decklayout;
+		object labware;
+		object rectRack;
+
+		variable tmpIsConnected (0);
+		variable isConnected (hslFalse);
+
+		variable traceSource("");								// source for formatted trace
+		variable traceAction("");								// action for formatted trace
+		variable traceInfo("");									// additional trace information
+
+		InitLabwareStateLibrary();
+
+		// get access to global data
+		SynEnterCriticalSection(mg_HSLLabwState_cs);
+
+		// error handler
+		onerror goto Unexpected;
+
+		traceSource = StringTable::Load(IDS::traceSource);
+		traceAction = StringTable::Load(IDS::traceActionIsLabwareConnected);
+
+		if (IsValidSequencePosition(Sequence) == hslFalse)
+			Error::RaiseEx(IDE::invalidSequencePosition, StringTable::Load(IDE::invalidSequencePosition), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+
+		// get the deck layout
+		decklayout = Device.GetDeckLayoutObject();
+
+		if ( !decklayout.IsNull() )
+		{
+			labware = decklayout.Labware(SeqGetLabwareId(Sequence));
+
+			if ( !labware.IsNull() )
+			{
+				labware.GetObject(Interfaces::IRectRack, rectRack);
+
+				if ( !rectRack.IsNull() )
+				{
+					tmpIsConnected = rectRack.ConnectedCtr;
+					if (tmpIsConnected == 1)
+						isConnected = hslTrue;
+					else
+						isConnected = hslFalse;
+
+					rectRack.ReleaseObject();
+				}
+				else
+				{
+					Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+				}
+				labware.ReleaseObject();
+			}
+			else
+			{
+				Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+			}
+			decklayout.ReleaseObject();
+		}
+		else
+		{
+			Error::RaiseEx(IDE::fatalError, StringTable::Load(IDE::fatalError), StrConst::libraryImplFullFileName, traceAction, GetLineNumber());
+		}
+		
+		// release access to global data
+		SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+		return (isConnected);
+
+		Unexpected:
+		{
+			traceInfo = StringTable::Load(IDS::functionIsLabwareConnectedFailed);
+
+			// trace progress
+			FormatTrace(traceSource, traceAction, TraceStatus::completeWithError, traceInfo);
+
+			// release access to global data
+			SynLeaveCriticalSection(mg_HSLLabwState_cs);
+
+			// re-throw error
+			Error::RaiseLast();
+		}
+	}
+} // end of namespace HSLLabwState
+// $$author=wbarmettler$$valid=1$$time=2017-03-09 07:27$$checksum=20a2b621$$length=088$$
