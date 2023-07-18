@@ -385,4 +385,4 @@ def log_banner(banner_text):
 def move_auto_load(ham, track):
     logging.info('moving auto load to track: ' + str(track))
     cmd = ham.send_command(MOVE_AUTO_LOAD, track=track)
-    return cmd
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=120)
