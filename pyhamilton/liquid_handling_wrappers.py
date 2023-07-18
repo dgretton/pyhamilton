@@ -383,5 +383,6 @@ def log_banner(banner_text):
             '#'*width]
     
 def move_auto_load(ham, track):
+    logging.info('moving auto load to track: ' + str(track))
     cmd = ham.send_command(MOVE_AUTO_LOAD, track=track)
     return cmd
