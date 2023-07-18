@@ -381,12 +381,3 @@ def log_banner(banner_text):
             '#' + ' '*margin + banner_text + ' '*margin + '#',
             '#' + ' '*(width - 2) + '#',
             '#'*width]
-
-def move_auto_load(ham, track):
-    logging.info('move auto load to track: ' + str(track)
-    cmd = ham.send_command(MOVE_AUTO_LOAD, track=track)
-    return cmd
-
-
-
-    
