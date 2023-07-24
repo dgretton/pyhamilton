@@ -41,12 +41,12 @@ https://www.youtube.com/watch?v=G92neaVfvyw
     ```
 6. **Install pyhamilton.**
    
-   If you want to install normally:
+   **If** you want to install normally:
    ```
     pip install pyhamilton
     ```
 
-   If you plan on adding new functionality or changing pyhamilton, do a project install:
+   **Or, if** you plan on adding new functionality or changing pyhamilton, do a project install:
    ```
    git clone https://github.com/dgretton/pyhamilton
    cd pyhamilton
