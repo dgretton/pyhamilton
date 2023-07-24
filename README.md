@@ -41,11 +41,20 @@ https://www.youtube.com/watch?v=G92neaVfvyw
     ```
 6. **Install pyhamilton.**
    
-    ```
+   If you want to install normally:
+   ```
     pip install pyhamilton
     ```
+
+   If you plan on adding new functionality or changing pyhamilton, do a project install:
+   ```
+   git clone https://github.com/dgretton/pyhamilton
+   cd pyhamilton
+   pip install -e .
+   ```
+   Now changes you make to the cloned repo will be reflected in your package install. You can test new code this way and then push it to a fork. 
     
-7. **Run the pyhamilton autoconfig tool from the command line.** 
+8. **Run the pyhamilton autoconfig tool from the command line.** 
 This will automatically execute all the installers in `pyhamilton/bin` and will copy all the files in `pyhamilton\library` to `C:/Program Files (x86)/HAMILTON/Library`. You are welcome to forgo this command and perform the steps manually if you are concerned about file overwriting.
 
     ```
@@ -54,7 +63,7 @@ This will automatically execute all the installers in `pyhamilton/bin` and will 
 
     Press accept to proceed with the bundled installers.
     
-8. **Test your PyHamilton installation** </br>
+9. **Test your PyHamilton installation** </br>
 The easiest way to test your PyHamilton installation is by running the following in your terminal
 
     ```
@@ -64,7 +73,7 @@ The easiest way to test your PyHamilton installation is by running the following
     py robot_method.py
     ```
 
-9. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
+10. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
 
 ## AI Coding Assistant
 
