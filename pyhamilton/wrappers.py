@@ -84,6 +84,8 @@ class HHS:
                 cmd, raise_first_exception=True, return_data=["step-return2"]
             )
             self.num = response.return_data[0]
+        
+        self.shaker = HHS.Shaker(hammy, self.num)
 
     @staticmethod
     def set_simulation(hammy: HamiltonInterface, simulation: bool = True) -> str:
@@ -146,6 +148,9 @@ class HHS:
         self.hammy.wait_on_response(cmd, raise_first_exception=True)
 
     class Shaker:
+        
+        def __init__(self, hammy: HamiltonInterface, device_number: int)
+        
         @staticmethod
         def parameters(
             hammy: HamiltonInterface,
