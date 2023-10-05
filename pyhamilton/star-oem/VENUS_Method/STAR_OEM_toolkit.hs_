@@ -1,6 +1,6 @@
 
 // this ALWAYS GENERATED file contains the sub-method library header
-// Generated at 6/1/2023 6:17:42 PM
+// Generated at 7/18/2023 10:23:34 AM
 
 #pragma once
 #ifndef HSL_RUNTIME
@@ -22,12 +22,13 @@ function Inheco_TEC_Initialize( variable ControllerID, variable SimulationMode, 
 function Inheco_TEC_SetTarget( variable ControllerID, variable DeviceID, variable TargetTemperature, variable & o_stepReturn ) void { }
 function Inheco_TEC_StartTemperatureControl( variable ControllerID, variable DeviceID, variable & ErrorCode, variable & o_stepReturn ) void { }
 function Inheco_TEC_StopTemperatureControl( variable ControllerID, variable DeviceID, variable & o_stepReturn ) void { }
-function Inheco_TEC_Terminate( variable StopAllDevices, variable & o_stepReturn ) void { }
+function Inheco_TEC_Terminate( variable & o_stepReturn ) void { }
 function Initialize( device & ML_STAR, variable initializeAlways, variable & o_stepReturn ) void { }
 function MPH96_Aspirate( device & ML_STAR, sequence & aspirateSequence, variable aspirateVolume, variable channelVariable, variable liquidClass, variable sequenceCounting, variable aspirateMode, variable capacitiveLLD, variable liquidFollowing, variable submergeDepth, variable liquidHeight, variable mixCycles, variable mixPosition, variable mixVolume, variable airTransportRetractDist, variable & o_stepReturn, variable & o_liquidLevel_mm, variable & o_liquidLevel_mL, variable & o_stepReturn_PositionIDs ) void { }
 function MPH96_Dispense( device & ML_STAR, sequence & dispenseSequence, variable dispenseVolume, variable liquidClass, variable sequenceCounting, variable dispenseMode, variable capacitiveLLD, variable liquidFollowing, variable submergeDepth, variable liquidHeight, variable mixCycles, variable mixPosition, variable mixVolume, variable airTransportRetractDist, variable zMoveAfterStep, variable sideTouch, variable & o_stepReturn, variable & o_liquidLevel_mm, variable & o_liquidLevel_mL, variable & o_stepReturn_PositionIDs ) void { }
 function MPH96_TipEject( device & ML_STAR, sequence & tipEjectSequence, variable sequenceCounting, variable tipEjectToKnownPosition, variable & o_stepReturn, variable & o_stepReturn_PositionIDs ) void { }
 function MPH96_TipPickUp( device & ML_STAR, sequence & tipSequence, variable channelVariable, variable sequenceCounting, variable reducedPatternMode, variable & o_stepReturn, variable & o_stepReturn_PositionIDs ) void { }
+function Move_Auto_Load( device & ML_STAR, variable track, variable & o_stepReturn ) void { }
 function SendFirmwareCommand( variable FirmwareCommand, device & ML_STAR, variable FirmwareParameter, variable & o_stepReturn ) void { }
 function TiltModule_Initialize( variable Module, variable Comport, variable TraceLevel, variable Simulate, variable & o_stepReturn ) void { }
 function TiltModule_MoveToPosition( variable Module, variable Position, variable & o_stepReturn ) void { }
@@ -42,4 +43,4 @@ function pH_Measure( variable i_intModuleID, variable i_fltTemperature, variable
 #ifdef HSL_RUNTIME
 #include __filename__ ".hsi"
 #endif
-// $$author=stefa$$valid=0$$time=2023-06-01 18:17$$checksum=5b56d9bc$$length=082$$
+// $$author=Samuel.Tomp$$valid=0$$time=2023-07-18 10:23$$checksum=5834d79e$$length=088$$
