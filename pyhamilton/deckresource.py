@@ -463,7 +463,7 @@ class Plate1536(DeckResource):
         row_letters = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + ['AA', 'AB', 'AC', 'AD', 'AE', 'AF']
         return row_letters[y] + str(x + 1)
 
-class Reservoir60mL:
+class Reservoir60mL(DeckResource):
 
     def __init__(self, layout_name):
         self._layout_name = layout_name
