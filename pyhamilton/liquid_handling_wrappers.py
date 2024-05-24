@@ -41,6 +41,30 @@ def compound_pos_str(pos_tuples):
 def compound_pos_str_96(labware96):
     return ';'.join((labware_pos_str(labware96, idx) for idx in range(96)))
 
+def cells_384_to_1536(well, idx):
+    return (well%16)*2+(well//16)*64+idx%2+(idx//2)*32
+
+def cells_96_to_384(well, idx):
+    return well*2+idx%2+(idx//2)*16+16*(well//8)
+
+def wells_384_to_96(x):
+    plate = x%2 + 2*((x//16)%2)
+    well = x//2 - (x//16)*8 + (x//32)*8
+    return plate, well
+
+def get_cells_from_position_384(well):
+    return [cells_384_to_1536(well, i) for i in range(4)]
+
+def get_cells_from_position_96(well):
+    return [cells_96_to_384(well, i) for i in range(4)]
+
+def get_384w_quadrant(quadrant):
+    return [cells_96_to_384(idx, quadrant) for idx in range(96)]
+    
+def compound_pos_str_384_quad(labware384, quadrant):
+    return ';'.join((labware_pos_str(labware384, idx) for idx in get_384w_quadrant(quadrant)))
+
+
 def initialize(ham, asynch=False):
     logging.info('initialize: ' + ('a' if asynch else '') + 'synchronously initialize the robot')
     cmd = ham.send_command(INITIALIZE)
@@ -254,6 +278,27 @@ def dispense_96(ham_int, plate96, vol, **more_options):
         labwarePositions=compound_pos_str_96(plate96),
         dispenseVolume=vol,
         **more_options), raise_first_exception=True)
+
+def aspirate_384_quadrant(ham_int, plate384, quadrant, vol, **more_options):
+    logging.info('aspirate_96: Aspirate volume ' + str(vol) + ' from ' + plate384.layout_name() +
+            ('' if not more_options else ' with extra options ' + str(more_options)))
+    if 'liquidClass' not in more_options:
+        more_options.update({'liquidClass':default_liq_class})
+    ham_int.wait_on_response(ham_int.send_command(ASPIRATE96,
+        labwarePositions=compound_pos_str_384_quad(plate384, quadrant),
+        aspirateVolume=vol,
+        **more_options), raise_first_exception=True)
+
+def dispense_384_quadrant(ham_int, plate384, quadrant, vol, **more_options):
+    logging.info('dispense_96: Dispense volume ' + str(vol) + ' into ' + plate384.layout_name() +
+            ('' if not more_options else ' with extra options ' + str(more_options)))
+    if 'liquidClass' not in more_options:
+        more_options.update({'liquidClass':default_liq_class})
+    ham_int.wait_on_response(ham_int.send_command(DISPENSE96,
+        labwarePositions=compound_pos_str_384_quad(plate384, quadrant),
+        dispenseVolume=vol,
+        **more_options), raise_first_exception=True)       
+
 
 def set_aspirate_parameter(ham_int, LiquidClass, Parameter, Value):
     param_key = liquidclass_params_asp[Parameter]
