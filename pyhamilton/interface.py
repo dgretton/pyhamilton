@@ -528,40 +528,47 @@ class HamiltonInterface:
 
         if not self.active:
             return
-        try:
-            if self.simulate:
-                self.log('sending end run command to simulator')
-                try:
-                    self.wait_on_response(self.send_command(command='end', id=hex(0)), timeout=1.5)
-                except HamiltonTimeoutError:
-                    pass
-            else:
-                for i in range(2):
-                    try:
-                        os.kill(self.oem_process.pid, signal.SIGTERM)
-                        self.log('sent sigterm to oem process')
-                        self.oem_process.join()
-                        self.log('oem process exited')
-                        break
-                    except PermissionError:
-                        self.log('permission denied, trying again...', 'warn')
-                        time.sleep(2)
-                else:
-                    self.log('Could not kill oem process, moving on with shutdown', 'warn')
-        finally:
-            self.active = False
+
+        if self.simulate:
+            self.log("sending end run command to simulator")
+            try:
+                self.wait_on_response(
+                    self.send_command(command="end", id=hex(0)), timeout=1.5
+                )
+            except HamiltonTimeoutError:
+                pass
+
+        if self.oem_process and self.oem_process.is_alive():
+            try:
+                os.kill(self.oem_process.pid, signal.SIGTERM)
+            except PermissionError:
+                self.log("permission denied, trying again...", "warn")
+            self.oem_process.join(timeout=2)
+            self.log("oem process exited")
+
+        if self.server_thread:
             self.server_thread.disconnect()
-            self.log('disconnected from server')
-            time.sleep(.1)
-            if not self.server_thread.has_exited():
-                self.log('server did not exit yet, sending dummy request to exit its loop')
+            self.log("disconnected from server")
+            if self.server_thread.is_alive():
+                self.log(
+                    "server did not exit yet, sending dummy request to exit its loop"
+                )
                 session = requests.Session()
                 adapter = requests.adapters.HTTPAdapter(max_retries=20)
-                session.mount('http://', adapter)
-                session.get('http://' + HamiltonInterface.default_address + ':' + str(HamiltonInterface.default_port))
-                self.log('dummy get request sent to server')
-            self.server_thread.join()
-            self.log('server thread exited')
+                session.mount("http://", adapter)
+                session.get(
+                    "http://"
+                    + HamiltonInterface.default_address
+                    + ":"
+                    + str(HamiltonInterface.default_port),
+                    timeout=2,
+                )
+                self.log("dummy get request sent to server")
+            self.server_thread.join(timeout=2)
+            self.server_thread.httpd.server_close()
+            self.log("server thread exited")
+
+        self.active = False
 
     def __enter__(self):
         self.start()
