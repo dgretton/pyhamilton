@@ -21,6 +21,10 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     'initialize':('INITIALIZE', {
         'initializeAlways':0
     }),
+    
+    'moveAutoLoad':('MOVE_AUTO_LOAD', {
+        'track':0
+    }),
 
     'channelTipPickUp':('PICKUP', {
         'tipSequence':'', # (string) leave empty if you are going to provide specific labwarePositions below

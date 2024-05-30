@@ -14,7 +14,7 @@ from .deckresource import LayoutManager, ResourceType, Plate24, Plate96, Tip96
 from .oemerr import PositionError
 from .interface import (INITIALIZE, PICKUP, EJECT, ASPIRATE, DISPENSE, ISWAP_GET, ISWAP_PLACE, HEPA,
 WASH96_EMPTY, PICKUP96, EJECT96, ASPIRATE96, DISPENSE96, ISWAP_MOVE, MOVE_SEQ, TILT_INIT, TILT_MOVE, GRIP_GET,
-GRIP_MOVE, GRIP_PLACE, SET_ASP_PARAM, SET_DISP_PARAM)
+GRIP_MOVE, GRIP_PLACE, SET_ASP_PARAM, SET_DISP_PARAM, MOVE_AUTO_LOAD)
 from .liquid_class_dict import liquidclass_params_asp, liquidclass_params_dsp
 
 def resource_list_with_prefix(layout_manager, prefix, res_class, num_ress, order_key=None, reverse=False):
@@ -426,3 +426,8 @@ def log_banner(banner_text):
             '#' + ' '*margin + banner_text + ' '*margin + '#',
             '#' + ' '*(width - 2) + '#',
             '#'*width]
+    
+def move_auto_load(ham, track):
+    logging.info('moving auto load to track: ' + str(track))
+    cmd = ham.send_command(MOVE_AUTO_LOAD, track=track)
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=120)
