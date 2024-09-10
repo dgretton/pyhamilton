@@ -1,6 +1,6 @@
 
 // this ALWAYS GENERATED file contains the sub-method library header
-// Generated at 6/1/2023 6:17:42 PM
+// Generated at 7/10/2024 7:18:55 PM
 
 #pragma once
 #ifndef HSL_RUNTIME
@@ -42,4 +42,4 @@ function pH_Measure( variable i_intModuleID, variable i_fltTemperature, variable
 #ifdef HSL_RUNTIME
 #include __filename__ ".hsi"
 #endif
-// $$author=stefa$$valid=0$$time=2023-06-01 18:17$$checksum=5b56d9bc$$length=082$$
+// $$author=Hamilton$$valid=0$$time=2024-07-10 19:18$$checksum=2a74381f$$length=085$$

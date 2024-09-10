@@ -36,7 +36,10 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'channelVariable':_channel_patt_16, # (string) channel pattern e.g. "11110000"
         'sequenceCounting':0, # (integer) 0=don´t autoincrement,  1=Autoincrement.  Value omitted if ejecting to default waste
         'channelUse':1, # (integer) 1=use all sequence positions (no empty wells), 2=keep channel pattern
-        'useDefaultWaste':0 # (integer) 0=eject to custom waste sequence,  1=Use default waste
+        'useDefaultWaste':0, # (integer) 0=eject to custom waste sequence,  1=Use default waste
+        'xDisplacement':0.0,
+        'yDisplacement':0.0,
+        'zDisplacement':0.0
     }),
 
     'channelAspirate':('ASPIRATE', {

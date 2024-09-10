@@ -89,12 +89,16 @@ def wash_empty_refill(ham, asynch=False, **more_options):
     return cmd
 
 
-def move_plate(ham, source_plate, target_plate, CmplxGetDict = None, CmplxPlaceDict = None, **more_options):
+def move_plate(ham, source_plate, target_plate, CmplxGetDict = None, CmplxPlaceDict = None, inversion = None, **more_options):
     
     logging.info('move_plate: Moving plate ' + source_plate.layout_name() + ' to ' + target_plate.layout_name())
     src_pos = labware_pos_str(source_plate, 0)
     trgt_pos = labware_pos_str(target_plate, 0)
-    try_inversions=(0,1)
+    
+    if not inversion:
+        try_inversions=(0,1)
+    else:
+        try_inversions = (inversion,)
     
     getCmplxMvmnt, getRetractDist, getLiftUpHeight, getOrientation = (0, 0.0, 20.0, 1)
     placeCmplxMvmnt, placeRetractDist, placeLiftUpHeight, placeOrientation = (0, 0.0, 20.0, 1)
@@ -111,8 +115,8 @@ def move_plate(ham, source_plate, target_plate, CmplxGetDict = None, CmplxPlaceD
         placeRetractDist = CmplxPlaceDict['retractDist']
         placeLiftUpHeight = CmplxPlaceDict['liftUpHeight']
         placeOrientation = CmplxPlaceDict['labwareOrientation']
-        
-    for inv in try_inversions:
+
+    for inv in try_inversions:    
         cid = ham.send_command(ISWAP_GET, 
                                plateLabwarePositions=src_pos, 
                                inverseGrip=inv, 
@@ -142,14 +146,43 @@ def move_plate(ham, source_plate, target_plate, CmplxGetDict = None, CmplxPlaceD
         raise IOError
 
 
-def move_by_seq(ham, source_plate_seq, target_plate_seq, grip_height = 0, try_inversions=None, gripForce = 2):
+def move_by_seq(ham, source_plate_seq, target_plate_seq, CmplxGetDict = None, CmplxPlaceDict = None, grip_height = 0, inversion=None, gripForce = 2, width_before = 132, **more_options):
     logging.info('move_lid_by_seq: Moving plate ' + source_plate_seq + ' to ' + target_plate_seq)
-    #src_pos = labware_pos_str(source_plate, 0)
-    #trgt_pos = labware_pos_str(target_plate, 0)
-    if try_inversions is None:
-        try_inversions = (0, 1)
+    
+    if not inversion:
+        try_inversions=(0,1)
+    else:
+        try_inversions = (inversion,)
+
+    getCmplxMvmnt, getRetractDist, getLiftUpHeight, getOrientation = (0, 0.0, 20.0, 1)
+    placeCmplxMvmnt, placeRetractDist, placeLiftUpHeight, placeOrientation = (0, 0.0, 20.0, 1)
+    
+    
+    if CmplxGetDict:
+        getCmplxMvmnt = 1
+        getRetractDist = CmplxGetDict['retractDist']
+        getLiftUpHeight = CmplxGetDict['liftUpHeight']
+        getOrientation = CmplxGetDict['labwareOrientation']
+    
+    if CmplxPlaceDict:
+        placeCmplxMvmnt = 1
+        placeRetractDist = CmplxPlaceDict['retractDist']
+        placeLiftUpHeight = CmplxPlaceDict['liftUpHeight']
+        placeOrientation = CmplxPlaceDict['labwareOrientation']
+
+    
     for inv in try_inversions:
-        cid = ham.send_command(ISWAP_GET, plateSequence=source_plate_seq, gripHeight=grip_height, gripForce=gripForce, inverseGrip=inv,transportMode=0, widthBefore = 132)
+        cid = ham.send_command(ISWAP_GET, plateSequence=source_plate_seq, 
+                                gripHeight=grip_height, 
+                                gripForce=gripForce, 
+                                inverseGrip=inv,
+                                transportMode=0, 
+                                widthBefore = width_before,
+                                movementType = placeCmplxMvmnt, 
+                                retractDistance = placeRetractDist,
+                                liftUpHeight = placeLiftUpHeight,
+                                labwareOrientation = placeOrientation,
+                                **more_options)
         try:
             ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
             break
@@ -157,9 +190,15 @@ def move_by_seq(ham, source_plate_seq, target_plate_seq, grip_height = 0, try_in
             pass
     else:
         raise IOError
-    cid = ham.send_command(ISWAP_PLACE, plateSequence=target_plate_seq)
+    cid = ham.send_command(ISWAP_PLACE, 
+                            plateSequence=target_plate_seq,
+                            movementType = placeCmplxMvmnt, 
+                            retractDistance = placeRetractDist,
+                            liftUpHeight = placeLiftUpHeight,
+                            labwareOrientation = placeOrientation
+                            )
     try:
-        ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
+        r = ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
     except PositionError:
         raise IOError
 
