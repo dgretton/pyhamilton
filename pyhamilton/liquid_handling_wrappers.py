@@ -261,7 +261,7 @@ def aspirate(ham_int, pos_tuples, vols, **more_options):
         channelVariable=channel_var(pos_tuples),
         labwarePositions=compound_pos_str(pos_tuples),
         volumes=[v for v in vols if v is not None],
-        **more_options), raise_first_exception=True)
+        **more_options), raise_first_exception=True, return_data=['step-return2', 'step-return3'])
     return response
 
 def dispense(ham_int, pos_tuples, vols, **more_options):
@@ -277,7 +277,7 @@ def dispense(ham_int, pos_tuples, vols, **more_options):
         channelVariable=channel_var(pos_tuples),
         labwarePositions=compound_pos_str(pos_tuples),
         volumes=[v for v in vols if v is not None],
-        **more_options), raise_first_exception=True)
+        **more_options), raise_first_exception=True, return_data=['step-return2', 'step-return3'])
     return response
     
 
