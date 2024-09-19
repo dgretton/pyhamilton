@@ -257,11 +257,12 @@ def aspirate(ham_int, pos_tuples, vols, **more_options):
         raise ValueError('Can only aspirate with 8 channels at a time')
     if 'liquidClass' not in more_options:
         more_options.update({'liquidClass':default_liq_class})
-    ham_int.wait_on_response(ham_int.send_command(ASPIRATE,
+    response = ham_int.wait_on_response(ham_int.send_command(ASPIRATE,
         channelVariable=channel_var(pos_tuples),
         labwarePositions=compound_pos_str(pos_tuples),
         volumes=[v for v in vols if v is not None],
         **more_options), raise_first_exception=True)
+    return response
 
 def dispense(ham_int, pos_tuples, vols, **more_options):
     assert_parallel_nones(pos_tuples, vols)
@@ -272,11 +273,13 @@ def dispense(ham_int, pos_tuples, vols, **more_options):
         raise ValueError('Can only aspirate with 8 channels at a time')
     if 'liquidClass' not in more_options:
         more_options.update({'liquidClass':default_liq_class})
-    ham_int.wait_on_response(ham_int.send_command(DISPENSE,
+    response = ham_int.wait_on_response(ham_int.send_command(DISPENSE,
         channelVariable=channel_var(pos_tuples),
         labwarePositions=compound_pos_str(pos_tuples),
         volumes=[v for v in vols if v is not None],
         **more_options), raise_first_exception=True)
+    return response
+    
 
 def tip_pick_up_96(ham_int, tip96, **more_options):
     logging.info('tip_pick_up_96: Pick up tips at ' + tip96.layout_name() +
