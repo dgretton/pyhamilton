@@ -38,7 +38,7 @@ AI_TEMPLATE_DIR = os.path.join(PACKAGE_DIR, 'templates/ai_template')
 EXE_DIR = os.path.join(PACKAGE_DIR, 'bin')
 
 exe_http = os.path.join(PACKAGE_DIR, 'bin', 'Hamilton HSLHttp Library Installer Version 2.7.exe')
-exe_json = os.path.join(PACKAGE_DIR, 'bin', 'HSLJson Library v1.6 Installer.exe')
+exe_json = os.path.join(PACKAGE_DIR, 'bin', 'HSLJson Library v2.0.1 Installer.exe')
 exe_pH = os.path.join(PACKAGE_DIR, 'bin', 'Hamilton pH Module v2.2.exe')
 exe_mpe = os.path.join(PACKAGE_DIR, 'bin', 'Hamilton MPE HSL Driver.msi')
 
