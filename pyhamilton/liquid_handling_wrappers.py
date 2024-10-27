@@ -412,20 +412,19 @@ def normal_logging(ham_int, method_local_dir):
     for handler in logging.root.handlers[:]:
         print(handler)
         logging.root.removeHandler(handler)
-    #logger = logging.getLogger(__name__)
     logging.getLogger('parse').setLevel(logging.CRITICAL)
     local_log_dir = os.path.join(method_local_dir, 'log')
     if not os.path.exists(local_log_dir):
         os.mkdir(local_log_dir)
     main_logfile = os.path.join(local_log_dir, 'main.log')
     logging.basicConfig(filename=main_logfile, level=logging.DEBUG, format='[%(asctime)s] %(name)s %(levelname)s %(message)s')
-    #add_robot_level_log()
     logger = logging.getLogger(__name__)
     add_stderr_logging()
     import __main__
     for banner_line in log_banner('Begin execution of ' + __main__.__file__):
         logging.info(banner_line)
     ham_int.set_log_dir(os.path.join(local_log_dir, 'hamilton.log'))
+    ham_int.json_logger.set_log_dir(os.path.join(local_log_dir, 'robot_json.log'))
 
 
 def run_async(funcs):

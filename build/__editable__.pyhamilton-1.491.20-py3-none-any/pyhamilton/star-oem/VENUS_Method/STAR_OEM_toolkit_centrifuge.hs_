@@ -1,0 +1,24 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 2/10/2023 12:16:54 AM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace STAR_OEM_TOOLKIT_CENTRIFUGE {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function HamiltonCentrifuge_Centrifuge( variable i_strLabel, variable i_blnCloseCoverAtEnd, variable i_intPresentPosition, variable i_intDirection, variable & i_intArrSpeed[], variable & i_intArrAccelleration[], variable & i_intArrDuration[], variable i_intDecelleration, variable & o_stepReturn ) void { }
+function HamiltonCentrifuge_CoverClose( variable i_strLabel, variable & o_stepReturn ) void { }
+function HamiltonCentrifuge_CoverOpen( variable i_strLabel, variable & o_stepReturn ) void { }
+function HamiltonCentrifuge_GetRotationStatus( variable i_strLabel, variable & o_blnRotorDriveRunning, variable & o_int_ProfileStatus, variable & o_intTimeLeft, variable & o_blnCurrentSpeed, variable & o_blnSpeedSensorTrip, variable & o_blnGravitySensorTrip, variable & o_blnTemperatureSensorTrip, variable & o_stepReturn ) void { }
+function HamiltonCentrifuge_Initialize( variable i_strLabel, variable i_strNodeName, variable i_blnSimulationMode, variable i_blnAlwaysInitialize, variable & o_stepReturn ) void { }
+function HamiltonCentrifuge_StartCentrifuge( variable i_strLabel, variable i_intDirection, variable i_intSpeed, variable i_intAcceleration, variable i_intMaxTime, variable & o_stepReturn ) void { }
+function HamiltonCentrifuge_StopCentrifuge( variable i_strLabel, variable i_intDecelleration, variable & o_stepReturn ) void { }
+function HamiltonCentrifuge_Terminate( variable i_strLabel, variable & o_stepReturn ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=stefa$$valid=0$$time=2023-02-10 00:16$$checksum=08b8e6bd$$length=082$$

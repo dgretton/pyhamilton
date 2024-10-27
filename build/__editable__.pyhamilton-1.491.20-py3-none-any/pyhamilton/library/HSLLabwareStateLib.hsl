@@ -1,0 +1,448 @@
+// ======================================================================
+// This is a part of the HSL Labware State Library.
+// Copyright (C) by HAMILTON Bonaduz AG, CH-7402 Bonaduz.
+// All rights reserved.
+// ======================================================================
+//
+// Modification History
+// 2005-05-03  mhosang : Initial file creation
+//
+// ======================================================================
+
+#ifndef __HSLLabwareStateLib_hsl__
+#define __HSLLabwareStateLib_hsl__	1
+
+// ---------------------------------------------------------------------------------------
+// Interface to the HSL Labware State Library
+// ---------------------------------------------------------------------------------------
+
+#ifndef HSL_RUNTIME
+namespace HSLLabwState
+{
+	//****************************************************************************************
+	// Library function GetLabwareID
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the labware ID of the labware at the current position of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//
+	//	Return value:
+	//		The labware id of the labware (string)
+	//****************************************************************************************
+	
+	function GetLabwareID(
+		device&		Device,
+		sequence&	Sequence) variable { return (""); }
+
+	//****************************************************************************************
+	// Library function GetLabwareBarcode
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the barcode of the labware at the current position of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		LabwareLevel	[in] the labware level to be used
+	//                        must be a value out of the namespace LabwareLevels
+	//
+	//	Return value:
+	//		The barcode of the labware (string)
+	//****************************************************************************************
+	function GetLabwareBarcode(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel) variable { return (""); }
+
+	//****************************************************************************************
+	// Library function SetLabwareBarcode
+	//****************************************************************************************
+	//
+	// Description:
+	//		Overwrites the barcode of the labware at the current position of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		LabwareLevel	[in] the labware level to be used
+	//							     must be a value out of the namespace LabwareLevels
+	//		Barcode			[in] the barcode to be set (string)
+	//
+	//	Return value:
+	//		None. The function throws an error if it fails.
+	//****************************************************************************************
+	function SetLabwareBarcode(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel,
+		variable&	Barcode) void {}
+
+	//****************************************************************************************
+	// Library function GetLabwareBarcodeMask
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the barcode mask of the labware at the current position of the given
+	//    sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		LabwareLevel	[in] the labware level to be used
+	//							     must be a value out of the namespace LabwareLevels
+	//
+	//	Return value:
+	//		The barcode mask of the labware (string)
+	//****************************************************************************************
+	function GetLabwareBarcodeMask(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel) variable { return (""); }
+
+	//****************************************************************************************
+	// Library function SetLabwareBarcodeMask
+	//****************************************************************************************
+	//
+	// Description:
+	//		Overwrites the barcode mask of the labware at the current position of the given
+	//		sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		LabwareLevel	[in] the labware level to be used
+	//							     must be a value out of the namespace LabwareLevels
+	//		BarcodeMask		[in] the barcode mask to be set (string)
+	//
+	//	Return value:
+	//		None. The function throws an error if it fails.
+	//****************************************************************************************
+	function SetLabwareBarcodeMask(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel,
+		variable&	BarcodeMask) void {}
+
+	//****************************************************************************************
+	// Library function GetLabwareSourceBarcodes
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns an array filled with all source barcodes of the labware at the current
+	//		position of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		ListType			[in] the type of the source barcode list
+	//								  must be a valid barcode list type out of the namespace
+	//								  STrackerConst
+	//
+	//	Return value:
+	//		An array filled with historical ordered source barcodes
+	//****************************************************************************************
+	function GetLabwareSourceBarcodes(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	ListType) variable[] { variable retVal[]; return (retVal); }
+
+	//****************************************************************************************
+	// Library function GetLabwareLastSourceBarcode
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the last known source barcode of the labware at the current position of the
+	//		given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//
+	//	Return value:
+	//		The last known source barcode as a string
+	//****************************************************************************************
+	function GetLabwareLastSourceBarcode(
+		device&		Device,
+		sequence&	Sequence) variable { return (""); }
+
+	//****************************************************************************************
+	// Library function AddLabwareSourceBarcode
+	//****************************************************************************************
+	//
+	// Description:
+	//		Adds a specific barcode to the source barcodes of the labware at the current
+	//		position of the given sequence.
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		Barcode			[in] the barcode to be added
+	//
+	//	Return value:
+	//		The last known source barcode as a string
+	//****************************************************************************************
+	function AddLabwareSourceBarcode(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	Barcode) void {}
+
+	//****************************************************************************************
+	// Library function SetLabwareSummaryState
+	//****************************************************************************************
+	//
+	// Description:
+	//		Overwrites the summary state of the labware at the current position of the given
+	//		sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		SummaryState	[in] the summary state to be set
+	//
+	//	Return value:
+	//		None. The function throws an error if it fails.
+	//****************************************************************************************
+	function SetLabwareSummaryState(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	SummaryState) void {}
+
+	//****************************************************************************************
+	// Library function GetLabwareSummaryState
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the summary state of the labware at the current position of the given
+	//		sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//
+	//	Return value:
+	//		The summary state of the labware as an integer
+	//****************************************************************************************
+	function GetLabwareSummaryState(
+		device&		Device,
+		sequence&	Sequence) variable { return (0); }
+
+	//****************************************************************************************
+	// Library function GetLabwareLastActionState
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the action state of the last action for the labware at the current position
+	//		of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//
+	//	Return value:
+	//		The last action state of the labware as an integer
+	//****************************************************************************************
+	function GetLabwareLastActionState(
+		device&		Device,
+		sequence&	Sequence) variable { return (0); }
+
+	//****************************************************************************************
+	// Library function SetLabwareExpNumOfProcSteps
+	//****************************************************************************************
+	//
+	// Description:
+	//		Sets the expected number of processed steps for the labware at the current position
+	//		of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		NumOfProcSteps	[in] the number of processed steps
+	//
+	//	Return value:
+	//		The last known source barcode as a string
+	//****************************************************************************************
+	function SetLabwareExpNumOfProcSteps(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	NumOfProcSteps) void {}
+
+	//****************************************************************************************
+	// Library function GetLabwareExpNumOfProcSteps
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the expected number of processed steps for the labware at the current
+	//		position of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//
+	//	Return value:
+	//		The last known source barcode as a string
+	//****************************************************************************************
+	function GetLabwareExpNumOfProcSteps(
+		device&		Device,
+		sequence&	Sequence) variable { return (0); }
+
+	//****************************************************************************************
+	// Library function GetLabwareNumOfProcSteps
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the number of processed steps for the labware at the current position
+	//		of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//
+	//	Return value:
+	//		The last known source barcode as a string
+	//****************************************************************************************
+	function GetLabwareNumOfProcSteps(
+		device&		Device,
+		sequence&	Sequence) variable { return (0); }
+
+	//****************************************************************************************
+	// Library function SetLabwareVolume
+	//****************************************************************************************
+	//
+	// Description:
+	//		Sets the volume of the labware at the current position of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		Volume			[in] the volume to be set
+	//
+	//	Return value:
+	//		None. The function throws an error if it fails.
+	//****************************************************************************************
+	function SetLabwareVolume(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	Volume) void {}
+
+	//****************************************************************************************
+	// Library function GetLabwareVolume
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the volume of the labware at the current position of the given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//
+	//	Return value:
+	//		The volume of the labware as an integer
+	//****************************************************************************************
+	function GetLabwareVolume(
+		device&		Device,
+		sequence&	Sequence) variable { return (0); }
+
+	//****************************************************************************************
+	// Library function GetLabwareRelation
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the labware id of the choosen labware level at the current position of the
+	//		given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		LabwareLevel	[in] the labware level to be used
+	//								  must be a value out of the namespace LabwareLevels
+	//
+	//	Return value:
+	//		The last known source barcode as a string
+	//****************************************************************************************
+	function GetLabwareRelation(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel) variable { return (""); }
+
+	//****************************************************************************************
+	// Library function SetLabwareVisibility
+	//****************************************************************************************
+	//
+	// Description:
+	//		Sets the visibility of the choosen labware level at the current position of the
+	//		given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		LabwareLevel	[in] the labware level to be used
+	//								  must be a value out of the namespace LabwareLevels
+	//		Visibility		[in] the visibility to be set [hslTrue|hslFalse]
+	//
+	//	Return value:
+	//		None. The function throws an error if it fails.
+	//****************************************************************************************
+	function SetLabwareVisibility(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel,
+		variable&	Visibility) void {}
+
+	//****************************************************************************************
+	// Library function GetLabwareVisibility
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns the visibility of the choosen labware level at the current position of the
+	//		given sequence
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//		LabwareLevel	[in] the labware level to be used
+	//								  must be a value out of the namespace LabwareLevels
+	//
+	//	Return value:
+	//		The visibility of the labware. (integer)
+	//****************************************************************************************
+	function GetLabwareVisibility(
+		device&		Device,
+		sequence&	Sequence,
+		variable&	LabwareLevel) variable { return (0); }
+
+	//****************************************************************************************
+	// Library function IsLabwareConnected
+	//****************************************************************************************
+	//
+	// Description:
+	//		Returns hslTrue, if the labware at the current position of the given sequence is
+	//		part of a connected container, else hslFalse
+	//
+	// Parameter:
+	//		Device			[in] the device to be used
+	// 	Sequence			[in] the sequence where the current position specifies a labware
+	//
+	//	Return value:
+	//		Returns hslTrue, if part of a connected container, else hslFalse
+	//****************************************************************************************
+	function IsLabwareConnected(
+		device&		Device,
+		sequence&	Sequence) variable { return (hslFalse); }
+
+} // end of namespace HSLLabwState
+#endif
+
+// --------------------------------------------------------------------------------------
+// Implementation of the HSL Labware State Library
+// --------------------------------------------------------------------------------------
+#ifdef HSL_RUNTIME
+#include "HSLLabwareStateLibImpl.hs_"
+#endif
+
+#endif
+// $$author=wbarmettler$$valid=1$$time=2017-03-09 07:27$$checksum=00b519d6$$length=090$$

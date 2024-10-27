@@ -1,0 +1,972 @@
+// {{{ 2 "IncludeGuard" "PragmaOnce"
+#pragma once
+// }} ""
+#include "Hamilton pH Module\\Hamilton pH Module.hsl"
+#include "HSLErrLib.hsl"
+#include "Hamilton pH Module\\Hamilton pH Station Washer Module.hsl"
+#include "Hamilton pH Module\\Hamilton pH Station Dryer Module.hsl"
+/* {{ 2 "LibraryInsertLine" "" */ // }} ""
+// {{ 2 "TemplateIncludeBlock" ""
+#include "HSLMETEDLib.hs_"
+#include "HSLMECCLib.hs_"
+#include "HSLPTLLib.hsl"
+// }} ""
+// {{{ 2 "LibraryNamespace" "Begin"
+namespace STAR_OEM_TOOLKIT_PH {
+// }} ""
+/* {{ 2 "VariableInsertLine" "" */ // }} ""
+// {{{ 2 "SubmethodForwardDeclaration" ""
+function pH_Calibrate( variable i_intModuleID, variable i_intCalibrationLevel, variable i_fltCalibrationValue, variable i_fltCalibrationTemperature, variable i_strProbePattern, variable & o_stepReturn ) void ;
+function pH_Calibrate_Dynamically( variable i_intModuleID, variable i_intCalibrationLevel, variable i_intVariance, variable i_intTimeout, variable i_fltCalibrationValue, variable i_fltCalibrationTemperature, variable i_strProbePattern, variable & o_stepReturn ) void ;
+function pH_Dryer_Initialize( device & ML_STAR, variable i_intComport, variable i_strModuleName, variable i_blnSimulationMode, variable & o_intModuleID, variable & o_stepReturn ) void ;
+function pH_Dryer_Set_Trace( variable i_intModuleID, variable i_intTraceLevel, variable & o_stepReturn ) void ;
+function pH_Dryer_StartDrying( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void ;
+function pH_Dryer_StopDrying( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void ;
+function pH_Dryer_Terminate( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void ;
+function pH_Enable_Extended_Log( variable & o_stepReturn ) void ;
+function pH_Get_Last_Error( variable i_intModuleID, variable & o_strLastError, variable & o_stepReturn ) void ;
+function pH_Initialize( variable i_intComport, variable i_blnSimulationMode, variable & o_intModuleID, variable & o_stepReturn ) void ;
+function pH_Measure( variable i_intModuleID, variable i_fltTemperature, variable i_strProbePattern, variable & o_fltpHProbe_1, variable & o_fltpHProbe_2, variable & o_fltpHProbe_3, variable & o_fltpHProbe_4, variable & o_stepReturn ) void ;
+function pH_Measure_Dynamically( variable i_intModuleID, variable i_fltTemperature, variable i_fltPrecision, variable i_intTimeout, variable i_strProbePattern, variable & o_fltpHProbe_1, variable & o_fltpHProbe_2, variable & o_fltpHProbe_3, variable & o_fltpHProbe_4, variable & o_stepReturn ) void ;
+function pH_Request_Battery_Data( variable i_intModuleID, variable & o_strReplacementDate, variable & o_intChargeCounter, variable & o_intBatteryCondition, variable & o_intActualCharge, variable & o_stepReturn ) void ;
+function pH_Request_Calibration_Values( variable i_intModuleID, variable i_intProbeNumber, variable & o_fltpHLowValue, variable & o_fltpHLowVoltage, variable & o_fltpHHighValue, variable & o_fltpHHighVoltage, variable & o_fltCalibrationTemperature, variable & o_fltCalibrationOffset, variable & o_fltCalibrationSlope, variable & o_intCalibrationSlopeRation, variable & o_stepReturn ) void ;
+function pH_Request_Probe_Data( variable i_intModuleID, variable & o_strReplacementDate, variable & o_intMeasurementCounter_Probe_1, variable & o_intMeasurementCounter_Probe_2, variable & o_intMeasurementCounter_Probe_3, variable & o_intMeasurementCounter_Probe_4, variable & o_stepReturn ) void ;
+function pH_Request_Technical_Data( variable i_intModuleID, variable i_intHardwareNumber, variable & o_intPartNumber, variable & o_intRevision, variable & o_intSerialNumber, variable & o_stepReturn ) void ;
+function pH_Request_Voltage_Data( variable i_intModuleID, variable i_intSelector, variable & o_varVoltageData, variable & o_stepReturn ) void ;
+function pH_Set_Battery_Replacement_Date( variable i_intModuleID, variable i_intYear, variable i_intMonth, variable i_intDay, variable & o_stepReturn ) void ;
+function pH_Set_Charge_Parameters( variable i_intModuleID, variable i_blnCharge, variable i_blnAutoCharge, variable i_intChargeLevel, variable & o_stepReturn ) void ;
+function pH_Set_Probe_Replacement_Date( variable i_intModuleID, variable i_intProbe, variable i_intYear, variable i_intMonth, variable i_intDay, variable & o_stepReturn ) void ;
+function pH_Set_Shutdown( variable i_intModuleID, variable i_intMode, variable & o_stepReturn ) void ;
+function pH_Set_Technical_Data( variable i_intModuleID, variable i_intHardwareNumber, variable i_intPartNumber, variable i_intRevision, variable i_intSerialNumber, variable & o_stepReturn ) void ;
+function pH_Set_Trace_Level( variable i_intModuleID, variable i_intTraceLevel, variable & o_stepReturn ) void ;
+function pH_Sleep( variable i_intModuleID, variable & o_stepReturn ) void ;
+function pH_Template( variable i_intModuleID, variable & o_stepReturn ) void ;
+function pH_Terminate( variable i_intModuleID, variable & o_stepReturn ) void ;
+function pH_Wakeup( variable i_intModuleID, variable & o_stepReturn ) void ;
+function pH_Washer_Initialize( device & ML_STAR, variable i_intComport, variable i_strModuleName, variable i_blnSimulationMode, variable o_intModuleID, variable & o_stepReturn ) void ;
+function pH_Washer_Set_Trace( variable i_intModuleID, variable i_intTraceLevel, variable & o_stepReturn ) void ;
+function pH_Washer_Terminate( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void ;
+function pH_Washer_Wash( device & ML_STAR, variable i_intModuleID, variable i_intCycleNumber, variable & o_stepReturn ) void ;
+// }} ""
+function _InitLibrary() {
+// {{ 2 "AutoInitBlock" ""
+PTL::SetWashingStateDefault("RinseTime1", 5);
+PTL::SetWashingStateDefault("SoakTime1", 5);
+PTL::SetWashingStateDefault("FlowRate1", 11);
+PTL::SetWashingStateDefault("RinseTime2", 0);
+PTL::SetWashingStateDefault("SoakTime2", 0);
+PTL::SetWashingStateDefault("FlowRate2", 11);
+PTL::SetWashingStateDefault("DrainingTime", 10);
+PTL::SetWashingStateDefault("StartWashLiquid", 0);
+PTL::SetLoadingStateDefault("RecoveryOptionContinue", hslTrue);
+PTL::SetLoadingStateDefault("RecoveryOptionExclude", hslTrue);
+PTL::SetLoadingStateDefault("RecoveryOptionDefault", 0);
+PTL::SetLoadingStateDefault("KitLotCheckEnabled", hslFalse);
+// }} ""
+}
+function _ExitLibrary() {
+// {{ 2 "AutoExitBlock" ""
+// }} ""
+}
+// {{{ 5 "pH_Measure" "Begin"
+function pH_Measure( variable i_intModuleID, variable i_fltTemperature, variable i_strProbePattern, variable & o_fltpHProbe_1, variable & o_fltpHProbe_2, variable & o_fltpHProbe_3, variable & o_fltpHProbe_4, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Measure" "InitLocals"
+o_fltpHProbe_1 = 0;
+o_fltpHProbe_2 = 0;
+o_fltpHProbe_3 = 0;
+o_fltpHProbe_4 = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 61 1 0 "80d90406_e318_4f91_9ef3b6f12b798351" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_2E2474F7607B4feb8948B25BBE3B49F3 ;
+err.Clear();
+// }} ""
+// {{{ 62 1 0 "2394bca1_88c0_4399_ab04a338af9f5010" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::Measure(i_intModuleID, i_fltTemperature, i_strProbePattern, o_fltpHProbe_1, o_fltpHProbe_2, o_fltpHProbe_3, o_fltpHProbe_4);
+// }} ""
+// {{ 63 1 0 "80d90406_e318_4f91_9ef3b6f12b798351" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_2E2474F7607B4feb8948B25BBE3B49F3 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 64 1 0 "d771a760_6814_4866_a12a03881c971346" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 65 1 0 "80d90406_e318_4f91_9ef3b6f12b798351" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Measure" "End"
+}
+// }} ""
+// {{{ 5 "pH_Calibrate" "Begin"
+function pH_Calibrate( variable i_intModuleID, variable i_intCalibrationLevel, variable i_fltCalibrationValue, variable i_fltCalibrationTemperature, variable i_strProbePattern, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Calibrate" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 1 1 0 "03c80eb0_3f18_420c_96086b655439183a" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_ADDE389AF4C7414193E7475BFBC151C7 ;
+err.Clear();
+// }} ""
+// {{{ 2 1 0 "9742609f_32c7_419d_8ec016c662c584c2" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::Calibrate(i_intModuleID, i_intCalibrationLevel, i_fltCalibrationValue, i_fltCalibrationTemperature, i_strProbePattern);
+// }} ""
+// {{ 3 1 0 "03c80eb0_3f18_420c_96086b655439183a" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_ADDE389AF4C7414193E7475BFBC151C7 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 4 1 0 "8904566e_857b_47da_868f8d8e8444f2bb" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 5 1 0 "03c80eb0_3f18_420c_96086b655439183a" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Calibrate" "End"
+}
+// }} ""
+// {{{ 5 "pH_Template" "Begin"
+function pH_Template( variable i_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Template" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 145 1 0 "dc3e048a_9bb1_4fcc_99ff096bd8ece583" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_EBDA9B022DA24dd7955D30E2549FDE5B ;
+err.Clear();
+// }} ""
+// {{ 146 1 0 "dc3e048a_9bb1_4fcc_99ff096bd8ece583" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_EBDA9B022DA24dd7955D30E2549FDE5B : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 147 1 0 "a89bc761_6592_4106_a0acdd14e73bc5d4" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 148 1 0 "dc3e048a_9bb1_4fcc_99ff096bd8ece583" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Template" "End"
+}
+// }} ""
+// {{{ 5 "pH_Calibrate_Dynamically" "Begin"
+function pH_Calibrate_Dynamically( variable i_intModuleID, variable i_intCalibrationLevel, variable i_intVariance, variable i_intTimeout, variable i_fltCalibrationValue, variable i_fltCalibrationTemperature, variable i_strProbePattern, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Calibrate_Dynamically" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 7 1 0 "1464aeb3_96b1_4ec4_ab8008b4ad8e5c58" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_94CD08297F814239B0B11419D328505E ;
+err.Clear();
+// }} ""
+// {{{ 8 1 0 "5f0f28e4_2d10_486d_a5f025fe43a57dfd" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::CalibrateDynamically(i_intModuleID, i_intCalibrationLevel, i_intVariance, i_intTimeout, i_fltCalibrationValue, i_fltCalibrationTemperature, i_strProbePattern);
+// }} ""
+// {{ 9 1 0 "1464aeb3_96b1_4ec4_ab8008b4ad8e5c58" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_94CD08297F814239B0B11419D328505E : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 10 1 0 "276c7958_53d6_44c9_bdc01f6b0631af18" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 11 1 0 "1464aeb3_96b1_4ec4_ab8008b4ad8e5c58" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Calibrate_Dynamically" "End"
+}
+// }} ""
+// {{{ 5 "pH_Enable_Extended_Log" "Begin"
+function pH_Enable_Extended_Log( variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Enable_Extended_Log" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 43 1 0 "f3a44791_8d5d_43fd_90d52cf307b0d397" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_6213D20124C149648FFCCD6E66E53566 ;
+err.Clear();
+// }} ""
+// {{{ 44 1 0 "cfadb79c_ec52_4a4c_8c613ef78f0d979e" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+Hamilton_pH_Module::EnableExtendedLog();
+// }} ""
+// {{ 45 1 0 "f3a44791_8d5d_43fd_90d52cf307b0d397" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_6213D20124C149648FFCCD6E66E53566 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 46 1 0 "352e0c88_c061_4d35_a4aeefb9fd441f38" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 47 1 0 "f3a44791_8d5d_43fd_90d52cf307b0d397" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Enable_Extended_Log" "End"
+}
+// }} ""
+// {{{ 5 "pH_Get_Last_Error" "Begin"
+function pH_Get_Last_Error( variable i_intModuleID, variable & o_strLastError, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Get_Last_Error" "InitLocals"
+o_strLastError = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 49 1 0 "49163b05_332f_4bd8_b1a0875b42af9888" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_09FCEB2F0AAA4c5888E7D970B9EB0906 ;
+err.Clear();
+// }} ""
+// {{{ 50 1 0 "1bbf5668_7da2_4593_a954eb5c20baf705" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::GetLastError(i_intModuleID, o_strLastError);
+// }} ""
+// {{ 51 1 0 "49163b05_332f_4bd8_b1a0875b42af9888" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_09FCEB2F0AAA4c5888E7D970B9EB0906 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 52 1 0 "1340b7b5_ecea_4308_8a8ee7d11c70edc2" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 53 1 0 "49163b05_332f_4bd8_b1a0875b42af9888" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Get_Last_Error" "End"
+}
+// }} ""
+// {{{ 5 "pH_Initialize" "Begin"
+function pH_Initialize( variable i_intComport, variable i_blnSimulationMode, variable & o_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Initialize" "InitLocals"
+o_intModuleID = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 55 1 0 "b8217b02_6fd3_4298_892d2568d77c74e0" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_970E55A20F9F4e42B517C5847AEB8E38 ;
+err.Clear();
+// }} ""
+// {{{ 56 1 0 "297fb019_93d9_4b46_a56c3a32731a402d" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::Initialize(i_intComport, i_blnSimulationMode, o_intModuleID);
+// }} ""
+// {{ 57 1 0 "b8217b02_6fd3_4298_892d2568d77c74e0" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_970E55A20F9F4e42B517C5847AEB8E38 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 58 1 0 "911745ea_61cd_4f58_b8e0704906ebf222" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 59 1 0 "b8217b02_6fd3_4298_892d2568d77c74e0" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Initialize" "End"
+}
+// }} ""
+// {{{ 5 "pH_Measure_Dynamically" "Begin"
+function pH_Measure_Dynamically( variable i_intModuleID, variable i_fltTemperature, variable i_fltPrecision, variable i_intTimeout, variable i_strProbePattern, variable & o_fltpHProbe_1, variable & o_fltpHProbe_2, variable & o_fltpHProbe_3, variable & o_fltpHProbe_4, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Measure_Dynamically" "InitLocals"
+o_fltpHProbe_1 = 0;
+o_fltpHProbe_2 = 0;
+o_fltpHProbe_3 = 0;
+o_fltpHProbe_4 = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 67 1 0 "1fc3b06c_8e97_43c2_8dfc804da44c34e7" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_AA203E903AF848e0B0529507465A94E1 ;
+err.Clear();
+// }} ""
+// {{{ 68 1 0 "b4fb2269_5bd3_4f6c_8660501f53441522" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::MeasureDynamically(i_intModuleID, i_fltTemperature, i_fltPrecision, i_intTimeout, i_strProbePattern, o_fltpHProbe_1, o_fltpHProbe_2, o_fltpHProbe_3, o_fltpHProbe_4);
+// }} ""
+// {{ 69 1 0 "1fc3b06c_8e97_43c2_8dfc804da44c34e7" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_AA203E903AF848e0B0529507465A94E1 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 70 1 0 "b05cdfa7_6391_4ff4_81ed18ac5f6a52e6" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 71 1 0 "1fc3b06c_8e97_43c2_8dfc804da44c34e7" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Measure_Dynamically" "End"
+}
+// }} ""
+// {{{ 5 "pH_Request_Battery_Data" "Begin"
+function pH_Request_Battery_Data( variable i_intModuleID, variable & o_strReplacementDate, variable & o_intChargeCounter, variable & o_intBatteryCondition, variable & o_intActualCharge, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Request_Battery_Data" "InitLocals"
+o_strReplacementDate = 0;
+o_intChargeCounter = 0;
+o_intBatteryCondition = 0;
+o_intActualCharge = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 73 1 0 "847b4f5f_d886_41dc_9c81ac903c97a162" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_996D8DE608A04eacBD637370A8B07B64 ;
+err.Clear();
+// }} ""
+// {{{ 74 1 0 "da6aa4ae_3fb0_4dcb_a2a72e6dbb23e4e5" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::RequestBatteryData(i_intModuleID, o_strReplacementDate, o_intChargeCounter, o_intBatteryCondition, o_intActualCharge);
+// }} ""
+// {{ 75 1 0 "847b4f5f_d886_41dc_9c81ac903c97a162" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_996D8DE608A04eacBD637370A8B07B64 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 76 1 0 "374fab67_3d2c_479b_824c5098139051de" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 77 1 0 "847b4f5f_d886_41dc_9c81ac903c97a162" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Request_Battery_Data" "End"
+}
+// }} ""
+// {{{ 5 "pH_Request_Calibration_Values" "Begin"
+function pH_Request_Calibration_Values( variable i_intModuleID, variable i_intProbeNumber, variable & o_fltpHLowValue, variable & o_fltpHLowVoltage, variable & o_fltpHHighValue, variable & o_fltpHHighVoltage, variable & o_fltCalibrationTemperature, variable & o_fltCalibrationOffset, variable & o_fltCalibrationSlope, variable & o_intCalibrationSlopeRation, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Request_Calibration_Values" "InitLocals"
+o_fltpHLowValue = 0;
+o_fltpHLowVoltage = 0;
+o_fltpHHighValue = 0;
+o_fltpHHighVoltage = 0;
+o_fltCalibrationTemperature = 0;
+o_fltCalibrationOffset = 0;
+o_fltCalibrationSlope = 0;
+o_intCalibrationSlopeRation = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 79 1 0 "094d126e_7f40_4ffb_9e7c8e9df3ccc571" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_A458A465FAAE4354AE920AE0DDDD5DCA ;
+err.Clear();
+// }} ""
+// {{{ 80 1 0 "be826faa_b99a_4b0d_8bcfd9b9e6f58c1c" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::RequestCalibrationValues(i_intModuleID, i_intProbeNumber, o_fltpHLowValue, o_fltpHLowVoltage, o_fltpHHighValue, o_fltpHHighVoltage, o_fltCalibrationTemperature, o_fltCalibrationOffset, o_fltCalibrationSlope, o_intCalibrationSlopeRation);
+// }} ""
+// {{ 81 1 0 "094d126e_7f40_4ffb_9e7c8e9df3ccc571" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_A458A465FAAE4354AE920AE0DDDD5DCA : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 82 1 0 "3beb4db8_474e_4c8b_8c2a3a46b738bdbe" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 83 1 0 "094d126e_7f40_4ffb_9e7c8e9df3ccc571" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Request_Calibration_Values" "End"
+}
+// }} ""
+// {{{ 5 "pH_Request_Probe_Data" "Begin"
+function pH_Request_Probe_Data( variable i_intModuleID, variable & o_strReplacementDate, variable & o_intMeasurementCounter_Probe_1, variable & o_intMeasurementCounter_Probe_2, variable & o_intMeasurementCounter_Probe_3, variable & o_intMeasurementCounter_Probe_4, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Request_Probe_Data" "InitLocals"
+o_strReplacementDate = 0;
+o_intMeasurementCounter_Probe_1 = 0;
+o_intMeasurementCounter_Probe_2 = 0;
+o_intMeasurementCounter_Probe_3 = 0;
+o_intMeasurementCounter_Probe_4 = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 85 1 0 "a792a4ba_ffaa_496e_a9e84924e8d48769" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_A2F80039318F4807A9355EEE8F65F09D ;
+err.Clear();
+// }} ""
+// {{{ 86 1 0 "39f96463_bf0a_478e_99d106ede0c66ca8" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::RequestProbeData(i_intModuleID, o_strReplacementDate, o_intMeasurementCounter_Probe_1, o_intMeasurementCounter_Probe_2, o_intMeasurementCounter_Probe_3, o_intMeasurementCounter_Probe_4);
+// }} ""
+// {{ 87 1 0 "a792a4ba_ffaa_496e_a9e84924e8d48769" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_A2F80039318F4807A9355EEE8F65F09D : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 88 1 0 "c289098d_bcc1_49b8_acdb3d5a56078d64" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 89 1 0 "a792a4ba_ffaa_496e_a9e84924e8d48769" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Request_Probe_Data" "End"
+}
+// }} ""
+// {{{ 5 "pH_Request_Technical_Data" "Begin"
+function pH_Request_Technical_Data( variable i_intModuleID, variable i_intHardwareNumber, variable & o_intPartNumber, variable & o_intRevision, variable & o_intSerialNumber, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Request_Technical_Data" "InitLocals"
+o_intPartNumber = 0;
+o_intRevision = 0;
+o_intSerialNumber = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 91 1 0 "ef7e5b04_2a8d_43c7_a579daaa255b35fc" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_903977FAFD2C4e8bB89D056988CC3EF4 ;
+err.Clear();
+// }} ""
+// {{{ 92 1 0 "7b65b46f_5b72_4640_9861bacd4ace5643" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::RequestTechnicalData(i_intModuleID, i_intHardwareNumber, o_intPartNumber, o_intRevision, o_intSerialNumber);
+// }} ""
+// {{ 93 1 0 "ef7e5b04_2a8d_43c7_a579daaa255b35fc" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_903977FAFD2C4e8bB89D056988CC3EF4 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 94 1 0 "0381375a_eba4_4614_93c926558c2d7558" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 95 1 0 "ef7e5b04_2a8d_43c7_a579daaa255b35fc" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Request_Technical_Data" "End"
+}
+// }} ""
+// {{{ 5 "pH_Request_Voltage_Data" "Begin"
+function pH_Request_Voltage_Data( variable i_intModuleID, variable i_intSelector, variable & o_varVoltageData, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Request_Voltage_Data" "InitLocals"
+o_varVoltageData = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 97 1 0 "4db83f8d_771a_4c91_979c072c89b28ed1" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_44952D3849BE4a219EFD38455D886E56 ;
+err.Clear();
+// }} ""
+// {{{ 98 1 0 "4a76ad62_352e_40ca_81088288e34cdeee" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+Hamilton_pH_Module::RequestVoltageData(i_intModuleID, i_intSelector, o_varVoltageData);
+// }} ""
+// {{ 99 1 0 "4db83f8d_771a_4c91_979c072c89b28ed1" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_44952D3849BE4a219EFD38455D886E56 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 100 1 0 "043b5397_9bb9_4522_978d64f42943ee9e" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 101 1 0 "4db83f8d_771a_4c91_979c072c89b28ed1" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Request_Voltage_Data" "End"
+}
+// }} ""
+// {{{ 5 "pH_Set_Battery_Replacement_Date" "Begin"
+function pH_Set_Battery_Replacement_Date( variable i_intModuleID, variable i_intYear, variable i_intMonth, variable i_intDay, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Set_Battery_Replacement_Date" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 103 1 0 "28fa18e0_d7a7_4d5b_bce1e78a6bfdac57" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_C13705D0B70B4e8eAA80912053CAC1F1 ;
+err.Clear();
+// }} ""
+// {{{ 104 1 0 "b9ab604b_ca72_4ee2_b99c1a7872da4624" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::SetBatteryReplacementDate(i_intModuleID, i_intDay, i_intMonth, i_intYear);
+// }} ""
+// {{ 105 1 0 "28fa18e0_d7a7_4d5b_bce1e78a6bfdac57" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_C13705D0B70B4e8eAA80912053CAC1F1 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 106 1 0 "bbb0d55f_6f61_4bd2_9477cf3936b9472e" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 107 1 0 "28fa18e0_d7a7_4d5b_bce1e78a6bfdac57" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Set_Battery_Replacement_Date" "End"
+}
+// }} ""
+// {{{ 5 "pH_Set_Charge_Parameters" "Begin"
+function pH_Set_Charge_Parameters( variable i_intModuleID, variable i_blnCharge, variable i_blnAutoCharge, variable i_intChargeLevel, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Set_Charge_Parameters" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 109 1 0 "046ad941_806a_4ac7_b2f4ca60ae77c950" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_4A84194D248D4b0088B93676813BEE2D ;
+err.Clear();
+// }} ""
+// {{{ 110 1 0 "c35f1bf8_8cea_4986_96ba8ef0097524c2" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::SetChargeParameters(i_intModuleID, i_blnCharge, i_blnAutoCharge, i_intChargeLevel);
+// }} ""
+// {{ 111 1 0 "046ad941_806a_4ac7_b2f4ca60ae77c950" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_4A84194D248D4b0088B93676813BEE2D : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 112 1 0 "ed302be8_6fd1_4215_80f039adbe780f7a" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 113 1 0 "046ad941_806a_4ac7_b2f4ca60ae77c950" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Set_Charge_Parameters" "End"
+}
+// }} ""
+// {{{ 5 "pH_Set_Probe_Replacement_Date" "Begin"
+function pH_Set_Probe_Replacement_Date( variable i_intModuleID, variable i_intProbe, variable i_intYear, variable i_intMonth, variable i_intDay, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Set_Probe_Replacement_Date" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 115 1 0 "048020e2_7cb7_4b0e_9d7951ebced9d9ca" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_244E236DDAAF4536B249F6D8792A60A2 ;
+err.Clear();
+// }} ""
+// {{{ 116 1 0 "d9b9ef0e_6c6d_4272_97b55d209307f7e6" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::SetProbeReplacementDate(i_intModuleID, i_intProbe, i_intYear, i_intMonth, i_intDay);
+// }} ""
+// {{ 117 1 0 "048020e2_7cb7_4b0e_9d7951ebced9d9ca" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_244E236DDAAF4536B249F6D8792A60A2 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 118 1 0 "4ebc6879_cd2b_448a_b753ab26b9645392" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 119 1 0 "048020e2_7cb7_4b0e_9d7951ebced9d9ca" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Set_Probe_Replacement_Date" "End"
+}
+// }} ""
+// {{{ 5 "pH_Set_Shutdown" "Begin"
+function pH_Set_Shutdown( variable i_intModuleID, variable i_intMode, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Set_Shutdown" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 121 1 0 "9a1900c4_4658_4aa6_8f04356997560654" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_7907B9BE9B2647d09FEC0DD2979D5B14 ;
+err.Clear();
+// }} ""
+// {{{ 122 1 0 "3b63fd46_6389_405c_8940455e9f127468" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::SetShutdown(i_intModuleID, i_intMode);
+// }} ""
+// {{ 123 1 0 "9a1900c4_4658_4aa6_8f04356997560654" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_7907B9BE9B2647d09FEC0DD2979D5B14 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 124 1 0 "804cd242_3933_4e99_a96c4367bbe3f9ad" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 125 1 0 "9a1900c4_4658_4aa6_8f04356997560654" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Set_Shutdown" "End"
+}
+// }} ""
+// {{{ 5 "pH_Set_Technical_Data" "Begin"
+function pH_Set_Technical_Data( variable i_intModuleID, variable i_intHardwareNumber, variable i_intPartNumber, variable i_intRevision, variable i_intSerialNumber, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Set_Technical_Data" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 127 1 0 "c02ce5b6_c9e6_47bf_95caba6446142317" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_007BB8AFAE534922B6C5EA899698EA91 ;
+err.Clear();
+// }} ""
+// {{{ 128 1 0 "8dd87239_734f_4123_90ead0ba65f0bbbf" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::SetTechnicalData(i_intModuleID, i_intHardwareNumber, i_intPartNumber, i_intRevision, i_intSerialNumber);
+// }} ""
+// {{ 129 1 0 "c02ce5b6_c9e6_47bf_95caba6446142317" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_007BB8AFAE534922B6C5EA899698EA91 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 130 1 0 "ebf84842_e475_488c_9862aa5015f5fec3" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 131 1 0 "c02ce5b6_c9e6_47bf_95caba6446142317" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Set_Technical_Data" "End"
+}
+// }} ""
+// {{{ 5 "pH_Set_Trace_Level" "Begin"
+function pH_Set_Trace_Level( variable i_intModuleID, variable i_intTraceLevel, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Set_Trace_Level" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 133 1 0 "de8cbad8_49c8_46e7_a0700ca21c045a6c" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_E054D9949EA7480786FBA86809E1466A ;
+err.Clear();
+// }} ""
+// {{{ 134 1 0 "6047012d_fb0a_4b7e_8aaf873bfe7845f1" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::SetTraceLevel(i_intModuleID, i_intTraceLevel);
+// }} ""
+// {{ 135 1 0 "de8cbad8_49c8_46e7_a0700ca21c045a6c" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_E054D9949EA7480786FBA86809E1466A : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 136 1 0 "555d191a_8248_46cf_8ea20adfafc8467f" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 137 1 0 "de8cbad8_49c8_46e7_a0700ca21c045a6c" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Set_Trace_Level" "End"
+}
+// }} ""
+// {{{ 5 "pH_Sleep" "Begin"
+function pH_Sleep( variable i_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Sleep" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 139 1 0 "a89f0ae6_b4cb_4656_a2ccf7c867144e25" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_76094A1A6DE5412d86AB364ECCABC11C ;
+err.Clear();
+// }} ""
+// {{{ 140 1 0 "2a282561_49e7_4e38_9a879c795b444f19" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::Sleep(i_intModuleID);
+// }} ""
+// {{ 141 1 0 "a89f0ae6_b4cb_4656_a2ccf7c867144e25" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_76094A1A6DE5412d86AB364ECCABC11C : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 142 1 0 "e0169354_be6f_4f1f_8bdafe388a9c4771" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 143 1 0 "a89f0ae6_b4cb_4656_a2ccf7c867144e25" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Sleep" "End"
+}
+// }} ""
+// {{{ 5 "pH_Terminate" "Begin"
+function pH_Terminate( variable i_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Terminate" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 150 1 0 "668de1be_76f5_4b4b_9bdce72e242c1da9" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_2159C97E67DC41d2931B29ED5B108588 ;
+err.Clear();
+// }} ""
+// {{{ 151 1 0 "5eafa92d_a6f8_43b4_85d53439a46b7150" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::Terminate(i_intModuleID);
+// }} ""
+// {{ 152 1 0 "668de1be_76f5_4b4b_9bdce72e242c1da9" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_2159C97E67DC41d2931B29ED5B108588 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 153 1 0 "c747eb9a_16b7_4375_a0b8c1fa3905f4e2" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 154 1 0 "668de1be_76f5_4b4b_9bdce72e242c1da9" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Terminate" "End"
+}
+// }} ""
+// {{{ 5 "pH_Wakeup" "Begin"
+function pH_Wakeup( variable i_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Wakeup" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 156 1 0 "a07b04fa_c851_41e7_b5a0a2399e165b7d" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_AC33764C04E24aa192975F20CE5661F3 ;
+err.Clear();
+// }} ""
+// {{{ 157 1 0 "b874aa08_e28d_448b_bcb942611cb0081e" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Module::WakeUp(i_intModuleID);
+// }} ""
+// {{ 158 1 0 "a07b04fa_c851_41e7_b5a0a2399e165b7d" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_AC33764C04E24aa192975F20CE5661F3 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 159 1 0 "0bb81b5c_7196_46bd_a008386d79a49a7b" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 160 1 0 "a07b04fa_c851_41e7_b5a0a2399e165b7d" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Wakeup" "End"
+}
+// }} ""
+// {{{ 5 "pH_Washer_Initialize" "Begin"
+function pH_Washer_Initialize( device & ML_STAR, variable i_intComport, variable i_strModuleName, variable i_blnSimulationMode, variable o_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Washer_Initialize" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 162 1 0 "10f9829c_87f4_46c5_9b033ca5b5c71300" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_7FD13D87F8D74230A78B98C5B83581AE ;
+err.Clear();
+// }} ""
+// {{{ 163 1 0 "73832845_cea9_4136_b893d93437a02f00" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Station_Washer_Module::Initialize(ML_STAR, i_intComport, i_strModuleName, i_blnSimulationMode, o_intModuleID);
+// }} ""
+// {{ 164 1 0 "10f9829c_87f4_46c5_9b033ca5b5c71300" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_7FD13D87F8D74230A78B98C5B83581AE : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 165 1 0 "dba61f0e_40e0_4580_a0521efc45217200" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 166 1 0 "10f9829c_87f4_46c5_9b033ca5b5c71300" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Washer_Initialize" "End"
+}
+// }} ""
+// {{{ 5 "pH_Washer_Set_Trace" "Begin"
+function pH_Washer_Set_Trace( variable i_intModuleID, variable i_intTraceLevel, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Washer_Set_Trace" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 168 1 0 "96553ed4_7e70_4640_9f84ae4898d745b6" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_B6EDA3032F05464e9D3AC6C60F6B38DD ;
+err.Clear();
+// }} ""
+// {{{ 169 1 0 "878952e6_2860_4a96_a9c8d7f2ae67c7a8" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Station_Washer_Module::SetTraceLevel(i_intModuleID, i_intTraceLevel);
+// }} ""
+// {{ 170 1 0 "96553ed4_7e70_4640_9f84ae4898d745b6" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_B6EDA3032F05464e9D3AC6C60F6B38DD : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 171 1 0 "0f963a42_c256_489a_aaa94e1febe27518" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 172 1 0 "96553ed4_7e70_4640_9f84ae4898d745b6" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Washer_Set_Trace" "End"
+}
+// }} ""
+// {{{ 5 "pH_Washer_Terminate" "Begin"
+function pH_Washer_Terminate( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Washer_Terminate" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 174 1 0 "d9a253c1_0910_4e9f_a187149052ec3a76" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_3C057778551F44998B365E9253A02217 ;
+err.Clear();
+// }} ""
+// {{{ 175 1 0 "d4227020_99a1_4aa0_9d6e084149e70033" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Station_Washer_Module::Terminate(ML_STAR, i_intModuleID);
+// }} ""
+// {{ 176 1 0 "d9a253c1_0910_4e9f_a187149052ec3a76" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_3C057778551F44998B365E9253A02217 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 177 1 0 "66061ca5_5cc5_4d0f_9202635c03ec1307" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 178 1 0 "d9a253c1_0910_4e9f_a187149052ec3a76" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Washer_Terminate" "End"
+}
+// }} ""
+// {{{ 5 "pH_Washer_Wash" "Begin"
+function pH_Washer_Wash( device & ML_STAR, variable i_intModuleID, variable i_intCycleNumber, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Washer_Wash" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 180 1 0 "f80ebec7_e999_4849_ba9dd4ea56ea0f57" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_78E848113B364c5bA57553087E6B301D ;
+err.Clear();
+// }} ""
+// {{{ 181 1 0 "f05733be_cfcc_4ec8_b953e718e1850a9c" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Station_Washer_Module::Wash(ML_STAR, i_intModuleID, i_intCycleNumber);
+// }} ""
+// {{ 182 1 0 "f80ebec7_e999_4849_ba9dd4ea56ea0f57" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_78E848113B364c5bA57553087E6B301D : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 183 1 0 "c9e18e37_6611_4c12_8283218c23b61e2f" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 184 1 0 "f80ebec7_e999_4849_ba9dd4ea56ea0f57" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Washer_Wash" "End"
+}
+// }} ""
+// {{{ 5 "pH_Dryer_Initialize" "Begin"
+function pH_Dryer_Initialize( device & ML_STAR, variable i_intComport, variable i_strModuleName, variable i_blnSimulationMode, variable & o_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Dryer_Initialize" "InitLocals"
+o_intModuleID = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 13 1 0 "607202ca_06ee_4a0f_866a0d2c76d5cb28" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_5DF85C91FEE34492A487BBB5FD9647BE ;
+err.Clear();
+// }} ""
+// {{{ 14 1 0 "05f15313_9f49_451a_95bbeb4c53196bc2" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Station_Dryer_Module::Initialize(ML_STAR, i_strModuleName, i_blnSimulationMode, o_intModuleID);
+// }} ""
+// {{ 15 1 0 "607202ca_06ee_4a0f_866a0d2c76d5cb28" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_5DF85C91FEE34492A487BBB5FD9647BE : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 16 1 0 "ab7a6bde_3380_4c1c_9e57ee94fd815540" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 17 1 0 "607202ca_06ee_4a0f_866a0d2c76d5cb28" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Dryer_Initialize" "End"
+}
+// }} ""
+// {{{ 5 "pH_Dryer_Set_Trace" "Begin"
+function pH_Dryer_Set_Trace( variable i_intModuleID, variable i_intTraceLevel, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Dryer_Set_Trace" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 19 1 0 "294bac48_145a_4d48_a51b4612dd3440c2" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_C2938C2495A74c4cA632332F553DD428 ;
+err.Clear();
+// }} ""
+// {{{ 20 1 0 "3cc57734_cda6_468c_a2c90189391dadd8" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Station_Dryer_Module::SetTraceLevel(i_intModuleID, i_intTraceLevel);
+// }} ""
+// {{ 21 1 0 "294bac48_145a_4d48_a51b4612dd3440c2" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_C2938C2495A74c4cA632332F553DD428 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 22 1 0 "b9209d93_3ded_4c38_96bc13f91674c01c" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 23 1 0 "294bac48_145a_4d48_a51b4612dd3440c2" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Dryer_Set_Trace" "End"
+}
+// }} ""
+// {{{ 5 "pH_Dryer_StartDrying" "Begin"
+function pH_Dryer_StartDrying( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Dryer_StartDrying" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 25 1 0 "a3b51a95_0ff1_47ef_b688fd99b4c881ec" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_04151AE1B5D4492089F91C4D24DFB4D1 ;
+err.Clear();
+// }} ""
+// {{{ 26 1 0 "689c20eb_6a9d_4a74_88f159552e3027f3" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Station_Dryer_Module::StartDrying(ML_STAR, i_intModuleID);
+// }} ""
+// {{ 27 1 0 "a3b51a95_0ff1_47ef_b688fd99b4c881ec" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_04151AE1B5D4492089F91C4D24DFB4D1 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 28 1 0 "adeee0f8_b525_41bd_a62b5edf9d117c6d" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 29 1 0 "a3b51a95_0ff1_47ef_b688fd99b4c881ec" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Dryer_StartDrying" "End"
+}
+// }} ""
+// {{{ 5 "pH_Dryer_StopDrying" "Begin"
+function pH_Dryer_StopDrying( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Dryer_StopDrying" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 31 1 0 "29d5863e_4160_4760_b56b41dc758bdcd9" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_A4169CBA98C24da39C38331F531BB852 ;
+err.Clear();
+// }} ""
+// {{{ 32 1 0 "db4fe054_872e_4452_8835e28b39a4ad1d" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Station_Dryer_Module::StopDrying(ML_STAR, i_intModuleID);
+// }} ""
+// {{ 33 1 0 "29d5863e_4160_4760_b56b41dc758bdcd9" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_A4169CBA98C24da39C38331F531BB852 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 34 1 0 "47b1bc71_479a_474d_a5b3c1fe4e31d5e7" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 35 1 0 "29d5863e_4160_4760_b56b41dc758bdcd9" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Dryer_StopDrying" "End"
+}
+// }} ""
+// {{{ 5 "pH_Dryer_Terminate" "Begin"
+function pH_Dryer_Terminate( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "pH_Dryer_Terminate" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 37 1 0 "75b21d84_d009_4e72_8a0184c15d4eb585" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_976FC1B840694cb598ACF66A1DAAA974 ;
+err.Clear();
+// }} ""
+// {{{ 38 1 0 "59fd889e_96a4_4c23_a1f9d3304535be72" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = Hamilton_pH_Station_Dryer_Module::Terminate(ML_STAR, i_intModuleID);
+// }} ""
+// {{ 39 1 0 "75b21d84_d009_4e72_8a0184c15d4eb585" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_976FC1B840694cb598ACF66A1DAAA974 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 40 1 0 "6d67118e_7746_4fb9_aa5ef1f641c11cb5" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 41 1 0 "75b21d84_d009_4e72_8a0184c15d4eb585" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "pH_Dryer_Terminate" "End"
+}
+// }} ""
+/* {{ 2 "SubmethodInsertLine" "" */ // }} ""
+// {{{ 2 "LibraryNamespace" "End"
+} // library namespace
+// }} ""
+// $$author=stefa$$valid=0$$time=2022-10-28 20:30$$checksum=f397232e$$length=084$$

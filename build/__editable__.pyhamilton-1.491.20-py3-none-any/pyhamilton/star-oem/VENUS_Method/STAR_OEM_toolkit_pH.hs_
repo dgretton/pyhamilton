@@ -1,0 +1,47 @@
+
+// this ALWAYS GENERATED file contains the sub-method library header
+// Generated at 10/28/2022 8:30:08 PM
+
+#pragma once
+#ifndef HSL_RUNTIME
+namespace STAR_OEM_TOOLKIT_PH {
+function _InitLibrary() { }
+function _ExitLibrary() { }
+function pH_Calibrate( variable i_intModuleID, variable i_intCalibrationLevel, variable i_fltCalibrationValue, variable i_fltCalibrationTemperature, variable i_strProbePattern, variable & o_stepReturn ) void { }
+function pH_Calibrate_Dynamically( variable i_intModuleID, variable i_intCalibrationLevel, variable i_intVariance, variable i_intTimeout, variable i_fltCalibrationValue, variable i_fltCalibrationTemperature, variable i_strProbePattern, variable & o_stepReturn ) void { }
+function pH_Dryer_Initialize( device & ML_STAR, variable i_intComport, variable i_strModuleName, variable i_blnSimulationMode, variable & o_intModuleID, variable & o_stepReturn ) void { }
+function pH_Dryer_Set_Trace( variable i_intModuleID, variable i_intTraceLevel, variable & o_stepReturn ) void { }
+function pH_Dryer_StartDrying( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void { }
+function pH_Dryer_StopDrying( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void { }
+function pH_Dryer_Terminate( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void { }
+function pH_Enable_Extended_Log( variable & o_stepReturn ) void { }
+function pH_Get_Last_Error( variable i_intModuleID, variable & o_strLastError, variable & o_stepReturn ) void { }
+function pH_Initialize( variable i_intComport, variable i_blnSimulationMode, variable & o_intModuleID, variable & o_stepReturn ) void { }
+function pH_Measure( variable i_intModuleID, variable i_fltTemperature, variable i_strProbePattern, variable & o_fltpHProbe_1, variable & o_fltpHProbe_2, variable & o_fltpHProbe_3, variable & o_fltpHProbe_4, variable & o_stepReturn ) void { }
+function pH_Measure_Dynamically( variable i_intModuleID, variable i_fltTemperature, variable i_fltPrecision, variable i_intTimeout, variable i_strProbePattern, variable & o_fltpHProbe_1, variable & o_fltpHProbe_2, variable & o_fltpHProbe_3, variable & o_fltpHProbe_4, variable & o_stepReturn ) void { }
+function pH_Request_Battery_Data( variable i_intModuleID, variable & o_strReplacementDate, variable & o_intChargeCounter, variable & o_intBatteryCondition, variable & o_intActualCharge, variable & o_stepReturn ) void { }
+function pH_Request_Calibration_Values( variable i_intModuleID, variable i_intProbeNumber, variable & o_fltpHLowValue, variable & o_fltpHLowVoltage, variable & o_fltpHHighValue, variable & o_fltpHHighVoltage, variable & o_fltCalibrationTemperature, variable & o_fltCalibrationOffset, variable & o_fltCalibrationSlope, variable & o_intCalibrationSlopeRation, variable & o_stepReturn ) void { }
+function pH_Request_Probe_Data( variable i_intModuleID, variable & o_strReplacementDate, variable & o_intMeasurementCounter_Probe_1, variable & o_intMeasurementCounter_Probe_2, variable & o_intMeasurementCounter_Probe_3, variable & o_intMeasurementCounter_Probe_4, variable & o_stepReturn ) void { }
+function pH_Request_Technical_Data( variable i_intModuleID, variable i_intHardwareNumber, variable & o_intPartNumber, variable & o_intRevision, variable & o_intSerialNumber, variable & o_stepReturn ) void { }
+function pH_Request_Voltage_Data( variable i_intModuleID, variable i_intSelector, variable & o_varVoltageData, variable & o_stepReturn ) void { }
+function pH_Set_Battery_Replacement_Date( variable i_intModuleID, variable i_intYear, variable i_intMonth, variable i_intDay, variable & o_stepReturn ) void { }
+function pH_Set_Charge_Parameters( variable i_intModuleID, variable i_blnCharge, variable i_blnAutoCharge, variable i_intChargeLevel, variable & o_stepReturn ) void { }
+function pH_Set_Probe_Replacement_Date( variable i_intModuleID, variable i_intProbe, variable i_intYear, variable i_intMonth, variable i_intDay, variable & o_stepReturn ) void { }
+function pH_Set_Shutdown( variable i_intModuleID, variable i_intMode, variable & o_stepReturn ) void { }
+function pH_Set_Technical_Data( variable i_intModuleID, variable i_intHardwareNumber, variable i_intPartNumber, variable i_intRevision, variable i_intSerialNumber, variable & o_stepReturn ) void { }
+function pH_Set_Trace_Level( variable i_intModuleID, variable i_intTraceLevel, variable & o_stepReturn ) void { }
+function pH_Sleep( variable i_intModuleID, variable & o_stepReturn ) void { }
+function pH_Template( variable i_intModuleID, variable & o_stepReturn ) void { }
+function pH_Terminate( variable i_intModuleID, variable & o_stepReturn ) void { }
+function pH_Wakeup( variable i_intModuleID, variable & o_stepReturn ) void { }
+function pH_Washer_Initialize( device & ML_STAR, variable i_intComport, variable i_strModuleName, variable i_blnSimulationMode, variable o_intModuleID, variable & o_stepReturn ) void { }
+function pH_Washer_Set_Trace( variable i_intModuleID, variable i_intTraceLevel, variable & o_stepReturn ) void { }
+function pH_Washer_Terminate( device & ML_STAR, variable i_intModuleID, variable & o_stepReturn ) void { }
+function pH_Washer_Wash( device & ML_STAR, variable i_intModuleID, variable i_intCycleNumber, variable & o_stepReturn ) void { }
+} // namespace
+#endif
+
+#ifdef HSL_RUNTIME
+#include __filename__ ".hsi"
+#endif
+// $$author=stefa$$valid=0$$time=2022-10-28 20:30$$checksum=0bd52d60$$length=082$$

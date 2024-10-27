@@ -1,0 +1,270 @@
+// {{{ 2 "IncludeGuard" "PragmaOnce"
+#pragma once
+// }} ""
+#include "Hamilton Centrifuge\\Hamilton Centrifuge.hsl"
+#include "HSLBarcodeReader.hsl"
+#include "HSLErrLib.hsl"
+#include "HSLTrcLib.hsl"
+/* {{ 2 "LibraryInsertLine" "" */ // }} ""
+// {{ 2 "TemplateIncludeBlock" ""
+#include "HSLMETEDLib.hs_"
+#include "HSLMECCLib.hs_"
+// }} ""
+// {{{ 2 "LibraryNamespace" "Begin"
+namespace STAR_OEM_TOOLKIT_CENTRIFUGE {
+// }} ""
+/* {{ 2 "VariableInsertLine" "" */ // }} ""
+// {{{ 2 "SubmethodForwardDeclaration" ""
+function HamiltonCentrifuge_Centrifuge( variable i_strLabel, variable i_blnCloseCoverAtEnd, variable i_intPresentPosition, variable i_intDirection, variable & i_intArrSpeed[], variable & i_intArrAccelleration[], variable & i_intArrDuration[], variable i_intDecelleration, variable & o_stepReturn ) void ;
+function HamiltonCentrifuge_CoverClose( variable i_strLabel, variable & o_stepReturn ) void ;
+function HamiltonCentrifuge_CoverOpen( variable i_strLabel, variable & o_stepReturn ) void ;
+function HamiltonCentrifuge_GetRotationStatus( variable i_strLabel, variable & o_blnRotorDriveRunning, variable & o_int_ProfileStatus, variable & o_intTimeLeft, variable & o_blnCurrentSpeed, variable & o_blnSpeedSensorTrip, variable & o_blnGravitySensorTrip, variable & o_blnTemperatureSensorTrip, variable & o_stepReturn ) void ;
+function HamiltonCentrifuge_Initialize( variable i_strLabel, variable i_strNodeName, variable i_blnSimulationMode, variable i_blnAlwaysInitialize, variable & o_stepReturn ) void ;
+function HamiltonCentrifuge_StartCentrifuge( variable i_strLabel, variable i_intDirection, variable i_intSpeed, variable i_intAcceleration, variable i_intMaxTime, variable & o_stepReturn ) void ;
+function HamiltonCentrifuge_StopCentrifuge( variable i_strLabel, variable i_intDecelleration, variable & o_stepReturn ) void ;
+function HamiltonCentrifuge_Terminate( variable i_strLabel, variable & o_stepReturn ) void ;
+// }} ""
+function _InitLibrary() {
+// {{ 2 "AutoInitBlock" ""
+// }} ""
+}
+function _ExitLibrary() {
+// {{ 2 "AutoExitBlock" ""
+// }} ""
+}
+// {{{ 5 "HamiltonCentrifuge_Initialize" "Begin"
+function HamiltonCentrifuge_Initialize( variable i_strLabel, variable i_strNodeName, variable i_blnSimulationMode, variable i_blnAlwaysInitialize, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_Initialize" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 25 1 0 "8f396cc9_60f7_4219_ac1c9fe2276fd3d4" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_AB99818B6C9C4e01A2D3408A63DDB0B1 ;
+err.Clear();
+// }} ""
+// {{{ 26 1 0 "c61b809a_6951_4a41_92b162d30da0e530" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::Initialize(i_strLabel, i_strNodeName, i_blnSimulationMode, i_blnAlwaysInitialize);
+// }} ""
+// {{ 27 1 0 "8f396cc9_60f7_4219_ac1c9fe2276fd3d4" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_AB99818B6C9C4e01A2D3408A63DDB0B1 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 28 1 0 "d26c85f6_e647_41c0_808a53edea8c8982" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 29 1 0 "8f396cc9_60f7_4219_ac1c9fe2276fd3d4" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_Initialize" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_Centrifuge" "Begin"
+function HamiltonCentrifuge_Centrifuge( variable i_strLabel, variable i_blnCloseCoverAtEnd, variable i_intPresentPosition, variable i_intDirection, variable & i_intArrSpeed[], variable & i_intArrAccelleration[], variable & i_intArrDuration[], variable i_intDecelleration, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_Centrifuge" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 1 1 0 "d01bfc46_9e9c_4d7a_bd3fa6f791904929" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_A2C3EC70E5E846f58CD4FE2BBD93C9D9 ;
+err.Clear();
+// }} ""
+// {{{ 2 1 0 "f14d3090_673c_4c70_9da421f87af4d75f" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::Centrifuge(i_strLabel, i_blnCloseCoverAtEnd, i_intPresentPosition, i_intDirection, i_intArrSpeed, i_intArrAccelleration, i_intArrDuration, i_intDecelleration);
+// }} ""
+// {{ 3 1 0 "d01bfc46_9e9c_4d7a_bd3fa6f791904929" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_A2C3EC70E5E846f58CD4FE2BBD93C9D9 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 4 1 0 "c25dc277_d818_46fb_a5d49a65d6f867b7" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 5 1 0 "d01bfc46_9e9c_4d7a_bd3fa6f791904929" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_Centrifuge" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_GetRotationStatus" "Begin"
+function HamiltonCentrifuge_GetRotationStatus( variable i_strLabel, variable & o_blnRotorDriveRunning, variable & o_int_ProfileStatus, variable & o_intTimeLeft, variable & o_blnCurrentSpeed, variable & o_blnSpeedSensorTrip, variable & o_blnGravitySensorTrip, variable & o_blnTemperatureSensorTrip, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_GetRotationStatus" "InitLocals"
+o_blnRotorDriveRunning = 0;
+o_int_ProfileStatus = 0;
+o_intTimeLeft = 0;
+o_blnCurrentSpeed = 0;
+o_blnSpeedSensorTrip = 0;
+o_blnGravitySensorTrip = 0;
+o_blnTemperatureSensorTrip = 0;
+o_stepReturn = 0;
+// }} ""
+// {{ 19 1 0 "c30abb04_f50e_4df7_a1cfad44bbbf3bc5" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_419C19BCFC314cfc8125D61C4682527D ;
+err.Clear();
+// }} ""
+// {{{ 20 1 0 "dab46c43_7e7d_478a_a949dcf4ed01fcf3" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::GetRotationDriveStatus(i_strLabel, o_blnRotorDriveRunning, o_int_ProfileStatus, o_intTimeLeft, o_blnCurrentSpeed, o_blnSpeedSensorTrip, o_blnGravitySensorTrip, o_blnTemperatureSensorTrip);
+// }} ""
+// {{ 21 1 0 "c30abb04_f50e_4df7_a1cfad44bbbf3bc5" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_419C19BCFC314cfc8125D61C4682527D : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 22 1 0 "557851a9_1249_408d_9808213bccd348a2" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 23 1 0 "c30abb04_f50e_4df7_a1cfad44bbbf3bc5" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_GetRotationStatus" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_CoverOpen" "Begin"
+function HamiltonCentrifuge_CoverOpen( variable i_strLabel, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_CoverOpen" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 13 1 0 "d58ac169_88cf_4fd1_91c7d27e79a79e4d" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_E484704EBD56486aB099BF985EAAF152 ;
+err.Clear();
+// }} ""
+// {{{ 14 1 0 "13997326_7197_434f_89528b4f80fe763c" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::CoverOpen(i_strLabel);
+// }} ""
+// {{ 15 1 0 "d58ac169_88cf_4fd1_91c7d27e79a79e4d" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_E484704EBD56486aB099BF985EAAF152 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 16 1 0 "130626d7_a25f_491b_ac64c946c9398d2d" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 17 1 0 "d58ac169_88cf_4fd1_91c7d27e79a79e4d" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_CoverOpen" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_CoverClose" "Begin"
+function HamiltonCentrifuge_CoverClose( variable i_strLabel, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_CoverClose" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 7 1 0 "675a6a59_5716_4aad_a7be67a44d621f27" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_8DA249B863A24d38A5E8B6EDFAE8EC9C ;
+err.Clear();
+// }} ""
+// {{{ 8 1 0 "3bde4bdd_f253_4ade_b11a3add924729fd" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::CoverClose(i_strLabel);
+// }} ""
+// {{ 9 1 0 "675a6a59_5716_4aad_a7be67a44d621f27" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_8DA249B863A24d38A5E8B6EDFAE8EC9C : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 10 1 0 "90b316b5_8841_4665_906f0242b89acfba" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 11 1 0 "675a6a59_5716_4aad_a7be67a44d621f27" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_CoverClose" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_StartCentrifuge" "Begin"
+function HamiltonCentrifuge_StartCentrifuge( variable i_strLabel, variable i_intDirection, variable i_intSpeed, variable i_intAcceleration, variable i_intMaxTime, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_StartCentrifuge" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 31 1 0 "160054e2_9d07_4b06_8990696a6c21f633" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_2925F4CEB30A4628823CE84322B9DA0D ;
+err.Clear();
+// }} ""
+// {{{ 32 1 0 "59e1d420_00bc_4de5_ba19ef5907122ce0" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::StartCentrifuge(i_strLabel, i_intDirection, i_intSpeed, i_intAcceleration, i_intMaxTime);
+// }} ""
+// {{ 33 1 0 "160054e2_9d07_4b06_8990696a6c21f633" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_2925F4CEB30A4628823CE84322B9DA0D : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 34 1 0 "a65a3d22_f7ce_41e4_8f023e87df5f667f" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 35 1 0 "160054e2_9d07_4b06_8990696a6c21f633" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_StartCentrifuge" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_StopCentrifuge" "Begin"
+function HamiltonCentrifuge_StopCentrifuge( variable i_strLabel, variable i_intDecelleration, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_StopCentrifuge" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 37 1 0 "2b8f1369_657d_4eb0_b0dad38a7560b40e" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_9624A18BCC154f0c948BB09C882A91EA ;
+err.Clear();
+// }} ""
+// {{{ 38 1 0 "0be0854d_0181_4ef4_93c17722d290c889" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::StopCentrifuge(i_strLabel, i_intDecelleration);
+// }} ""
+// {{ 39 1 0 "2b8f1369_657d_4eb0_b0dad38a7560b40e" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_9624A18BCC154f0c948BB09C882A91EA : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 40 1 0 "a5c8e164_4da3_4a0b_9df26a767b13252e" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 41 1 0 "2b8f1369_657d_4eb0_b0dad38a7560b40e" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_StopCentrifuge" "End"
+}
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_Terminate" "Begin"
+function HamiltonCentrifuge_Terminate( variable i_strLabel, variable & o_stepReturn ) void {
+// }} ""
+// {{ 5 "HamiltonCentrifuge_Terminate" "InitLocals"
+o_stepReturn = 0;
+// }} ""
+// {{ 43 1 0 "8568f0bd_45dd_4b50_aa51ea5e57142996" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+onerror goto errLabel_FB35381D1C594f7eA650BBCA433D2A47 ;
+err.Clear();
+// }} ""
+// {{{ 44 1 0 "52061e8e_924b_4a10_8df3a8ab0848b707" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = HamiltonCentrifuge::Terminate(o_stepReturn);
+// }} ""
+// {{ 45 1 0 "8568f0bd_45dd_4b50_aa51ea5e57142996" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+errLabel_FB35381D1C594f7eA650BBCA433D2A47 : {}
+onerror goto 0;
+if (err.GetId() != 0)   /* skip handler if no error */
+{
+// }} ""
+// {{{ 46 1 0 "0b776374_a1a1_40bb_bbc047db6c198c6a" "{C1F3C015-47B3-4514-9407-AC2E65043419}"
+o_stepReturn = ErrGetDataAt(3);
+// }} ""
+// {{ 47 1 0 "8568f0bd_45dd_4b50_aa51ea5e57142996" "{3293659E-F71E-472f-AFB4-6A674E32B114}"
+}   /* end if from skip handler if no error */
+// }} ""
+// {{{ 5 "HamiltonCentrifuge_Terminate" "End"
+}
+// }} ""
+/* {{ 2 "SubmethodInsertLine" "" */ // }} ""
+// {{{ 2 "LibraryNamespace" "End"
+} // library namespace
+// }} ""
+// $$author=stefa$$valid=0$$time=2023-02-10 00:16$$checksum=e58d0858$$length=084$$

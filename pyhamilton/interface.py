@@ -480,16 +480,22 @@ class HamiltonInterface:
         def has_exited(self):
             return self.exited
 
-    def __init__(self, address=None, port=None, simulate=False, debug=False):
+    def __init__(self, address=None, port=None, simulating = False, debug=False, windowed = False, server_mode = False, **kwargs):
+        if 'simulate' in kwargs:
+            raise Exception("The simulate keyword argument is deprecated in favor of windowed. Please use windowed = True")
         self.address = HamiltonInterface.default_address if address is None else address
         self.port = HamiltonInterface.default_port if port is None else port
-        self.simulate = simulate
+        self.windowed = windowed
+        self.simulating = simulating
+        self.server_mode = server_mode
         self.debug = debug
         self.server_thread = None
         self.oem_process = None
         self.active = False
         self.logger = None
         self.log_queue = []
+        self.json_logger = JSONLogger()
+
 
     def start(self):
         """Starts the extra processes, threads, and servers for the Hamilton connection.
@@ -505,9 +511,16 @@ class HamiltonInterface:
         if self.active:
             return
         self.log('starting a Hamilton interface')
-        if self.simulate:
+        if self.windowed:
             subprocess.Popen([OEM_RUN_EXE_PATH, OEM_HSL_PATH])
             self.log('started the oem application for simulation')
+        elif self.simulating:
+            self.log('running in simulation mode')
+        elif self.server_mode:
+            current_directory = os.path.dirname(os.path.abspath(__file__))
+            server_script_path = os.path.join(current_directory, 'run_venus_client.py')
+            python_32bit_path = os.getenv('PYTHON_32BIT_PATH')
+            subprocess.run([python_32bit_path, server_script_path])
         else:
             self.oem_process = Process(target=run_hamilton_process, args=())
             self.oem_process.start()
@@ -529,7 +542,7 @@ class HamiltonInterface:
         if not self.active:
             return
         try:
-            if self.simulate:
+            if self.windowed or self.simulating or self.server_mode:
                 self.log('sending end run command to simulator')
                 try:
                     self.wait_on_response(self.send_command(command='end', id=hex(0)), timeout=1.5)
@@ -608,7 +621,10 @@ class HamiltonInterface:
             send_cmd_dict = template.assemble_cmd(**cmd_dict)
         if 'id' not in send_cmd_dict:
             self.log_and_raise(ValueError("Command dicts sent from HamiltonInterface must have a unique id with key 'id'"))
-        self.server_thread.server_handler_class.send_str(json.dumps(send_cmd_dict))
+        if not self.simulating:
+            self.server_thread.server_handler_class.send_str(json.dumps(send_cmd_dict))
+        else:
+            self.json_logger.log(str(send_cmd_dict))
         if block_until_sent:
             self._block_until_sq_clear()
         return send_cmd_dict['id']
@@ -640,7 +656,9 @@ class HamiltonInterface:
           `HamiltonTimeoutError`: after `timeout` seconds elapse with no response, if
           `timeout` was specified.
         """
-
+        if self.simulating:
+            return
+        
         delays = 1  # sec
         server_response = None
         for _ in wait(delays=delays, timeout=timeout):
@@ -709,3 +727,19 @@ class HamiltonInterface:
     def log_and_raise(self, err):
         self.log(repr(err), 'error')
         raise err
+
+class JSONLogger:
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)  # Set the default logging level
+    
+    def log(self, message):
+        self.logger.info(message)
+    
+    def set_log_dir(self, log_dir):
+        hdlr = logging.FileHandler(log_dir)
+        hdlr.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(message)s')
+        hdlr.setFormatter(formatter)
+        self.logger.addHandler(hdlr)
+        
