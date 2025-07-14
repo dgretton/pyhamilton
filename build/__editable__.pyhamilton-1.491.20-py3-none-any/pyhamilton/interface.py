@@ -741,4 +741,246 @@ class HamiltonInterface:
     def _compound_pos_str(pos_tuples):
         """Create position string for commands"""
         present_pos_tups = [pt for pt in pos_tuples if pt is not None]
-        return ';'.join((pt[0].layout_name() + 
+        return ';'.join((pt[0].layout_name() + ', ' + pt[0].position_id(pt[1]) 
+                        for pt in present_pos_tups))
+
+    @staticmethod
+    def _compound_pos_str_96(labware96):
+        """Create position string for 96-well commands"""
+        return ';'.join((labware96.layout_name() + ', ' + labware96.position_id(idx) 
+                        for idx in range(96)))
+
+    @staticmethod
+    def _assert_parallel_nones(list1, list2):
+        """Verify two lists have None values in the same positions"""
+        if not (len(list1) == len(list2) and 
+                all([(i1 is None) == (i2 is None) for i1, i2 in zip(list1, list2)])):
+            raise ValueError('Lists must have parallel None entries')
+
+    def aspirate(self, pos_tuples, vols, **more_options):
+        """Aspirate liquid from specified positions.
+        
+        Args:
+            pos_tuples: List of (labware, idx) tuples specifying positions
+            vols: List of volumes to aspirate
+            **more_options: Additional command options
+        """
+        self.log('aspirate: Aspirate volumes ' + str(vols) + ' from positions [' +
+                '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
+                (']' if not more_options else '] with extra options ' + str(more_options)))
+
+        if len(pos_tuples) > 8:
+            raise ValueError('Can only aspirate with 8 channels at a time')
+            
+        self._assert_parallel_nones(pos_tuples, vols)
+            
+        if 'liquidClass' not in more_options:
+            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        response = self.wait_on_response(
+            self.send_command(
+                ASPIRATE,
+                channelVariable=self._channel_var(pos_tuples),
+                labwarePositions=self._compound_pos_str(pos_tuples), 
+                volumes=[v for v in vols if v is not None],
+                **more_options
+            ),
+            raise_first_exception=True,
+            return_data=['step-return2', 'step-return3']
+        )
+        return response
+
+    def dispense(self, pos_tuples, vols, **more_options):
+        """Dispense liquid into specified positions.
+        
+        Args:
+            pos_tuples: List of (labware, idx) tuples specifying positions
+            vols: List of volumes to dispense
+            **more_options: Additional command options
+        """
+        self.log('dispense: Dispense volumes ' + str(vols) + ' into positions [' +
+                '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
+                (']' if not more_options else '] with extra options ' + str(more_options)))
+
+        if len(pos_tuples) > 8:
+            raise ValueError('Can only dispense with 8 channels at a time')
+            
+        self._assert_parallel_nones(pos_tuples, vols)
+            
+        if 'liquidClass' not in more_options:
+            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        response = self.wait_on_response(
+            self.send_command(
+                DISPENSE,
+                channelVariable=self._channel_var(pos_tuples),
+                labwarePositions=self._compound_pos_str(pos_tuples),
+                volumes=[v for v in vols if v is not None],
+                **more_options
+            ),
+            raise_first_exception=True,
+            return_data=['step-return2', 'step-return3']
+        )
+        return response
+
+    def tip_pick_up(self, pos_tuples, **more_options):
+        """Pick up tips from specified positions.
+        
+        Args:
+            pos_tuples: List of (labware, idx) tuples specifying tip positions
+            **more_options: Additional command options
+        """
+        self.log('tip_pick_up: Pick up tips at ' + '; '.join((labware_pos_str(*pt) if pt else '(skip)' 
+                for pt in pos_tuples)) + ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if len(pos_tuples) > 8:
+            raise ValueError('Can only pick up 8 tips at a time')
+
+        self.wait_on_response(
+            self.send_command(
+                PICKUP,
+                labwarePositions=self._compound_pos_str(pos_tuples),
+                channelVariable=self._channel_var(pos_tuples),
+                **more_options
+            ), 
+            raise_first_exception=True
+        )
+
+    def tip_eject(self, pos_tuples=None, **more_options):
+        """Eject tips to specified positions or default waste.
+        
+        Args:
+            pos_tuples: Optional list of (labware, idx) tuples specifying tip positions.
+                       If None, eject to default waste.
+            **more_options: Additional command options
+        """
+        if pos_tuples is None:
+            self.log('tip_eject: Eject tips to default waste' + 
+                    ('' if not more_options else ' with extra options ' + str(more_options)))
+            more_options['useDefaultWaste'] = 1
+            from .deckresource import Tip96
+            dummy = Tip96('')
+            pos_tuples = [(dummy, 0)] * 8
+        else:
+            self.log('tip_eject: Eject tips to ' + '; '.join((labware_pos_str(*pt) if pt else '(skip)' 
+                    for pt in pos_tuples)) + ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if len(pos_tuples) > 8:
+            raise ValueError('Can only eject up to 8 tips')
+
+        self.wait_on_response(
+            self.send_command(
+                EJECT,
+                labwarePositions=self._compound_pos_str(pos_tuples),
+                channelVariable=self._channel_var(pos_tuples),
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def tip_pick_up_96(self, tip96, **more_options):
+        """Pick up tips from a 96-well tip rack.
+        
+        Args:
+            tip96: 96-well tip rack labware
+            **more_options: Additional command options
+        """
+        self.log('tip_pick_up_96: Pick up tips at ' + tip96.layout_name() +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        self.wait_on_response(
+            self.send_command(
+                PICKUP96,
+                labwarePositions=self._compound_pos_str_96(tip96),
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def tip_eject_96(self, tip96=None, **more_options):
+        """Eject tips to a 96-well tip rack or default waste.
+        
+        Args:
+            tip96: Optional 96-well tip rack labware. If None, eject to default waste.
+            **more_options: Additional command options
+        """
+        self.log('tip_eject_96: Eject tips to ' + (tip96.layout_name() if tip96 else 'default waste') +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if tip96 is None:
+            labware_poss = ''
+            more_options.update({'tipEjectToKnownPosition': 2})  # 2 is default waste
+        else:
+            labware_poss = self._compound_pos_str_96(tip96)
+
+        self.wait_on_response(
+            self.send_command(
+                EJECT96,
+                labwarePositions=labware_poss,
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def aspirate_96(self, plate96, vol, **more_options):
+        """Aspirate liquid from a 96-well plate.
+        
+        Args:
+            plate96: 96-well plate labware
+            vol: Volume to aspirate
+            **more_options: Additional command options
+        """
+        self.log('aspirate_96: Aspirate volume ' + str(vol) + ' from ' + plate96.layout_name() +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if 'liquidClass' not in more_options:
+            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        self.wait_on_response(
+            self.send_command(
+                ASPIRATE96,
+                labwarePositions=self._compound_pos_str_96(plate96),
+                aspirateVolume=vol,
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def dispense_96(self, plate96, vol, **more_options):
+        """Dispense liquid into a 96-well plate.
+        
+        Args:
+            plate96: 96-well plate labware
+            vol: Volume to dispense
+            **more_options: Additional command options
+        """
+        self.log('dispense_96: Dispense volume ' + str(vol) + ' into ' + plate96.layout_name() +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if 'liquidClass' not in more_options:
+            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        self.wait_on_response(
+            self.send_command(
+                DISPENSE96,
+                labwarePositions=self._compound_pos_str_96(plate96),
+                dispenseVolume=vol,
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+class JSONLogger:
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)  # Set the default logging level
+    
+    def log(self, message):
+        self.logger.info(message)
+    
+    def set_log_dir(self, log_dir):
+        hdlr = logging.FileHandler(log_dir)
+        hdlr.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(message)s')
+        hdlr.setFormatter(formatter)
+        self.logger.addHandler(hdlr)
