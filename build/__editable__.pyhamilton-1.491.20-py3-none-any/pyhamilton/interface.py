@@ -480,7 +480,7 @@ class HamiltonInterface:
         def has_exited(self):
             return self.exited
 
-    def __init__(self, address=None, port=None, simulating = False, debug=False, windowed = False, server_mode = False, **kwargs):
+    def __init__(self, address=None, port=None, simulating = False, debug=False, windowed = False, server_mode = False, logger = None, **kwargs):
         if 'simulate' in kwargs:
             raise Exception("The simulate keyword argument is deprecated in favor of windowed. Please use windowed = True")
         self.address = HamiltonInterface.default_address if address is None else address
@@ -728,18 +728,17 @@ class HamiltonInterface:
         self.log(repr(err), 'error')
         raise err
 
-class JSONLogger:
-    def __init__(self):
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)  # Set the default logging level
-    
-    def log(self, message):
-        self.logger.info(message)
-    
-    def set_log_dir(self, log_dir):
-        hdlr = logging.FileHandler(log_dir)
-        hdlr.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(message)s')
-        hdlr.setFormatter(formatter)
-        self.logger.addHandler(hdlr)
-        
+    @staticmethod
+    def _channel_var(pos_tuples):
+        """Create channel pattern string for commands"""
+        ch_var = ['0']*16
+        for i, pos_tup in enumerate(pos_tuples):
+            if pos_tup is not None:
+                ch_var[i] = '1'
+        return ''.join(ch_var)
+
+    @staticmethod
+    def _compound_pos_str(pos_tuples):
+        """Create position string for commands"""
+        present_pos_tups = [pt for pt in pos_tuples if pt is not None]
+        return ';'.join((pt[0].layout_name() + 

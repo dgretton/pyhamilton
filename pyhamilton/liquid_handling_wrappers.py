@@ -210,96 +210,35 @@ def channel_var(pos_tuples):
     return ''.join(ch_var)
 
 def tip_pick_up(ham_int, pos_tuples, **more_options):
-    logging.info('tip_pick_up: Pick up tips at ' + '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    num_channels = len(pos_tuples)
-    if num_channels > 8:
-        raise ValueError('Can only pick up 8 tips at a time')
-    ch_patt = channel_var(pos_tuples)
-    labware_poss = compound_pos_str(pos_tuples)
-    ham_int.wait_on_response(ham_int.send_command(PICKUP,
-        labwarePositions=labware_poss,
-        channelVariable=ch_patt,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.tip_pick_up(pos_tuples, **more_options)
 
 def tip_eject(ham_int, pos_tuples=None, **more_options):
-    if pos_tuples is None:
-        logging.info('tip_eject: Eject tips to default waste' + ('' if not more_options else ' with extra options ' + str(more_options)))
-        more_options['useDefaultWaste'] = 1
-        dummy = Tip96('')
-        pos_tuples = [(dummy, 0)] * 8
-    else:
-        logging.info('tip_eject: Eject tips to ' + '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
-                ('' if not more_options else ' with extra options ' + str(more_options)))
-    num_channels = len(pos_tuples)
-    if num_channels > 8:
-        raise ValueError('Can only eject up to 8 tips')
-    ch_patt = channel_var(pos_tuples)
-    labware_poss = compound_pos_str(pos_tuples)
-    ham_int.wait_on_response(ham_int.send_command(EJECT,
-        labwarePositions=labware_poss,
-        channelVariable=ch_patt,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.tip_eject(pos_tuples, **more_options)
 
 def assert_parallel_nones(list1, list2):
-    if not (len(list1) == len(list2) and all([(i1 is None) == (i2 is None) for i1, i2 in zip(list1, list2)])):
-        raise ValueError('Lists must have parallel None entries')
+    """Legacy wrapper for backward compatibility"""
+    return HamiltonInterface._assert_parallel_nones(list1, list2)
 
 default_liq_class = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
 
-
 def aspirate(ham_int, pos_tuples, vols, **more_options):
-    assert_parallel_nones(pos_tuples, vols)
-    logging.info('aspirate: Aspirate volumes ' + str(vols) + ' from positions [' +
-            '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
-            (']' if not more_options else '] with extra options ' + str(more_options)))
-    if len(pos_tuples) > 8:
-        raise ValueError('Can only aspirate with 8 channels at a time')
-    if 'liquidClass' not in more_options:
-        more_options.update({'liquidClass':default_liq_class})
-    response = ham_int.wait_on_response(ham_int.send_command(ASPIRATE,
-        channelVariable=channel_var(pos_tuples),
-        labwarePositions=compound_pos_str(pos_tuples),
-        volumes=[v for v in vols if v is not None],
-        **more_options), raise_first_exception=True, return_data=['step-return2', 'step-return3'])
-    return response
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.aspirate(pos_tuples, vols, **more_options)
 
 def dispense(ham_int, pos_tuples, vols, **more_options):
-    assert_parallel_nones(pos_tuples, vols)
-    logging.info('dispense: Dispense volumes ' + str(vols) + ' into positions [' +
-            '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
-            (']' if not more_options else '] with extra options ' + str(more_options)))
-    if len(pos_tuples) > 8:
-        raise ValueError('Can only aspirate with 8 channels at a time')
-    if 'liquidClass' not in more_options:
-        more_options.update({'liquidClass':default_liq_class})
-    response = ham_int.wait_on_response(ham_int.send_command(DISPENSE,
-        channelVariable=channel_var(pos_tuples),
-        labwarePositions=compound_pos_str(pos_tuples),
-        volumes=[v for v in vols if v is not None],
-        **more_options), raise_first_exception=True, return_data=['step-return2', 'step-return3'])
-    return response
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.dispense(pos_tuples, vols, **more_options)
     
 
 def tip_pick_up_96(ham_int, tip96, **more_options):
-    logging.info('tip_pick_up_96: Pick up tips at ' + tip96.layout_name() +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    labware_poss = compound_pos_str_96(tip96)
-    ham_int.wait_on_response(ham_int.send_command(PICKUP96,
-        labwarePositions=labware_poss,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.tip_pick_up_96(tip96, **more_options)
 
 def tip_eject_96(ham_int, tip96=None, **more_options):
-    logging.info('tip_eject_96: Eject tips to ' + (tip96.layout_name() if tip96 else 'default waste') +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    if tip96 is None:
-        labware_poss = ''
-        more_options.update({'tipEjectToKnownPosition':2}) # 2 is default waste
-    else:   
-        labware_poss = compound_pos_str_96(tip96)
-    ham_int.wait_on_response(ham_int.send_command(EJECT96,
-        labwarePositions=labware_poss,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.tip_eject_96(tip96, **more_options)
 
 def aspirate_96(ham_int, plate96, vol, **more_options):
     logging.info('aspirate_96: Aspirate volume ' + str(vol) + ' from ' + plate96.layout_name() +
