@@ -121,6 +121,10 @@ for cmd in defaults_by_cmd:
     globals()[const_name] = const_template
     _builtin_templates_by_cmd[cmd] = const_template
 
+def labware_pos_str(labware, idx):
+    return labware.layout_name() + ', ' + labware.position_id(idx)
+
+
 def _make_new_hamilton_serv_handler(resp_indexing_fn):
     """Make HTTP request handler to aggregate responses according to an index function.
 
@@ -757,6 +761,23 @@ class HamiltonInterface:
                 all([(i1 is None) == (i2 is None) for i1, i2 in zip(list1, list2)])):
             raise ValueError('Lists must have parallel None entries')
 
+    def initialize(self, **more_options):
+        """Initialize the Hamilton robot with optional parameters.
+
+        Args:
+            **more_options: Additional command options to pass to the initialize command.
+        """
+        self.log('initialize: Initializing Hamilton robot with options ' + str(more_options))
+        response = self.wait_on_response(
+            self.send_command(
+                INITIALIZE,
+                **more_options
+            ),
+            raise_first_exception=True,
+            return_data=['step-return2', 'step-return3']
+        )
+        return response
+    
     def aspirate(self, pos_tuples, vols, **more_options):
         """Aspirate liquid from specified positions.
         
