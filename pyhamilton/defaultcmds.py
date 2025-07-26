@@ -16,6 +16,11 @@ try:
 except Exception:
     pass
 
+from .defaults import defaults
+
+cfg = defaults()
+
+
 defaults_by_cmd = { # 'field':None indicates field is required when assembling command
 
     'initialize':('INITIALIZE', {
@@ -211,7 +216,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'plateLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
         'lidSequence':'', # leave empty if you don´t use lid or if you are going to provide specific plate labware-positions below or ejecting to default waste
         'lidLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
-        'toolSequence':'COREGripTool', # sequence name of the CO-RE Gripper
+        'toolSequence': cfg.core_gripper_sequence, # sequence name of the CO-RE Gripper
         'gripForce':3, # (integer) 0-9, from lowest to highest
         'gripperToolChannel':8, # specifies the higher of two consecutive integers representing the CO-RE gripper channels.
         'sequenceCounting':0, # (integer) 0=don´t autoincrement plate sequence,  1=Autoincrement
@@ -313,6 +318,15 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     'BarcodeReader_Read':('BC_READ',{
 
     }),
+
+    'loadCarrier':('LOAD_CARRIER', {
+        'carrierName': '', # (string) name of the carrier to load
+        'barcodeFileName': '', # (string) name of the barcode file to load
+        'barcodeReadPositions': '', # (string) path to the barcode file
+    }),
+    'unloadCarrier':('UNLOAD_CARRIER', {
+        'carrierName': '', # (string) name of the carrier to unload
+    }), 
     'pH_Initialize':('PH_INIT',{
         'Comport' : '' , # (int)
         'SimulationMode' : '' # (boolean)

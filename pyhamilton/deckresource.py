@@ -7,6 +7,7 @@ import string, shutil, os, string, re
 from datetime import datetime
 from pyhamilton import OEM_LAY_PATH, LAY_BACKUP_DIR
 from .oemerr import ResourceUnavailableError
+from typing import List, Tuple, Union
 
 
 class ResourceType:
@@ -340,6 +341,20 @@ class Tip96(Standard96):
         self._assert_idx_in_range(idx)
         return str(idx + 1) # switch to standard advance through row first
 
+# tips = lmgr.layout_item(Tip96, 'tips_0')
+
+def resource_list_with_prefix(layout_manager:LayoutManager, prefix:str, res_class:DeckResource, num_ress:int, order_key=None, reverse=False):
+    def name_from_line(line):
+        field = LayoutManager.layline_objid(line)
+        if field:
+            return field
+        return LayoutManager.layline_first_field(line)
+    layline_test = lambda line: LayoutManager.field_starts_with(name_from_line(line), prefix)
+    res_type = ResourceType(res_class, layline_test, name_from_line)
+    res_list = [layout_manager.assign_unused_resource(res_type, order_key=order_key, reverse=reverse) for _ in range(num_ress)]
+    return res_list
+
+
 
 class Plate96(Standard96):
 
@@ -529,3 +544,6 @@ class FalconCarrier24(DeckResource):
 
     def position_id(self, idx):
         return self.positions[idx]
+
+def layout_item(lmgr, item_class, item_name):
+    return lmgr.assign_unused_resource(ResourceType(item_class, item_name))
