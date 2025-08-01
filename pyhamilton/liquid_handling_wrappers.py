@@ -187,29 +187,15 @@ def move_plate_gripper(ham, dest_poss, **more_options):
     """Legacy wrapper for backward compatibility"""
     return ham.move_plate_gripper(dest_poss, **more_options)
 
-'''
-    'gripPlace':('GRIP_PLACE', {
-        'plateSequence':'', # leave empty if you are going to provide specific plate labware-position below
-        'plateLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
-        'lidSequence':'', # leave empty if you don´t use lid or if you are going to provide specific plate labware-positions below or ejecting to default waste
-        'lidLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
-        'toolSequence':'COREGripTool', # sequence name of the iSWAP. leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1;
-        'sequenceCounting':0, # (integer) 0=don´t autoincrement plate sequence,  1=Autoincrement
-        'movementType':0, # (integer) 0=To carrier, 1=Complex movement
-        'transportMode':0, # (integer) 0=Plate only, 1=Lid only ,2=Plate with lid
-        'ejectToolWhenFinish':1, # (integer) 0=Off, 1=On
-        'zSpeed':100.0, # (float) mm/s
-        'platePressOnDistance':0.0, # (float) lift-up distance [mm] (only used if 'movement type' is set to 'complex movement'),
-        'xAcceleration':4  # (integer) 1-5 from slowest to fastest, where 4 is default
-
-'''
 
 def move_plate_using_gripper(ham_int: HamiltonInterface, source_plate: str, dest_poss: str, gripHeight: float, gripWidth: float = 81, 
                              openWidth: float = 87, lid: bool = False, tool_sequence: str = cfg.core_gripper_sequence, 
-                             gripForce: int = 8, ejectToolWhenFinish: int = 1, **more_options):
+                             gripForce: int = 8, ejectToolWhenFinish: int = 1, gripperToolChannel: int = 5, **more_options):
 
-    ham_int.get_plate_gripper_seq(source_plate, gripHeight, gripWidth, openWidth, lid, tool_sequence, gripForce=gripForce, **more_options)
-    ham_int.place_plate_gripper_seq(dest_poss, tool_sequence, ejectToolWhenFinish=ejectToolWhenFinish, **more_options)
+    ham_int.get_plate_gripper_seq(source_plate, gripHeight, gripWidth, openWidth, lid, tool_sequence, 
+                                  gripForce=gripForce, gripperToolChannel=gripperToolChannel, **more_options)
+    
+    ham_int.place_plate_gripper_seq(dest_poss, tool_sequence=tool_sequence, ejectToolWhenFinish=ejectToolWhenFinish, **more_options)
 
 def tracked_tip_pick_up(ham_int: HamiltonInterface, tips_tracker: TrackedTips, n: int) -> List[Tuple[DeckResource, int]]:
     """
@@ -227,20 +213,15 @@ def tracked_tip_pick_up(ham_int: HamiltonInterface, tips_tracker: TrackedTips, n
     return
 
 
-def tracked_tip_pick_up_96(ham_int: HamiltonInterface, tips_tracker: TrackedTips, n: int) -> List[Tuple[DeckResource, int]]:
+def tracked_tip_pick_up_96(ham_int: HamiltonInterface, tips_tracker: TrackedTips):
     """
     Pick up `n` tips from the tracker, marking them as occupied.
     Returns a list of (DeckResource, position_within_rack).
     """
 
-
-    if n > tips_tracker.count_remaining():
-        raise ValueError(f"Only {tips_tracker.count_remaining()} tips available; {n} requested.")
-    
     tip_rack = tips_tracker.fetch_rack()
     ham_int.tip_pick_up_96(tip_rack)
 
-    return
 
 
 class StderrLogger:

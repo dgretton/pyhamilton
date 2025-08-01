@@ -18,9 +18,9 @@ def hhs_begin_monitoring(ham, device_number, tolerance_range, interval, action):
     ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout)
 
 
-def hhs_create_star_device(ham, used_node, star_device='ML_STAR'):
+def hhs_create_star_device(ham, star_device='ML_STAR', used_node=1):
     return_field = ['step-return2']
-    cmd = ham.send_command(HHS_CREATE_STAR_DEVICE, starDevice = star_device, usedNode = used_node)
+    cmd = ham.send_command(HHS_CREATE_STAR_DEVICE, starDevice=star_device, usedNode=used_node)
     response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)
     device_number = response.return_data[0]
     return device_number
@@ -82,7 +82,9 @@ def hhs_get_temp_state(ham, device_number):
     temp_state = response.return_data[0]
     return temp_state
 
-
+def hhs_set_simulation(ham, simulate):
+    cmd = ham.send_command(HHS_SET_SIMULATION, simulate=simulate)
+    ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout)
 
 
 
@@ -106,9 +108,6 @@ def hhs_set_shaker_param(ham, device_number, shaking_direction, shaking_acc_ramp
             shakingAccRamp=shaking_acc_ramp)
     ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout)
 
-def hhs_set_simulation(ham, simulate):
-    cmd = ham.send_command(HHS_SET_SIMULATION, simulate=simulate)
-    ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout)
 
 def hhs_set_temp_param(ham, device_number, start_timeout, tolerance_range, security_range):
     cmd = ham.send_command(HHS_SET_TEMP_PARAM, deviceNumber=device_number, startTimeout=start_timeout, \

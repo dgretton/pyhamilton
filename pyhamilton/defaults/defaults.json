@@ -1,0 +1,5 @@
+{
+  "robot_type": "STAR",
+  "core_gripper_sequence": "COREGripTool_OnWaste_1000ul_0001",
+   "liquids_database": "C:\\Program Files (x86)\\Hamilton\\Config\\ML_STARLiquids.mdb"
+}

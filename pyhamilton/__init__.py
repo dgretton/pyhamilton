@@ -27,7 +27,8 @@ from .centrifuge_wrappers import *
 from .hig_wrappers import *
 from .mpe_wrappers import *
 from .tec_wrappers import *
-from .managed_resources import TrackedTips
+from .managed_resources import *
+from .liquid_class_viewer import *
 
 
 
@@ -79,6 +80,24 @@ installation process.""")
     
     recursive_copy(LIBRARY_DIR, hamilton_lib_dir)        
     print("Configuration completed")
+
+    user_home = os.path.expanduser("~")
+    config_dir = os.path.join(user_home, ".pyhamilton")
+    os.makedirs(config_dir, exist_ok=True)
+
+    source_defaults_path = os.path.join(PACKAGE_DIR, "defaults", "defaults.json")
+    target_defaults_path = os.path.join(config_dir, "defaults.json")
+
+    if not os.path.exists(source_defaults_path):
+        print(f"ERROR: Could not find source defaults file at: {source_defaults_path}")
+    else:
+        shutil.copyfile(source_defaults_path, target_defaults_path)
+        print(f"Copied default config to: {target_defaults_path}")
+
+    print("Configuration completed")
+
+
+
 
 def create_project():
     current_dir = os.path.abspath(os.getcwd())

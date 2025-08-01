@@ -427,6 +427,19 @@ class HamiltonResponse:
         if self.status == HamiltonResponseStatus.SUCCESS:
             raise HamiltonReturnParseError('Inconsistency: Venus returns SUCCESS while error code {firstErrorCode} found! ( response: ' + self.raw + ' )')
 
+@dataclass
+class DispenseResult:
+    liquidHeights: float
+    liquidVolumes: float
+    raw: HamiltonResponse # keep the raw object if callers need extras
+
+@dataclass
+class AspirateResult:
+    liquidHeights: float        
+    liquidVolumes: float
+    raw: HamiltonResponse # keep the raw object if callers need extras
+
+
 
 class HamiltonInterface:
     """Main class to automatically set up and tear down an interface to a Hamilton robot.
@@ -778,7 +791,7 @@ class HamiltonInterface:
         )
         return response
     
-    def aspirate(self, pos_tuples, vols, **more_options):
+    def aspirate(self, pos_tuples, vols, **more_options) -> AspirateResult:
         """Aspirate liquid from specified positions.
         
         Args:
@@ -817,21 +830,25 @@ class HamiltonInterface:
             return_data=['step-return2', 'step-return3']
         )
 
-        @dataclass
-        class AspirateResult:
-            liquidHeights: float         # choose a more specific type if you know it
-            liquidVolumes: float
-            raw: HamiltonResponse      # keep the raw object if callers need extras
+        if self.simulating:
+            # In simulation mode, we don't get liquid heights and volumes
+            res = AspirateResult(
+                liquidHeights=[2.0] * len(pos_tuples),
+                liquidVolumes=[10.0] * len(pos_tuples),
+                raw=response
+            )
+            return res
+        
+        else:
+            res = AspirateResult(
+                liquidHeights=[float(x) for x in response.return_data[0].split(';')],
+                liquidVolumes=[float(x) for x in response.return_data[1].split(';')],
+                raw=response
+            )
+            return res
 
-        res = AspirateResult(
-            liquidHeights=response.return_data[0],
-            liquidVolumes=response.return_data[1],
-            raw=response
-        )
-        return res
 
-
-    def dispense(self, pos_tuples, vols, **more_options):
+    def dispense(self, pos_tuples, vols, **more_options) -> DispenseResult:
         """Dispense liquid into specified positions.
         
         Args:
@@ -864,20 +881,25 @@ class HamiltonInterface:
             return_data=['step-return2', 'step-return3']
         )
 
-        @dataclass
-        class DispenseResult:
-            liquidHeights: float         # choose a more specific type if you know it
-            liquidVolumes: float
-            raw: HamiltonResponse      # keep the raw object if callers need extras
 
-        res = DispenseResult(
-            liquidHeights=response.return_data[0],
-            liquidVolumes=response.return_data[1],
-            raw=response
-        )
+        if self.simulating:
+            # In simulation mode, we don't get liquid heights and volumes
+            res = DispenseResult(
+                liquidHeights=[2.0] * len(pos_tuples),
+                liquidVolumes=[10.0] * len(pos_tuples),
+                raw=response
+            )
+            return res
+        
+        else:
+            res = DispenseResult(
+                liquidHeights=[float(x) for x in response.return_data[0].split(';')],
+                liquidVolumes=[float(x) for x in response.return_data[1].split(';')],
+                raw=response
+            )
+            return res
 
 
-        return response
 
     def tip_pick_up(self, pos_tuples, **more_options):
         """Pick up tips from specified positions.

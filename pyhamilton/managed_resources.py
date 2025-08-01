@@ -62,7 +62,10 @@ class TrackedTips:
     # ------------------------------------------------------------------
     def __init__(self,
                  tip_racks: List[DeckResource],
-                 tracker_id: str | None = None):
+                 volume_capacity: int,
+                 tracker_id: str | None = None,
+                 reset: bool = True,
+                 ):
         """
         Parameters
         ----------
@@ -74,6 +77,7 @@ class TrackedTips:
         """
         self.tip_racks   : List[DeckResource] = tip_racks
         self.tracker_id  : str = tracker_id or "|".join(r.layout_name() for r in tip_racks)
+        self.volume_capacity: int = volume_capacity
 
         # Build default in‑RAM state (all tips occupied).
         self.occupancy: List[Tuple[DeckResource, bool]] = []
@@ -81,16 +85,22 @@ class TrackedTips:
             self.occupancy.extend([(rack, True) for _ in range(rack._num_items)])
 
         # Reconcile with on‑disk data (or seed the DB if brand‑new).
-        self._hydrate_from_db()
+        if reset:           # optional hard‑reset switch
+            self._flush_entire_state()
+            self.restored_from_db = False
+        else:
+            self.restored_from_db = self._hydrate_from_db()
 
     # ----------------------------- Factories --------------------------
     @classmethod
     def from_prefix(cls,
                     tracker_id: str,
+                    volume_capacity: int,
                     prefix   : str,
                     count    : int,
                     lmgr     : LayoutManager,
-                    tip_type : ResourceType = Tip96) -> "TrackedTips":
+                    tip_type : ResourceType = Tip96,
+                    reset    : bool = True) -> "TrackedTips":
         """
         Allocate `count` racks named f"{prefix}_{i:04d}" via `lmgr`,
         then return a new TrackedTips instance managing them.
@@ -99,7 +109,7 @@ class TrackedTips:
             lmgr.assign_unused_resource(ResourceType(tip_type, f"{prefix}_{i:04d}"))
             for i in range(1, count + 1)
         ]
-        return cls(resources, tracker_id=tracker_id)
+        return cls(resources, volume_capacity=volume_capacity, tracker_id=tracker_id, reset=reset)
 
     # ------------------------ Public API ------------------------------
     def mark_occupied(self, index: int) -> None:
@@ -127,24 +137,28 @@ class TrackedTips:
         Output format: (DeckResource, position_within_rack).
         """
         fetched: List[Tuple[int, DeckResource, int]] = []
-        seen: Dict[int, int] = {}
 
         for idx, (rack, occ) in enumerate(self.occupancy):
             if not occ:
                 continue
-            rid = id(rack)
-            pos = seen.setdefault(rid, 0)
-            seen[rid] += 1
-            fetched.append((idx, rack, pos))
+
+            # Correct position inside this rack (0‑based)
+            pos_in_rack = idx % rack._num_items      # works for any rack size
+
+            fetched.append((idx, rack, pos_in_rack))
             if len(fetched) == n:
                 break
 
         if len(fetched) < n:
-            raise ValueError(f"Only {len(fetched)} tips available; {n} requested.")
+            raise ValueError(
+                f"Only {len(fetched)} tips available; {n} requested."
+            )
 
+        # Mark the returned tips as used and sync to DB
         for idx, _, _ in fetched:
-            self.mark_unoccupied(idx)          # syncs to DB
+            self.mark_unoccupied(idx)
 
+        # Strip the internal absolute index before returning
         return [(rack, pos) for _, rack, pos in fetched]
 
     def fetch_rack(self) -> Optional[DeckResource]:
@@ -164,7 +178,7 @@ class TrackedTips:
         return None
 
     # ------------------- Persistence internals ------------------------
-    def _hydrate_from_db(self) -> None:
+    def _hydrate_from_db(self) -> bool:
         with _get_conn() as conn:
             cur = conn.execute(
                 "SELECT position_idx, rack_name, occupied "
@@ -173,9 +187,9 @@ class TrackedTips:
             )
             rows = cur.fetchall()
 
-            if not rows:                     # first‑time tracker → seed DB
+            if not rows:  # first‑time tracker → seed DB
                 self._flush_entire_state()
-                return
+                return False
 
             # overwrite default RAM state with DB contents
             rack_map = {r.layout_name(): r for r in self.tip_racks}
@@ -184,6 +198,8 @@ class TrackedTips:
                 if rack is None:
                     continue  # stale DB row; ignore
                 self.occupancy[pos] = (rack, bool(occ_int))
+
+            return True
 
     def _update_row(self, position_idx: int, occupied: bool) -> None:
         rack = self.occupancy[position_idx][0]
@@ -234,112 +250,109 @@ def _ensure_stacked_table() -> None:
 
 
 _ensure_stacked_table()          # run at import time
+
+
 # ────────────────────────── StackedResources (persistent) ─────────────
 class StackedResources:
     """
-    Treat several DeckResources as one vertical stack and persist
-    which items remain between runs.
+    A persistent stack of named resources (as strings), supporting
+    FIFO access and database-backed availability tracking.
     """
 
-    # ------------------------------------------------------------------
     def __init__(self,
-                 resources : List[DeckResource],
-                 tracker_id: str | None = None):
+                 resource_names: List[str],
+                 tracker_id: Optional[str] = None):
         """
         Parameters
         ----------
-        resources : list[DeckResource]
-            Racks/plates/etc. that form the stack.
+        resource_names : list[str]
+            The initial resource names to be managed.
         tracker_id : str, optional
-            Namespace inside the DB.  Defaults to a join of rack names.
+            Namespace for persistence. Defaults to joined resource names.
         """
-        self.resources  = resources
-        self.tracker_id = tracker_id or "|".join(r.layout_name() for r in resources)
+        self.resource_names = resource_names
+        self.tracker_id     = tracker_id or "|".join(resource_names)
+        self._stacked: List[str] = list(resource_names)
 
-        # Build default “everything available” list --------------------
-        self._stacked: List[Tuple[DeckResource, int]] = []
-        for r in resources:
-            self._stacked.extend([(r, i) for i in range(r._num_items())])
-
-        # Reconcile with on‑disk copy
         self._hydrate_from_db()
 
-    # ----------------------- Public API ------------------------------
-    def get_stacked(self) -> List[Tuple[DeckResource, int]]:
-        """Return the live list (read‑only)."""
+    @classmethod
+    def from_prefix(cls,
+                    tracker_id: str,
+                    prefix    : str,
+                    count     : int) -> "StackedResources":
+        """
+        Create a StackedResources instance with names like 'prefix_0001', etc.
+
+        Parameters
+        ----------
+        tracker_id : str
+            Unique ID to scope persistence.
+        prefix : str
+            Base name for the resources.
+        count : int
+            How many named resources to generate.
+        """
+        resource_names = [f"{prefix}_{i:04d}" for i in range(1, count + 1)]
+        return cls(resource_names, tracker_id=tracker_id)
+
+    def get_stacked(self) -> List[str]:
+        """Return the current list of available resources."""
         return self._stacked
 
     def count(self) -> int:
-        """Number of remaining items."""
+        """Return the number of available resources."""
         return len(self._stacked)
 
-    def fetch_next(self, n: int) -> List[Tuple[DeckResource, int]]:
+    def fetch_next(self) -> List[str]:
         """
-        Pop `n` items from the stack (FIFO) and persist the change.
-        Returns tuples of (DeckResource, slot_idx).
+        Pop and return the next resource from the stack.
+        Persistently marks them as unavailable.
         """
-        if n > len(self._stacked):
-            raise ValueError(f"Only {len(self._stacked)} resources available; {n} requested.")
+        if len(self._stacked) < 1:
+            raise ValueError(f"Only {len(self._stacked)} resources available; 1 requested.")
 
-        fetched = self._stacked[:n]
-        self._stacked = self._stacked[n:]
+        fetched = self._stacked[:1]
+        self._stacked = self._stacked[1:]
 
-        # Mark each fetched item unavailable in DB
-        for rack, slot in fetched:
-            self._update_row(rack, slot, available=False)
+        for rname in fetched:
+            self._update_row(rname, available=False)
 
-        return fetched
+        return fetched[0]
 
-    # ---------------------- Persistence helpers ----------------------
+    # ---------------------- Persistence Helpers ----------------------
+
     def _hydrate_from_db(self) -> None:
-        """Overwrite default stack with DB copy, or seed DB if new."""
+        """Restore from DB or seed from initial list if new."""
         with _get_stacked_conn() as conn:
             cur = conn.execute(
-                "SELECT rack_name, slot_idx, available "
-                "FROM stacked WHERE tracker_id = ?;",
+                "SELECT rack_name, available FROM stacked WHERE tracker_id = ?;",
                 (self.tracker_id,))
             rows = cur.fetchall()
 
             if not rows:
-                self._flush_entire_state(conn)   # first‑time run
+                self._flush_entire_state(conn)
                 conn.commit()
                 return
 
-            # Map rack names back to live objects
-            rack_map = {r.layout_name(): r for r in self.resources}
+            valid_names = set(self.resource_names)
             self._stacked = [
-                (rack_map[r_name], slot)
-                for r_name, slot, avail in rows if avail and r_name in rack_map
+                rname for rname, available in rows
+                if available and rname in valid_names
             ]
 
-    def _update_row(self, rack: DeckResource, slot_idx: int, *, available: bool) -> None:
-        """Insert or replace a single row."""
+    def _update_row(self, rname: str, *, available: bool) -> None:
+        """Insert or update a single row in the DB."""
         with _get_stacked_conn() as conn:
             conn.execute("""INSERT OR REPLACE INTO stacked
                                (tracker_id, rack_name, slot_idx, available)
-                            VALUES (?,?,?,?);""",
-                         (self.tracker_id,
-                          rack.layout_name(),
-                          slot_idx,
-                          int(available)))
+                            VALUES (?,?,NULL,?);""",
+                         (self.tracker_id, rname, int(available)))
             conn.commit()
 
     def _flush_entire_state(self, conn) -> None:
-        """Write the current in‑memory stack to disk (bulk)."""
+        """Write the full available list to the DB."""
         conn.executemany("""INSERT OR REPLACE INTO stacked
                                (tracker_id, rack_name, slot_idx, available)
-                            VALUES (?,?,?,?);""",
-                         [(self.tracker_id,
-                           rack.layout_name(),
-                           slot,
-                           1)               # 1 = available
-                          for rack, slot in self._stacked])
-
-
-
-
-
-
-
-
-
+                            VALUES (?,?,NULL,?);""",
+                         [(self.tracker_id, rname, 1) for rname in self._stacked])

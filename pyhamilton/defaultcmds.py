@@ -244,7 +244,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'plateLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
         'lidSequence':'', # leave empty if you don´t use lid or if you are going to provide specific plate labware-positions below or ejecting to default waste
         'lidLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
-        'toolSequence':'COREGripTool', # sequence name of the iSWAP. leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1;
+        'toolSequence':cfg.core_gripper_sequence, # sequence name of the iSWAP. leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1;
         'sequenceCounting':0, # (integer) 0=don´t autoincrement plate sequence,  1=Autoincrement
         'movementType':0, # (integer) 0=To carrier, 1=Complex movement
         'transportMode':0, # (integer) 0=Plate only, 1=Lid only ,2=Plate with lid

@@ -19,6 +19,7 @@ class Defaults:
     """
     robot_type: str = "STAR"
     core_gripper_sequence: list[str] = ()
+    liquids_database: str = "C:\\Program Files (x86)\\Hamilton\\Config\\ML_STARLiquids.mdb"
 
     # (internal) pointer to source file for debugging
     _source_file: Path | None = None
