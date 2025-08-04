@@ -3,3 +3,5 @@ parse
 pythonnet --pre
 pyserial
 waiter
+SQLalchemy
+pandas

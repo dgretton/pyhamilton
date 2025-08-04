@@ -208,10 +208,23 @@ def tracked_tip_pick_up(ham_int: HamiltonInterface, tips_tracker: TrackedTips, n
         raise ValueError(f"Only {tips_tracker.count_remaining()} tips available; {n} requested.")
     
     tips_poss = tips_tracker.fetch_next(n)
-    ham_int.tip_pick_up(tips_poss)
+    try:
+        ham_int.tip_pick_up(tips_poss)
+    except Exception as e:
+        tips_tracker.mark_occupied(tips_poss)
+        raise e
+    return tips_poss
 
-    return
+def tracked_tip_eject(ham_int: HamiltonInterface, tips_tracker: TrackedTips, eject_poss: List[Tuple[DeckResource, int]]):
+    """
+    Eject tips from the tracker, marking them as free.
+    If `eject_positions` is None, eject all tips in the tracker.
+    """
 
+    ham_int.tip_eject(eject_poss)
+    tips_tracker.mark_occupied(eject_poss, occupied=True)
+
+    return eject_poss
 
 def tracked_tip_pick_up_96(ham_int: HamiltonInterface, tips_tracker: TrackedTips):
     """

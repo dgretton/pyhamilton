@@ -1,8 +1,6 @@
-import pyodbc
 import pandas as pd
-import warnings
+from sqlalchemy.engine import URL, create_engine
 from .defaults import defaults
-
 
 
 def get_liquid_class_volume(liquid_class_name: str) -> int | None:
@@ -13,9 +11,6 @@ def get_liquid_class_volume(liquid_class_name: str) -> int | None:
 
     cfg = defaults()
 
-
-    warnings.filterwarnings("ignore", category=UserWarning, module="pandas")
-
     # TipType enum mapping
     tip_type_to_volume = {
         3: 10,
@@ -25,15 +20,22 @@ def get_liquid_class_volume(liquid_class_name: str) -> int | None:
         # Add more if needed
     }
 
-    # Database connection info
+    # Database connection info using SQLAlchemy
     mdb_path = cfg.liquids_database
     driver = 'Microsoft Access Driver (*.mdb, *.accdb)'
-    conn_str = f"DRIVER={{{driver}}};DBQ={mdb_path};"
+    connection_url = URL.create(
+        "access+pyodbc",
+        query={
+            "driver": driver,
+            "DBQ": mdb_path,
+        }
+    )
 
     try:
-        conn = pyodbc.connect(conn_str)
-        df = pd.read_sql("SELECT * FROM LiquidClass", conn)
-        conn.close()
+        engine = create_engine(connection_url)
+
+        with engine.connect() as conn:
+            df = pd.read_sql("SELECT * FROM LiquidClass", conn)
 
         match = df[df['LiquidClassName'] == liquid_class_name]
         if match.empty:
@@ -49,9 +51,10 @@ def get_liquid_class_volume(liquid_class_name: str) -> int | None:
 
         return volume
 
-    except pyodbc.Error as e:
+    except Exception as e:
         print("Database error:", e)
         return None
+
 
 # Example usage
 if __name__ == "__main__":

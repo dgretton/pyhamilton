@@ -177,6 +177,45 @@ class TrackedTips:
                 return rack
         return None
 
+
+    def replace_tips(self, positions: List[Tuple[DeckResource, int]]) -> None:
+        """
+        Mark the given tips as present/available again.
+
+        Parameters
+        ----------
+        positions : list[tuple[DeckResource, int]]
+            A collection of (rack, pos_in_rack) pairs where `pos_in_rack`
+            is 0-based within that rack.
+
+        Raises
+        ------
+        ValueError
+            • If the rack is not managed by this tracker  
+            • If the position is out of range for that rack  
+            • If the tip at that location is already occupied
+        """
+        # Build a mapping of rack → starting absolute index once
+        rack_starts: Dict[DeckResource, int] = {}
+        offset = 0
+        for rack in self.tip_racks:
+            rack_starts[rack] = offset
+            offset += rack._num_items
+
+        for rack, pos_in_rack in positions:
+            if rack not in rack_starts:
+                raise ValueError(f"Rack {rack.layout_name()} not managed by this tracker.")
+            if not (0 <= pos_in_rack < rack._num_items):
+                raise ValueError(f"Position {pos_in_rack} out of range for rack {rack.layout_name()}.")
+
+            abs_idx = rack_starts[rack] + pos_in_rack
+
+            if self.is_occupied(abs_idx):
+                raise ValueError(f"Tip at {rack.layout_name()}[{pos_in_rack}] is already occupied.")
+
+            # Persistently mark the tip as available again
+            self.mark_occupied(abs_idx)
+
     # ------------------- Persistence internals ------------------------
     def _hydrate_from_db(self) -> bool:
         with _get_conn() as conn:
