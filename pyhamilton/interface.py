@@ -126,78 +126,70 @@ def labware_pos_str(labware, idx):
 
 
 def _make_new_hamilton_serv_handler(resp_indexing_fn):
-    """Make HTTP request handler to aggregate responses according to an index function.
+    """Make HTTP request handler to aggregate responses according to an index function."""
 
-    A new class is defined each time, bound to a specific indexing function, to keep it
-    agnostic to any particular indexing scheme. In practice, the current implementation
-    uses the value of the key 'id'; that is the scheme for the `pyhamilton` interpreter.
 
-    Attributes:
-      indexed_responses (dict): aggregated responses received by this handler, keyed by
-        the values returned by `resp_indexing_fn`.
+    
 
-    Args:
-      resp_indexing_fn (Callable[[str], Hashable]): Called on every response body (str)
-        to extract a hashable index. Later, the response can be retrieved by this index
-        from `indexed_responses`.
+class HamiltonServerHandler(server.BaseHTTPRequestHandler):
+    _send_queue = []
+    indexed_responses = {}
+    MAX_QUEUED_RESPONSES = 1000
+    
+    @classmethod
+    def set_indexing_fn(cls, fn):
+        cls.indexing_fn = fn
 
-    """
 
-    class HamiltonServerHandler(server.BaseHTTPRequestHandler):
-        _send_queue = []
-        indexed_responses = {}
-        indexing_fn = resp_indexing_fn
-        MAX_QUEUED_RESPONSES = 1000
+    @staticmethod
+    def send_str(cmd_str):
+        if not isinstance(cmd_str, b''.__class__):
+            if isinstance(cmd_str, ''.__class__):
+                cmd_str = cmd_str.encode()
+            else:
+                raise ValueError('send_command can only send strings, not ' + str(cmd_str))
+        HamiltonServerHandler._send_queue.append(cmd_str)
 
-        @staticmethod
-        def send_str(cmd_str):
-            if not isinstance(cmd_str, b''.__class__):
-                if isinstance(cmd_str, ''.__class__):
-                    cmd_str = cmd_str.encode()
-                else:
-                    raise ValueError('send_command can only send strings, not ' + str(cmd_str))
-            HamiltonServerHandler._send_queue.append(cmd_str)
+    @staticmethod
+    def has_queued_cmds():
+        return bool(HamiltonServerHandler._send_queue)
 
-        @staticmethod
-        def has_queued_cmds():
-            return bool(HamiltonServerHandler._send_queue)
+    @staticmethod
+    def pop_response(idx):
+        ir = HamiltonServerHandler.indexed_responses
+        return None if idx not in ir else ir.pop(idx).decode()
 
-        @staticmethod
-        def pop_response(idx):
-            ir = HamiltonServerHandler.indexed_responses
-            return None if idx not in ir else ir.pop(idx).decode()
+    def _set_headers(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/HTML')
+        self.end_headers()
 
-        def _set_headers(self):
-            self.send_response(200)
-            self.send_header('Content-type', 'text/HTML')
-            self.end_headers()
+    def do_GET(self):
+        sq = HamiltonServerHandler._send_queue
+        response_to_send = sq.pop(0) if sq else b''
+        self._set_headers()
+        self.wfile.write(response_to_send)
 
-        def do_GET(self):
-            sq = HamiltonServerHandler._send_queue
-            response_to_send = sq.pop(0) if sq else b''
-            self._set_headers()
-            self.wfile.write(response_to_send)
+    def do_HEAD(self):
+        self._set_headers()
 
-        def do_HEAD(self):
-            self._set_headers()
+    def do_POST(self):
+        content_len = int(self.headers.get('content-length', 0))
+        post_body = self.rfile.read(content_len)
+        self._set_headers()
+        self.wfile.write(b'<html><body><h1>POST!</h1></body></html>')
+        ir = HamiltonServerHandler.indexed_responses
+        index = HamiltonServerHandler.indexing_fn(post_body)
+        if index is None:
+            return
+        ir[index] = post_body
 
-        def do_POST(self):
-            content_len = int(self.headers.get('content-length', 0))
-            post_body = self.rfile.read(content_len)
-            self._set_headers()
-            self.wfile.write(b'<html><body><h1>POST!</h1></body></html>')
-            ir = HamiltonServerHandler.indexed_responses
-            index = HamiltonServerHandler.indexing_fn(post_body)
-            if index is None:
-                return
-            ir[index] = post_body
+    def log_message(self, *args, **kwargs):
+        pass
 
-        def log_message(self, *args, **kwargs):
-            pass
-
-    return HamiltonServerHandler
 
 def run_hamilton_process():
+    print("RUNNING HAMILTON PROCESS")
     """Start the interpreter in a separate python process.
 
     Starts the pyhamilton interpreter, which is an HSL file to be passed to the
@@ -440,6 +432,43 @@ class AspirateResult:
     raw: HamiltonResponse # keep the raw object if callers need extras
 
 
+class HamiltonServerThread(Thread):
+    """Private threaded local HTTP server with graceful shutdown flag."""
+
+    def __init__(self, address, port):
+        super().__init__()
+        self.server_address = (address, port)
+        self.should_continue = True
+        self.exited = False
+
+        # You can define a function for indexing the response by 'id'
+        def index_on_resp_id(response_str):
+            try:
+                response = json.loads(response_str)
+                if 'id' in response:
+                    return response['id']
+            except json.decoder.JSONDecodeError:
+                pass
+            return None
+
+        # Set that function on the SINGLE global handler class
+        HamiltonServerHandler.indexing_fn = index_on_resp_id
+
+        # We'll serve the global handler class
+        self.httpd = None
+
+    def run(self):
+        self.exited = False
+        self.httpd = server.HTTPServer(self.server_address, HamiltonServerHandler)
+        while self.should_continue:
+            self.httpd.handle_request()
+        self.exited = True
+
+    def disconnect(self):
+        self.should_continue = False
+
+    def has_exited(self):
+        return self.exited
 
 class HamiltonInterface:
     """Main class to automatically set up and tear down an interface to a Hamilton robot.
@@ -464,40 +493,10 @@ class HamiltonInterface:
     known_templates = _builtin_templates_by_cmd
     default_port = 3221
     default_address = '127.0.0.1' # localhost
+    _global_server_thread = None
 
-    class HamiltonServerThread(Thread):
-        """Private threaded local HTTP server with graceful shutdown flag."""
 
-        def __init__(self, address, port):
-            Thread.__init__(self)
-            self.server_address = (address, port)
-            self.should_continue = True
-            self.exited = False
-            def index_on_resp_id(response_str):
-                try:
-                    response = json.loads(response_str)
-                    if 'id' in response:
-                        return response['id']
-                    return None
-                except json.decoder.JSONDecodeError:
-                    return None
-            self.server_handler_class = _make_new_hamilton_serv_handler(index_on_resp_id)
-            self.httpd = None
-
-        def run(self):
-            self.exited = False
-            self.httpd = server.HTTPServer(self.server_address, self.server_handler_class)
-            while self.should_continue:
-                self.httpd.handle_request()
-            self.exited = True
-
-        def disconnect(self):
-            self.should_continue = False
-
-        def has_exited(self):
-            return self.exited
-
-    def __init__(self, address=None, port=None, simulating = False, debug=False, windowed = False, server_mode = False, logger = None, **kwargs):
+    def __init__(self, address=None, port=None, simulating = False, debug=False, windowed = False, server_mode = False, persistent = False, **kwargs):
         if 'simulate' in kwargs:
             raise Exception("The simulate keyword argument is deprecated in favor of windowed. Please use windowed = True")
         self.address = HamiltonInterface.default_address if address is None else address
@@ -505,6 +504,7 @@ class HamiltonInterface:
         self.windowed = windowed
         self.simulating = simulating
         self.server_mode = server_mode
+        self.persistent = persistent
         self.debug = debug
         self.server_thread = None
         self.oem_process = None
@@ -512,6 +512,38 @@ class HamiltonInterface:
         self.logger = None
         self.log_queue = []
         self.json_logger = JSONLogger()
+
+
+        if self.__class__._global_server_thread is not None and \
+           self.__class__._global_server_thread.is_alive():
+            print("Reusing existing server thread")
+            self.server_thread = self.__class__._global_server_thread
+        else:
+            print("Starting a new server thread")
+            self.server_thread = HamiltonServerThread(self.address, self.port)
+            self.server_thread.start()
+            # Store this new thread as the global server thread
+            self.__class__._global_server_thread = self.server_thread
+
+
+    def _open(self):
+        # This is your logic to check if the HSL application is up or needs to be started
+        if self.windowed:
+                # Only start HSL if it's not responding
+            try:
+                    # Attempt the ping
+                self.active = True
+                
+                response_id = self.send_command(command='ping', id=HamiltonCmdTemplate.unique_id())
+                self.wait_on_response(response_id, timeout=1.5)
+                
+                print("Interface already open")
+                return
+            except HamiltonTimeoutError:
+                print("Opening HSL application")
+                subprocess.Popen([OEM_RUN_EXE_PATH, OEM_HSL_PATH])
+                self.active = True
+                return
 
 
     def start(self):
@@ -529,23 +561,31 @@ class HamiltonInterface:
             return
         self.log('starting a Hamilton interface')
         if self.windowed:
-            subprocess.Popen([OEM_RUN_EXE_PATH, OEM_HSL_PATH])
+            self._open()
+            #subprocess.Popen([OEM_RUN_EXE_PATH, OEM_HSL_PATH])
             self.log('started the oem application for simulation')
         elif self.simulating:
+            self.active=True
             self.log('running in simulation mode')
         elif self.server_mode:
             current_directory = os.path.dirname(os.path.abspath(__file__))
             server_script_path = os.path.join(current_directory, 'run_venus_client.py')
             python_32bit_path = os.getenv('PYTHON_32BIT_PATH')
-            subprocess.run([python_32bit_path, server_script_path])
+            print("SERVER PATHS")
+            print(python_32bit_path)
+            if not python_32bit_path:
+                raise Exception("Please set your PYTHON_32BIT_PATH variable in order to use server mode.")
+            print(server_script_path)
+            self.server_process = subprocess.Popen([python_32bit_path, server_script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
             self.oem_process = Process(target=run_hamilton_process, args=())
             self.oem_process.start()
             self.log('started the oem process')
-        self.server_thread = HamiltonInterface.HamiltonServerThread(self.address, self.port)
-        self.server_thread.start()
+        #self.server_thread = HamiltonInterface.HamiltonServerThread(self.address, self.port)
+        #self.server_thread.start()
+        print("started the server thread")
         self.log('started the server thread')
-        self.active = True
+        #self.active = True
 
     def stop(self):
         """Stop this HamiltonInterface and clean up associated async processes.
@@ -598,7 +638,9 @@ class HamiltonInterface:
         return self
 
     def __exit__(self, type, value, tb):
-        self.stop()
+        if not self.persistent:
+            self.stop()
+        pass
 
     def is_open(self):
         """Return `True` if the HamiltonInterface has been started and not stopped."""
@@ -639,7 +681,7 @@ class HamiltonInterface:
         if 'id' not in send_cmd_dict:
             self.log_and_raise(ValueError("Command dicts sent from HamiltonInterface must have a unique id with key 'id'"))
         if not self.simulating:
-            self.server_thread.server_handler_class.send_str(json.dumps(send_cmd_dict))
+            HamiltonServerHandler.send_str(json.dumps(send_cmd_dict))
         else:
             self.json_logger.log(str(send_cmd_dict))
         if block_until_sent:
@@ -679,7 +721,7 @@ class HamiltonInterface:
         delays = 1  # sec
         server_response = None
         for _ in wait(delays=delays, timeout=timeout):
-            server_response = self.server_thread.server_handler_class.pop_response(id)
+            server_response = HamiltonServerHandler.pop_response(id)
             if server_response is not None:
                 break
             
@@ -714,6 +756,8 @@ class HamiltonInterface:
 
     def _block_until_sq_clear(self):
         while HamiltonServerHandler.has_queued_cmds():
+            print(HamiltonServerHandler._send_queue)
+
             pass
 
     def set_log_dir(self, log_dir):
