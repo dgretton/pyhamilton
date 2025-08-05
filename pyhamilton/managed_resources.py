@@ -177,6 +177,25 @@ class TrackedTips:
                 return rack
         return None
 
+    def reset_all(self) -> None:
+        """
+        Mark **every** tip in every managed rack as present/available again
+        and persist that state to the on-disk SQLite table.
+
+        This is functionally the same as constructing the tracker with
+        ``reset=True``—but it can be invoked at any time after the object
+        exists.
+
+        Example
+        -------
+        >>> tracker.reset_all()      # all tips are now ‘full’ again
+        """
+        # 1) Update the in-memory occupancy list
+        for i, (rack, _) in enumerate(self.occupancy):
+            self.occupancy[i] = (rack, True)
+
+        # 2) Push the fresh state to disk in one shot
+        self._flush_entire_state()
 
     def replace_tips(self, positions: List[Tuple[DeckResource, int]]) -> None:
         """

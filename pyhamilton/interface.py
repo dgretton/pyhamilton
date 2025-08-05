@@ -1287,10 +1287,11 @@ class HamiltonInterface:
         cid = self.send_command(GRIP_PLACE, plateSequence=dest_plate_seq, toolSequence=tool_sequence, **more_options)
         self.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
-    def move_plate_gripper(self, dest_poss, **more_options):
+    def move_plate_gripper(self, source_poss, dest_poss, **more_options):
         """Move a plate using the gripper by positions.
         
         Args:
+            source_poss: Source positions
             dest_poss: Destination positions
             **more_options: Additional command options
         """

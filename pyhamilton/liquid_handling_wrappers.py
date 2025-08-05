@@ -188,14 +188,14 @@ def move_plate_gripper(ham, dest_poss, **more_options):
     return ham.move_plate_gripper(dest_poss, **more_options)
 
 
-def move_plate_using_gripper(ham_int: HamiltonInterface, source_plate: str, dest_poss: str, gripHeight: float, gripWidth: float = 81, 
+def move_plate_using_gripper(ham_int: HamiltonInterface, source: str, destination: str, gripHeight: float, gripWidth: float = 81, 
                              openWidth: float = 87, lid: bool = False, tool_sequence: str = cfg.core_gripper_sequence, 
-                             gripForce: int = 8, ejectToolWhenFinish: int = 1, gripperToolChannel: int = 5, **more_options):
+                             gripForce: int = 8, ejectToolWhenFinish: int = 1, gripperToolChannel: int = 5):
 
-    ham_int.get_plate_gripper_seq(source_plate, gripHeight, gripWidth, openWidth, lid, tool_sequence, 
-                                  gripForce=gripForce, gripperToolChannel=gripperToolChannel, **more_options)
-    
-    ham_int.place_plate_gripper_seq(dest_poss, tool_sequence=tool_sequence, ejectToolWhenFinish=ejectToolWhenFinish, **more_options)
+    ham_int.get_plate_gripper_seq(source, gripHeight, gripWidth, openWidth, lid, tool_sequence, 
+                                  gripForce=gripForce, gripperToolChannel=gripperToolChannel)
+
+    ham_int.place_plate_gripper_seq(destination, tool_sequence=tool_sequence, ejectToolWhenFinish=ejectToolWhenFinish)
 
 def tracked_tip_pick_up(ham_int: HamiltonInterface, tips_tracker: TrackedTips, n: int) -> List[Tuple[DeckResource, int]]:
     """
@@ -209,6 +209,8 @@ def tracked_tip_pick_up(ham_int: HamiltonInterface, tips_tracker: TrackedTips, n
     
     tips_poss = tips_tracker.fetch_next(n)
     try:
+        print("Picking up tips at positions:")
+        print(tips_poss)
         ham_int.tip_pick_up(tips_poss)
     except Exception as e:
         tips_tracker.mark_occupied(tips_poss)
