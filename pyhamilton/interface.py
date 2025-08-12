@@ -830,6 +830,7 @@ class HamiltonInterface:
                 INITIALIZE,
                 **more_options
             ),
+            timeout=300,
             raise_first_exception=True,
             return_data=['step-return2', 'step-return3']
         )
@@ -1217,8 +1218,10 @@ class HamiltonInterface:
         except PositionError:
             raise IOError
 
-    def move_by_seq(self, source_plate_seq, target_plate_seq, CmplxGetDict=None, CmplxPlaceDict=None, grip_height=0, inversion=None, gripForce=2, width_before=132, **more_options):
+    def move_by_seq(self, source_plate_seq, target_plate_seq, CmplxGetDict=None, CmplxPlaceDict=None, inversion=None, **more_options):
         """Move a plate by sequence using iSWAP.
+
+        Used to have defaults: grip_height=0, inversion=None, gripForce=2, width_before=132,
         
         Args:
             source_plate_seq: Source plate sequence
@@ -1255,11 +1258,7 @@ class HamiltonInterface:
 
         for inv in try_inversions:
             cid = self.send_command(ISWAP_GET, plateSequence=source_plate_seq,
-                                   gripHeight=grip_height,
-                                   gripForce=gripForce,
                                    inverseGrip=inv,
-                                   transportMode=0,
-                                   widthBefore=width_before,
                                    movementType=placeCmplxMvmnt,
                                    retractDistance=placeRetractDist,
                                    liftUpHeight=placeLiftUpHeight,

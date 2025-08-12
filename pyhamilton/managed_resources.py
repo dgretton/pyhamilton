@@ -310,73 +310,85 @@ def _ensure_stacked_table() -> None:
 _ensure_stacked_table()          # run at import time
 
 
-# ────────────────────────── StackedResources (persistent) ─────────────
 class StackedResources:
     """
     A persistent stack of named resources (as strings), supporting
-    FIFO access and database-backed availability tracking.
+    top-of-stack-first access and database-backed availability tracking.
     """
 
     def __init__(self,
                  resource_names: List[str],
-                 tracker_id: Optional[str] = None):
-        """
-        Parameters
-        ----------
-        resource_names : list[str]
-            The initial resource names to be managed.
-        tracker_id : str, optional
-            Namespace for persistence. Defaults to joined resource names.
-        """
-        self.resource_names = resource_names
+                 tracker_id: Optional[str] = None,
+                 reset: bool = True):
+        self.resource_names = list(resource_names)  # fixed order definition
         self.tracker_id     = tracker_id or "|".join(resource_names)
         self._stacked: List[str] = list(resource_names)
 
-        self._hydrate_from_db()
+        if reset:
+            # Hard reset: clear any prior rows for this tracker_id and seed to "full"
+            with _get_stacked_conn() as conn:
+                conn.execute("DELETE FROM stacked WHERE tracker_id = ?;", (self.tracker_id,))
+                self._flush_entire_state(conn)
+                conn.commit()
+        else:
+            # Rehydrate from DB if present; otherwise seed to full
+            self._hydrate_from_db()
 
     @classmethod
     def from_prefix(cls,
                     tracker_id: str,
                     prefix    : str,
-                    count     : int) -> "StackedResources":
+                    count     : int,
+                    reset     : bool = True) -> "StackedResources":
         """
-        Create a StackedResources instance with names like 'prefix_0001', etc.
-
-        Parameters
-        ----------
-        tracker_id : str
-            Unique ID to scope persistence.
-        prefix : str
-            Base name for the resources.
-        count : int
-            How many named resources to generate.
+        Create a stack with HIGHEST index at the TOP (fetched first).
+        Example: count=4 → top: prefix_0004, prefix_0003, prefix_0002, prefix_0001
         """
-        resource_names = [f"{prefix}_{i:04d}" for i in range(1, count + 1)]
-        return cls(resource_names, tracker_id=tracker_id)
+        ascending = [f"{prefix}_{i:04d}" for i in range(1, count + 1)]
+        top_first = list(reversed(ascending))
+        return cls(top_first, tracker_id=tracker_id, reset=reset)
 
     def get_stacked(self) -> List[str]:
-        """Return the current list of available resources."""
+        """Return the current list of available resources (top-first)."""
         return self._stacked
 
     def count(self) -> int:
         """Return the number of available resources."""
         return len(self._stacked)
 
-    def fetch_next(self) -> List[str]:
+    def fetch_next(self) -> str:
         """
-        Pop and return the next resource from the stack.
-        Persistently marks them as unavailable.
+        Pop and return the next resource from the top of the stack.
+        Persistently marks it as unavailable and remembers it for put_back_top().
         """
         if len(self._stacked) < 1:
             raise ValueError(f"Only {len(self._stacked)} resources available; 1 requested.")
 
-        fetched = self._stacked[:1]
-        self._stacked = self._stacked[1:]
+        rname = self._stacked.pop(0)
+        self._last_fetched = rname
+        self._update_row(rname, available=False)
+        return rname
 
-        for rname in fetched:
-            self._update_row(rname, available=False)
+    def put_back(self) -> str:
+        """
+        Restore the next positional resource to the TOP of the stack, mark it available,
+        and return its name.
 
-        return fetched[0]
+        Logic:
+        - self.resource_names is the canonical, top-first order (e.g. 0004,0003,0002,0001).
+        - self._stacked is a subsequence (available ones).
+        - Putting back picks the highest-priority *missing* name and inserts it at index 0.
+        """
+        # Compute which names are currently missing (unavailable), in top-first order.
+        missing = [r for r in self.resource_names if r not in self._stacked]
+
+        if not missing:
+            raise RuntimeError("Stack is already full; nothing to put back.")
+
+        rname = missing[0]          # highest-priority missing item
+        self._stacked.insert(0, rname)
+        self._update_row(rname, available=True)
+        return rname
 
     # ---------------------- Persistence Helpers ----------------------
 
@@ -394,10 +406,8 @@ class StackedResources:
                 return
 
             valid_names = set(self.resource_names)
-            self._stacked = [
-                rname for rname, available in rows
-                if available and rname in valid_names
-            ]
+            availability = {r: bool(a) for r, a in rows if r in valid_names}
+            self._stacked = [r for r in self.resource_names if availability.get(r, False)]
 
     def _update_row(self, rname: str, *, available: bool) -> None:
         """Insert or update a single row in the DB."""

@@ -10,7 +10,7 @@ from .interface import (HHS_BEGIN_MONITORING, HHS_CREATE_STAR_DEVICE, HHS_CREATE
     HHS_START_ALL_SHAKER_TIMED, HHS_START_SHAKER, HHS_START_SHAKER_TIMED, HHS_START_TEMP_CTRL, HHS_STOP_ALL_SHAKER,
     HHS_STOP_SHAKER, HHS_STOP_TEMP_CTRL, HHS_TERMINATE, HHS_WAIT_FOR_SHAKER, HHS_WAIT_FOR_TEMP_CTRL)
 
-std_timeout = 5
+std_timeout = 30
 
 def hhs_begin_monitoring(ham, device_number, tolerance_range, interval, action):
     cmd = ham.send_command(HHS_BEGIN_MONITORING, deviceNumber = device_number, \
@@ -79,7 +79,7 @@ def hhs_get_temp(ham, device_number):
 def hhs_get_temp_state(ham, device_number):
     cmd = ham.send_command(HHS_GET_TEMP_STATE, deviceNumber = device_number)
     response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=['step-return2'])
-    temp_state = response.return_data[0]
+    temp_state = response
     return temp_state
 
 def hhs_set_simulation(ham, simulate):

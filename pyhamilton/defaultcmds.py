@@ -543,12 +543,11 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     }),
     'ODTC_EvaluateError':('ODTC_EVAL', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string); 
+        'LockID':0, # (string); 
     }),
     'ODTC_ExecuteMethod':('ODTC_EXCT', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string);
-        'LockID':'', # (string); 
+        'LockID':0, # (integer);
         'MethodName':'', # (string)
         'Priority':'', # (integer); 
     }),
@@ -557,15 +556,15 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     }),
     'ODTC_OpenDoor':('ODTC_OPEN', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string);
+        'LockID':0, # (integer);
     }),
     'ODTC_ReadActualTemperature':('ODTC_READ', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string); 
+        'LockID':0, # (integer);
     }),
     'ODTC_Reset':('ODTC_RESET', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string); 
+        'LockID':0, # (integer);
         'SimulationMode': '', # (boolean)
         'TimeToWait': '', # 0=False, 1=True
         'strDeviceID': '', # (string)
@@ -573,7 +572,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     }),
     'ODTC_StopMethod':('ODTC_STOP', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string); 
+        'LockID':0, # (integer);
     }),
     'ODTC_Terminate':('ODTC_TERM', {
         'DeviceID':'', # (integer)

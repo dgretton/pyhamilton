@@ -7,14 +7,15 @@ Created on Mon Jan 23 23:25:49 2023
 
 import sys, os, time, logging, importlib
 from threading import Thread
+from dataclasses import dataclass
 
-from .interface import HamiltonInterface
+from .interface import HamiltonInterface, HamiltonResponse
 
 from .interface import (ODTC_ABORT, ODTC_CONNECT, ODTC_INIT, ODTC_CLOSE, 
                         ODTC_PRTCL, ODTC_EVAL, ODTC_EXCT, ODTC_STATUS, 
                         ODTC_OPEN, ODTC_READ, ODTC_RESET, ODTC_STOP, ODTC_TERM)
 
-std_timeout = 5
+std_timeout = 60
 
 
 def odtc_abort(ham, device_id, lock_id):
@@ -67,8 +68,14 @@ def odtc_execute_protocol(ham, device_id, method_name, priority, lock_id = ''):
     return_field = ['step-return2']
     cmd = ham.send_command(ODTC_EXCT, DeviceID=device_id, LockID=lock_id, MethodName=method_name, Priority=priority)
     response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)
-    result = response.return_data[0]
-    return result
+
+    @dataclass
+    class ODTCExecuteResponse:
+        duration: float     
+        resultID: int
+        raw: HamiltonResponse # keep the raw object if callers need extras
+
+    return ODTCExecuteResponse(duration=response.return_data[0], resultID=response.return_data[1], raw=response)
 
 def odtc_get_status(ham, device_id):
 
@@ -77,10 +84,20 @@ def odtc_get_status(ham, device_id):
     cmd = ham.send_command(ODTC_STATUS, DeviceID=device_id)
     response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_fields)
     
+    @dataclass
+    class ODTCStatusResponse:
+        state: str
+        raw: HamiltonResponse # keep the raw object if callers need extras
+
+
     if ham.simulate:
-        return ['Simulation_mode_placeholder']*len(return_fields)
+        #return ['Simulation_mode_placeholder']*len(return_fields)
+        return ODTCStatusResponse(state='Simulation_mode_placeholder', raw=response)
     else:
-        result = response.return_data
+        result = ODTCStatusResponse(
+            state=response.return_data[0],
+            raw=response
+        )
         return result
 
 def odtc_open_door(ham, device_id, lock_id = ''):
