@@ -100,7 +100,7 @@ class TrackedTips:
                     count    : int,
                     lmgr     : LayoutManager,
                     tip_type : ResourceType = Tip96,
-                    reset    : bool = True) -> "TrackedTips":
+                    reset    : bool = True) -> TrackedTips:
         """
         Allocate `count` racks named f"{prefix}_{i:04d}" via `lmgr`,
         then return a new TrackedTips instance managing them.
@@ -339,7 +339,7 @@ class StackedResources:
                     tracker_id: str,
                     prefix    : str,
                     count     : int,
-                    reset     : bool = True) -> "StackedResources":
+                    reset     : bool = True) -> StackedResources:
         """
         Create a stack with HIGHEST index at the TOP (fetched first).
         Example: count=4 → top: prefix_0004, prefix_0003, prefix_0002, prefix_0001

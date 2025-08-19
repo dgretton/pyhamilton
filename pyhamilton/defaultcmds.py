@@ -286,8 +286,14 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'DeviceID':'', # (integer); 
         'TargetTemperature':'', # (float); 
     }),
-    'TEC_StopTemperatureControl':('TEC_STOP', {
+    
+    'TEC_GetTemperature':('TEC_GET_TEMPERATURE', {
 
+        'ControllerID':'', # (integer)
+        'DeviceID':'', # (integer); 
+        'Selector':'', # (integer); 
+    }),
+    'TEC_StopTemperatureControl':('TEC_STOP', {
         'ControllerID':'', # (integer)
         'DeviceID':'', # (integer); 
     }),

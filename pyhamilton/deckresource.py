@@ -354,6 +354,17 @@ def resource_list_with_prefix(layout_manager:LayoutManager, prefix:str, res_clas
     res_list = [layout_manager.assign_unused_resource(res_type, order_key=order_key, reverse=reverse) for _ in range(num_ress)]
     return res_list
 
+class Waste96(Standard96):
+
+    def __init__(self, layout_name):
+        self._layout_name = layout_name
+        self._num_items = 96
+        self.resource_type = DeckResource.types.VESSEL
+        self._items = [Vessel(self, i) for i in range(self._num_items)]
+    
+    def position_id(self, idx): # Waste uses 1-indexed int ids descending columns first
+        self._assert_idx_in_range(idx)
+        return str(idx + 1) # switch to standard advance through row first
 
 
 class Plate96(Standard96):
