@@ -2,11 +2,10 @@
 *__pycache__
 *.DS_store
 *.swp
-build/pdf-intermediate.md
 pyhamilton/LAY-BACKUP
-<<<<<<< HEAD
 dist
 *.egg-info
-=======
 .ipynb_checkpoints
->>>>>>> fc55ea0a92bbb0e42acbf8574be03c6be654274e
+build/
+dist/
+*.egg-info/

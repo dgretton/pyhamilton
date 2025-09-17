@@ -1,0 +1,261 @@
+{
+  "image_path": ".\\deck.png",
+  "image_dimensions": {
+    "width": 1152,
+    "height": 648
+  },
+  "regions": {
+    "RGT_60mL_0001": {
+      "top_left": [
+        553,
+        126
+      ],
+      "bottom_right": [
+        565,
+        154
+      ],
+      "width": 12,
+      "height": 28,
+      "center": [
+        559,
+        140
+      ],
+      "color": [
+        0,
+        0,
+        255
+      ]
+    },
+    "Rgt_60mL_0002": {
+      "top_left": [
+        556,
+        155
+      ],
+      "bottom_right": [
+        569,
+        187
+      ],
+      "width": 13,
+      "height": 32,
+      "center": [
+        562,
+        171
+      ],
+      "color": [
+        0,
+        255,
+        0
+      ]
+    },
+    "Rgt_60mL_0003": {
+      "top_left": [
+        562,
+        192
+      ],
+      "bottom_right": [
+        577,
+        224
+      ],
+      "width": 15,
+      "height": 32,
+      "center": [
+        569,
+        208
+      ],
+      "color": [
+        255,
+        0,
+        0
+      ]
+    },
+    "Rgt_60mL_0004": {
+      "top_left": [
+        569,
+        230
+      ],
+      "bottom_right": [
+        583,
+        262
+      ],
+      "width": 14,
+      "height": 32,
+      "center": [
+        576,
+        246
+      ],
+      "color": [
+        0,
+        255,
+        255
+      ]
+    },
+    "Rgt_60mL_0005": {
+      "top_left": [
+        574,
+        270
+      ],
+      "bottom_right": [
+        589,
+        314
+      ],
+      "width": 15,
+      "height": 44,
+      "center": [
+        581,
+        292
+      ],
+      "color": [
+        255,
+        0,
+        255
+      ]
+    },
+    "Rgt_60mL_0006": {
+      "top_left": [
+        566,
+        125
+      ],
+      "bottom_right": [
+        577,
+        155
+      ],
+      "width": 11,
+      "height": 30,
+      "center": [
+        571,
+        140
+      ],
+      "color": [
+        255,
+        255,
+        0
+      ]
+    },
+    "Rgt_60mL_0007": {
+      "top_left": [
+        570,
+        157
+      ],
+      "bottom_right": [
+        585,
+        187
+      ],
+      "width": 15,
+      "height": 30,
+      "center": [
+        577,
+        172
+      ],
+      "color": [
+        128,
+        0,
+        255
+      ]
+    },
+    "Rgt_60mL_0008": {
+      "top_left": [
+        580,
+        192
+      ],
+      "bottom_right": [
+        591,
+        223
+      ],
+      "width": 11,
+      "height": 31,
+      "center": [
+        585,
+        207
+      ],
+      "color": [
+        0,
+        165,
+        255
+      ]
+    },
+    "Rgt_60mL_0009": {
+      "top_left": [
+        582,
+        229
+      ],
+      "bottom_right": [
+        597,
+        267
+      ],
+      "width": 15,
+      "height": 38,
+      "center": [
+        589,
+        248
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ]
+    },
+    "Rgt_60mL_010": {
+      "top_left": [
+        590,
+        269
+      ],
+      "bottom_right": [
+        608,
+        312
+      ],
+      "width": 18,
+      "height": 43,
+      "center": [
+        599,
+        290
+      ],
+      "color": [
+        192,
+        192,
+        192
+      ]
+    },
+    "CPAC": {
+      "top_left": [
+        746,
+        278
+      ],
+      "bottom_right": [
+        834,
+        325
+      ],
+      "width": 88,
+      "height": 47,
+      "center": [
+        790,
+        301
+      ],
+      "color": [
+        255,
+        255,
+        128
+      ]
+    },
+    "Ethanol": {
+      "top_left": [
+        642,
+        226
+      ],
+      "bottom_right": [
+        725,
+        265
+      ],
+      "width": 83,
+      "height": 39,
+      "center": [
+        683,
+        245
+      ],
+      "color": [
+        128,
+        255,
+        128
+      ]
+    }
+  }
+}

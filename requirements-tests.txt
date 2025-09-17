@@ -1,7 +1,0 @@
-requests
-parse
-pytest
-pytest-mock
-pythonnet --pre
-pyserial
-waiter

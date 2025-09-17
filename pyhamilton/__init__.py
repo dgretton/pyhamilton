@@ -16,19 +16,16 @@ if not (os.path.exists(OEM_STAR_PATH)
 OEM_LAY_PATH = join(OEM_STAR_PATH, 'VENUS_Method', 'STAR_OEM_Test.lay')
 OEM_HSL_PATH = join(OEM_STAR_PATH, 'VENUS_Method', 'STAR_OEM_noFan.hsl')
 OEM_RUN_EXE_PATH = 'C:\\Program Files (x86)\\HAMILTON\\Bin\\HxRun.exe'
+
 from .interface import *
-from .deckresource import *
 from .oemerr import *
-from .pH_wrappers import *
 from .liquid_handling_wrappers import *
-from .hhs_wrappers import *
-from .odtc_wrappers import *
-from .centrifuge_wrappers import *
-from .hig_wrappers import *
-from .mpe_wrappers import *
-from .tec_wrappers import *
-from .managed_resources import *
-from .liquid_class_viewer import *
+from .devices import *
+from .resources import *
+from .liquid_class_db import *
+from .consumables import *
+from .ngs import *
+from .liquid_classes import *
 
 
 

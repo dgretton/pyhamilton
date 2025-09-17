@@ -3,22 +3,22 @@
 Created on Wed Mar  9 12:01:01 2022
 
 @author: stefa
-@author: yang
 """
 
 import sys, os, time, logging, importlib
 from threading import Thread
 
 from .interface import HamiltonInterface
-from .deckresource import LayoutManager, ResourceType, Plate24, Plate96, Tip96, resource_list_with_prefix, layout_item, DeckResource
+from .resources.deckresource import LayoutManager, ResourceType, Plate24, Plate96, Tip96, resource_list_with_prefix, layout_item, DeckResource
 from .oemerr import PositionError
 from .interface import (INITIALIZE, PICKUP, EJECT, ASPIRATE, DISPENSE, ISWAP_GET, ISWAP_PLACE, HEPA,
 WASH96_EMPTY, PICKUP96, EJECT96, ASPIRATE96, DISPENSE96, ISWAP_MOVE, MOVE_SEQ, TILT_INIT, TILT_MOVE, GRIP_GET,
-GRIP_MOVE, GRIP_PLACE, SET_ASP_PARAM, SET_DISP_PARAM)
-from .liquid_class_dict import liquidclass_params_asp, liquidclass_params_dsp
-from .managed_resources import TrackedTips
+GRIP_MOVE, GRIP_PLACE, SET_ASP_PARAM, SET_DISP_PARAM, COPY_LIQ_CLASS, SET_CORR_CURVE, SET_TIP_TYPE, SET_LABWARE_PROPERTY)
+from .resources.managed_resources import TrackedTips
 from typing import List, Tuple
 from .defaults import defaults
+from .resources.enums import TipType
+from .resources.managed_resources import TipSupportTracker
 
 cfg = defaults()
 
@@ -109,6 +109,26 @@ def assert_parallel_nones(list1, list2):
     """Legacy wrapper for backward compatibility"""
     return HamiltonInterface._assert_parallel_nones(list1, list2)
 
+import threading
+
+class TimerHandle:
+    def __init__(self, seconds):
+        self._event = threading.Event()
+        self._timer = threading.Timer(seconds, self._event.set)
+        self._timer.daemon = True   
+        self._timer.start()
+
+    def wait(self, skip=False):
+        """Block until the timer finishes."""
+        if skip:
+            return
+        self._event.wait()
+
+def start_timer(seconds):
+    """Start a timer in the background and return a handle."""
+    return TimerHandle(seconds)
+
+
 default_liq_class = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
 
 def aspirate(ham_int, pos_tuples, vols, **more_options):
@@ -144,6 +164,31 @@ def dispense_384_quadrant(ham_int, plate384, quadrant, vol, **more_options):
     """Legacy wrapper for backward compatibility"""
     return ham_int.dispense_384_quadrant(plate384, quadrant, vol, **more_options)
 
+liquidclass_params_asp = {
+    "FlowRate": -533331950,
+    "MixFlowRate": -533331949,
+    "AirTransportVolume": -533331948,
+    "BlowOutVolume": -533331947,
+    "SwapSpeed": -533331946,
+    "SettlingTime": -533331945,
+    "OverAspirateVolume": -533331936,
+    "ClotRetractHeight": -533331935
+}
+
+liquidclass_params_dsp = {
+    "FlowRate": -533331950,
+    "MixFlowRate": -533331949,
+    "AirTransportVolume": -533331948,
+    "BlowOutVolume": -533331947,
+    "SwapSpeed": -533331946,
+    "SettlingTime": -533331945,
+    "StopFlowRate": -533331920,
+    "StopBackVolume": -533331919,
+}
+
+def copy_liquid_class(ham_int, template_liquid_class, new_liquid_class):
+    cid = ham_int.send_command(COPY_LIQ_CLASS, TemplateLiquidClass = template_liquid_class, NewLiquidClass = new_liquid_class)
+    ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
 def set_aspirate_parameter(ham_int, LiquidClass, Parameter, Value):
     param_key = liquidclass_params_asp[Parameter]
@@ -155,6 +200,13 @@ def set_dispense_parameter(ham_int, LiquidClass, Parameter, Value):
     cid = ham_int.send_command(SET_DISP_PARAM, LiquidClass = LiquidClass, Parameter = param_key, Value = Value)
     ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
+def set_tip_type(ham_int, LiquidClass, TipType):
+    cid = ham_int.send_command(SET_TIP_TYPE, LiquidClass = LiquidClass, TipType = TipType)
+    ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+def set_correction_curve(ham_int, LiquidClass, NominalArray, CorrectedArray):
+    cid = ham_int.send_command(SET_CORR_CURVE, LiquidClass = LiquidClass, NominalArray = NominalArray, CorrectedArray = CorrectedArray)
+    ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
 def move_sequence(ham_int, sequence, xDisplacement=0, yDisplacement=0, zDisplacement=0):
     """Legacy wrapper for backward compatibility"""
@@ -209,8 +261,6 @@ def tracked_tip_pick_up(ham_int: HamiltonInterface, tips_tracker: TrackedTips, n
     
     tips_poss = tips_tracker.fetch_next(n)
     try:
-        print("Picking up tips at positions:")
-        print(tips_poss)
         ham_int.tip_pick_up(tips_poss)
     except Exception as e:
         tips_tracker.mark_occupied(tips_poss)
@@ -228,15 +278,24 @@ def tracked_tip_eject(ham_int: HamiltonInterface, tips_tracker: TrackedTips, eje
 
     return eject_poss
 
-def tracked_tip_pick_up_96(ham_int: HamiltonInterface, tips_tracker: TrackedTips):
+def tracked_tip_pick_up_96(ham_int: HamiltonInterface, tips_tracker: TrackedTips, rack = None):
     """
     Pick up `n` tips from the tracker, marking them as occupied.
     Returns a list of (DeckResource, position_within_rack).
     """
-
-    tip_rack = tips_tracker.fetch_rack()
+    if rack is None:
+        tip_rack = tips_tracker.fetch_rack()
+    else:
+        tips_tracker.mark_unoccupied(rack)
     ham_int.tip_pick_up_96(tip_rack)
 
+
+def tip_support_pickup_columns(ham_int: HamiltonInterface, tips:TrackedTips, tip_support_tracker: TipSupportTracker, num_columns):
+    """
+    Pick up n columns from the right side of the tip support rack.
+    """
+    column_idx = tip_support_tracker.fetch_n_columns(ham_int, num_columns, tips)
+    ham_int.tip_pick_up_mph_columns(tip_support_tracker.resource, num_columns_from_left=column_idx)
 
 
 class StderrLogger:

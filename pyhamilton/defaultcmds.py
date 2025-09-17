@@ -260,6 +260,10 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'yDisplacement':'',
         'zDisplacement':'',
     }),
+    'copyLiquidClass':('COPY_LIQ_CLASS',{
+        'TemplateLiquidClass':'',
+        'NewLiquidClass':'',
+    }),
     'setAspirateParam':('SET_ASP_PARAM',{
         'LiquidClass':'',
         'Parameter':'',
@@ -269,6 +273,24 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'LiquidClass':'',
         'Parameter':'',
         'Value':'',
+    }),
+    'setTipType':('SET_TIP_TYPE',{
+        'LiquidClass':'',
+        'TipType':'', # int from the TipType enum
+    }),
+    'setCorrectionCurve':('SET_CORR_CURVE',{
+        'LiquidClass':'',
+        'NominalArray':'',
+        'CorrectedArray':'',
+    }),
+    'setDispenseMode':('SET_DISP_MODE',{
+        'LiquidClass':'',
+        'DispenseMode':'', # int from the DispenseMode enum
+    }),
+    'setLabwareProperty':('SET_LABWARE_PROPERTY',{
+        'LabwareID':'',
+        'PropertyName':'',
+        'PropertyValue':'',
     }),
     'TEC_Initialize':('TEC_INIT', {
 

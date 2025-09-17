@@ -1,7 +1,4 @@
 import sys
-
-
-
 import time, json, signal, os, requests, string, logging, subprocess
 from dataclasses import dataclass, field
 from enum import auto, Enum, unique
@@ -13,6 +10,19 @@ from multiprocessing import Process
 from pyhamilton import OEM_RUN_EXE_PATH, OEM_HSL_PATH
 from .oemerr import * #TODO: specify
 from .defaultcmds import defaults_by_cmd
+from .liquid_class_db import get_liquid_class_volume, get_liquid_class_dispense_mode
+
+def invert_columns(pos_str: str, sep: str = ';') -> str:
+    parts = pos_str.split(sep)
+    wells_per_col = 8
+    num_cols = 12
+
+    if len(parts) != wells_per_col * num_cols:
+        raise ValueError(f"Expected {wells_per_col * num_cols} entries, got {len(parts)}")
+
+    cols = [parts[i*wells_per_col:(i+1)*wells_per_col] for i in range(num_cols)]
+    inverted = cols[::-1]
+    return sep.join(item for col in inverted for item in col)
 
 class HamiltonCmdTemplate:
     """
@@ -637,10 +647,17 @@ class HamiltonInterface:
         self.start()
         return self
 
-    def __exit__(self, type, value, tb):
-        if not self.persistent:
+    def __exit__(self, exc_type, exc_value, tb):
+        if exc_type is not None:
+            # There was an error, always stop
             self.stop()
-        pass
+        elif not self.persistent:
+            # Normal exit, but not persistent → stop
+            self.stop()
+        # else: persistent and normal exit → keep running
+
+        # Returning False means exceptions propagate normally
+        return False
 
     def is_open(self):
         """Return `True` if the HamiltonInterface has been started and not stopped."""
@@ -861,8 +878,13 @@ class HamiltonInterface:
         self._assert_parallel_nones(pos_tuples, vols)
             
         if 'liquidClass' not in more_options:
-            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+            raise ValueError('Must specify a liquidClass for aspirate commands')
 
+        if more_options.get('capacitiveLLD') == 1:
+            dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
+            if 'Surface' not in dispense_mode:
+                raise ValueError('cLLD can only be used with Surface dispense modes')
+        
         response = self.wait_on_response(
             self.send_command(
                 ASPIRATE,
@@ -981,7 +1003,7 @@ class HamiltonInterface:
             self.log('tip_eject: Eject tips to default waste' + 
                     ('' if not more_options else ' with extra options ' + str(more_options)))
             more_options['useDefaultWaste'] = 1
-            from .deckresource import Tip96
+            from .resources.deckresource import Tip96
             dummy = Tip96('')
             pos_tuples = [(dummy, 0)] * 8
         else:
@@ -1010,7 +1032,6 @@ class HamiltonInterface:
         """
         self.log('tip_pick_up_96: Pick up tips at ' + tip96.layout_name() +
                 ('' if not more_options else ' with extra options ' + str(more_options)))
-
         self.wait_on_response(
             self.send_command(
                 PICKUP96,
@@ -1057,13 +1078,43 @@ class HamiltonInterface:
                 ('' if not more_options else ' with extra options ' + str(more_options)))
 
         if 'liquidClass' not in more_options:
-            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+            raise ValueError('Must specify a liquidClass for aspirate commands')
+
+        if more_options.get('capacitiveLLD') == 1:
+            dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
+            if 'Surface' not in dispense_mode:
+                raise ValueError('cLLD can only be used with Surface dispense modes')
 
         self.wait_on_response(
             self.send_command(
                 ASPIRATE96,
                 labwarePositions=self._compound_pos_str_96(plate96),
                 aspirateVolume=vol,
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def tip_pick_up_mph_columns(self, tip_96, num_columns_from_left, **more_options):
+        """Pick up tips from a 96-well tip rack in a multi-channel fashion.
+
+        Args:
+            tip_96: 96-well tip rack labware
+            num_columns: Number of columns to pick up
+            **more_options: Additional command options
+        """
+        self.log('tip_pick_up_mph_columns: Pick up tips at ' + tip_96.layout_name() +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+        num_columns_from_right = 12 - num_columns_from_left + 1 # Convert to right-side pickup
+        channelVariable = '1'*num_columns_from_right*8 + '0'*(12-num_columns_from_right)*8
+        positions = self._compound_pos_str_96(tip_96)
+        flipped_positions = invert_columns(positions) # Sequences have to be inverted for right-side pickup
+        self.wait_on_response(
+            self.send_command(
+                PICKUP96,
+                labwarePositions=flipped_positions,
+                channelVariable=channelVariable,
+                reducedPatternMode=3,  # (integer) 0=All (not reduced), 1=One channel, 2=One row  3=One column
                 **more_options
             ),
             raise_first_exception=True
@@ -1140,6 +1191,26 @@ class HamiltonInterface:
                 labwarePositions=self._compound_pos_str_384_quad(plate384, quadrant),
                 dispenseVolume=vol,
                 **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def set_labware_property(self, labware_id, property_name, property_value):
+        """Set a property for a specific labware item.
+
+        Args:
+            labware_id: The ID of the labware item
+            property_name: The name of the property to set
+            property_value: The value to set the property to
+        """
+        self.log(f'set_labware_property: Setting {property_name} of {labware_id} to {property_value}')
+
+        self.wait_on_response(
+            self.send_command(
+                SET_LABWARE_PROPERTY,
+                LabwareID=labware_id,
+                PropertyName=property_name,
+                PropertyValue=property_value
             ),
             raise_first_exception=True
         )
