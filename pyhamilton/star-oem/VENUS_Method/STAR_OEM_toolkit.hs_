@@ -1,6 +1,6 @@
 
 // this ALWAYS GENERATED file contains the sub-method library header
-// Generated at 8/26/2025 2:42:41 PM
+// Generated at 9/17/2025 6:52:03 PM
 
 #pragma once
 #ifndef HSL_RUNTIME
@@ -18,7 +18,7 @@ function Channels_1mL_Dispense( device & ML_STAR, sequence & dispenseSequence, v
 function Channels_1mL_TipEject( device & ML_STAR, sequence & wasteSequence, variable channelVariable, variable sequenceCounting, variable channelUse, variable useDefaultWaste, variable & o_stepReturn ) void { }
 function Channels_1mL_TipPickUp( device & ML_STAR, sequence & tipSequence, variable channelVariable, variable sequenceCounting, variable channelUse, variable & o_stepReturn ) void { }
 function Channels_1ml_Aspirate( device & ML_STAR, sequence & aspirateSequence, variable & volumeArray[], variable channelVariable, variable liquidClass, variable sequenceCounting, variable channelUse, variable aspirateMode, variable capacitiveLLD, variable pressureLLD, variable liquidFollowing, variable submergeDepth, variable liquidHeight, variable maxLLdDifference, variable mixCycles, variable mixPosition, variable mixVolume, variable airTransportRetractDist, variable touchOff, variable aspPosAboveTouch, variable & o_stepReturn, variable & o_liquidLevels_mm[], variable & o_liquidLevels_mL[] ) void { }
-function Inheco_TEC_GetTemperature( variable controllerID, variable deviceID, variable selector, variable & temperature, variable & stepReturn ) void { }
+function Inheco_TEC_GetTemperature( variable controllerID, variable deviceID, variable selector, variable & o_stepReturn2, variable & o_stepReturn ) void { }
 function Inheco_TEC_Initialize( variable ControllerID, variable SimulationMode, variable & o_stepReturn ) void { }
 function Inheco_TEC_SetTarget( variable ControllerID, variable DeviceID, variable TargetTemperature, variable & o_stepReturn ) void { }
 function Inheco_TEC_StartTemperatureControl( variable ControllerID, variable DeviceID, variable & ErrorCode, variable & o_stepReturn ) void { }
@@ -43,4 +43,4 @@ function pH_Measure( variable i_intModuleID, variable i_fltTemperature, variable
 #ifdef HSL_RUNTIME
 #include __filename__ ".hsi"
 #endif
-// $$author=Stefan.Golas$$valid=0$$time=2025-08-26 14:42$$checksum=e82c50ac$$length=089$$
+// $$author=Stefan.Golas$$valid=0$$time=2025-09-17 18:52$$checksum=f3e6c611$$length=089$$

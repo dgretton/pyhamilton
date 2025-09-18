@@ -28,7 +28,12 @@ def odtc_connect(ham, simulation_mode, local_ip, device_ip, device_port = ''):
     return_field = ['step-return2']
     cmd = ham.send_command(ODTC_CONNECT, LocalIP=local_ip, DeviceIP=device_ip, DevicePort=device_port, SimulationMode=simulation_mode)
     response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)
-    device_id = int(response.return_data[0])
+    if response == 0 and not ham.simulating:
+        raise RuntimeError("Failed to connect to ODTC device")
+    if ham.simulating:
+        return 1  # Simulated device ID
+    else:
+        device_id = int(response.return_data[0])
     return device_id
 
 def odtc_initialize(ham, device_id, lock_id = ''):
@@ -55,7 +60,7 @@ def odtc_evaluate_error(ham, device_id, lock_id = ''):
     response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)
     return response
 
-def odtc_execute_protocol(ham, device_id, method_name, priority=1, lock_id = ''):
+def odtc_execute_protocol(ham, device_id, method_name, priority=1, lock_id = '', simulating=False):
     
     if not 0 < priority < 10001:
         raise ValueError("Date provided can't be in the past")
@@ -68,9 +73,9 @@ def odtc_execute_protocol(ham, device_id, method_name, priority=1, lock_id = '')
     class ODTCExecuteResponse:
         duration: float     
         resultID: int
-        raw: HamiltonResponse # keep the raw object if callers need extras
-    
-    if ham.simulating:
+        raw: HamiltonResponse  # keep the raw object if callers need extras
+
+    if simulating:
         return ODTCExecuteResponse(duration=0.0, resultID=0, raw=response)
     else:
         return ODTCExecuteResponse(duration=response.return_data[0], resultID=response.return_data[1], raw=response)
@@ -136,7 +141,7 @@ def odtc_terminate(ham, device_id):
     response = ham.wait_on_response(cmd, raise_first_exception=True, timeout=std_timeout, return_data=return_field)
     return response
 
-def odtc_wait_for_idle(ham, device_id, check_interval=5, max_wait=3000):
+def odtc_wait_for_idle(ham, device_id, check_interval=5, max_wait=3000, simulating=False):
     '''
     Waits until the ODTC device is in 'idle' state.
     
@@ -149,6 +154,9 @@ def odtc_wait_for_idle(ham, device_id, check_interval=5, max_wait=3000):
     Raises:
         TimeoutError: If the device does not reach 'idle' state within max_wait time.
     '''
+    if simulating:
+        return
+    
     start_time = time.time()
     while True:
         status = odtc_get_status(ham, device_id)

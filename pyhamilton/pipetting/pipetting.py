@@ -367,7 +367,6 @@ def mph_tip_pickup_support(ham_int: HamiltonInterface, tips: TrackedTips, tip_su
     '''
     if isinstance(tips, TrackedTips):
         num_columns = num_tips//8 + 1*(num_tips % 8 > 0)
-        print("Picking up " + str(num_columns) + " columns of tips from support")
         tip_support_pickup_columns(ham_int, tips, tip_support, num_columns)
     else:
         ham_int.tip_pick_up_96(tips)
@@ -380,7 +379,9 @@ def transfer_96(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource,int]]|T
     Dispense to multiple positions with 96 channel head.
     '''
 
-    # How to include pre_dispense_volume?
+    vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
+    if volume > vol_capacity:
+        raise ValueError(f"Volume exceeds tip capacity: {volume} > {vol_capacity}")
 
     mph_tip_pickup_support(ham_int, tips, tip_support, num_tips=num_samples)
 
@@ -401,9 +402,14 @@ def double_aspirate_supernatant_96(ham_int: HamiltonInterface, tips: TrackedTips
 
     # Potentially adjust sequence position by 3mm? Yes, because we have to stop liquid following 3mm from the bottom
 
+    vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
+    volume = first_volume + second_volume
+    if volume > vol_capacity:
+        raise ValueError(f"Volume exceeds tip capacity: {volume} > {vol_capacity}")
+
+
     mph_tip_pickup_support(ham_int, tips, tip_support, num_tips=num_samples)
 
-    print("Liquid class in double aspiration: " + str(liquid_class))
     ham_int.aspirate_96(source_plate, first_volume, liquidClass=liquid_class, mixCycles=mix_cycles,
                         capacitiveLLD=1, liquidFollowing=True, aspirateMode=2, submergeDepth=0.5)  # First aspiration uses cLLD and liquid following
 

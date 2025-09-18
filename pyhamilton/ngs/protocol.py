@@ -307,6 +307,13 @@ class Protocol:
         """Reset all tracked resources to initial state."""
         for tips in self.tracked_tips:
             tips.reset_all()
+        
+        for vessel in self.tracked_reagent_vessels:
+            vessel.reset_volumes()
+        
+        for stacked_resource in self.stacked_resources:
+            stacked_resource.reset_all()
+
         self.tip_support = TipSupportTracker(self.tip_support.resource)
 
     def run_selected_steps(self, steps: list, simulation: bool = True, windowed: bool = False, persistent: bool = False):

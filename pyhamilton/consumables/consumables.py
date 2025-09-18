@@ -1,5 +1,5 @@
-from pyhamilton import (DeckResource, layout_item, LayoutManager, HamiltonInterface, Plate96, Plate24 ,Reservoir60mL, 
-                        BulkReagentPlate, FalconCarrier24, EppiCarrier32)
+from pyhamilton import (HamiltonInterface, DeckResource, layout_item, LayoutManager)
+from ..resources import BulkReagentPlate, FalconCarrier24, EppiCarrier32, Reservoir60mL, Plate24, Plate96
 from pathlib import Path
 import json
 
@@ -34,7 +34,13 @@ class TrackedReagentVessel(TrackedContainer):
         so we can pass the output to aspirate functions.
         '''
         self.reagent_map[reagent_name] = positions
-        return self.reagent_positions(reagent_name) 
+        return self.reagent_positions(reagent_name)
+    
+    def reset_volumes(self):
+        """
+        Resets all volume trackers in the container to 0.
+        """
+        self.volumes = {pos: 0 for pos in self.volumes}
 
     def calculate_required_reagent_volume(self, reagent_name: str):
         # Use the negative volume from the tracker to determine reagent consumption for this tracked resource

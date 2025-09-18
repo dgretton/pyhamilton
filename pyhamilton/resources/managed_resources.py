@@ -501,6 +501,31 @@ class StackedResources:
         self._stacked.insert(0, rname)
         self._update_row(rname, available=True)
         return rname
+    
+    def reset_all(self) -> None:
+        """
+        Reset all resources to available state and restore the full stack.
+        This marks every resource as available again and rebuilds the stack
+        to its original top-first order.
+        
+        This is functionally the same as constructing the tracker with
+        ``reset=True``—but it can be invoked at any time after the object
+        exists.
+        
+        Example
+        -------
+        >>> stack.reset_all()      # all resources are now available again
+        """
+        # 1) Update the in-memory stack to full state
+        self._stacked = list(self.resource_names)
+        
+        # 2) Push the fresh state to disk in one shot
+        with _get_stacked_conn() as conn:
+            # Clear existing entries for this tracker
+            conn.execute("DELETE FROM stacked WHERE tracker_id = ?;", (self.tracker_id,))
+            # Write all resources as available
+            self._flush_entire_state(conn)
+            conn.commit()
 
     # ---------------------- Persistence Helpers ----------------------
 
@@ -583,11 +608,15 @@ class TipSupportTracker:
         """
         if self.source_rack is None:
             self.tip_support_add_rack(ham_int, tip_tracker, n)
-
+        
+        if self.tip_vol != tip_tracker.volume_capacity:
+            print(f"Tip volume mismatch: support has {self.tip_vol}, tracker has {tip_tracker.volume_capacity}. Replacing rack.")
+            self.tip_support_add_rack(ham_int, tip_tracker, n)
+        
         try:
-
             indices = self._rightmost_indices_for_n_columns(n)
         except ValueError:
+            print(f"Not enough tips in support; adding new rack.")
             self.tip_support_add_rack(ham_int, tip_tracker, n)
             indices = self._rightmost_indices_for_n_columns(n)
 

@@ -17,7 +17,7 @@ def set_temperature_target_tec(ham, target_temp, controller_id, device_id):
     cid = ham.send_command(TEC_SET_TARGET, TargetTemperature=target_temp, ControllerID=controller_id, DeviceID=device_id)
     ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
-def get_temperature_tec(ham:HamiltonInterface, controller_id, device_id, selector = 0):
+def get_temperature_tec(ham:HamiltonInterface, controller_id, device_id, selector = 1):
     logging.info('Getting temperature ' + str(controller_id) +' '+ str(device_id))
     cid = ham.send_command(TEC_GET_TEMPERATURE, ControllerID=controller_id, DeviceID=device_id, Selector=selector)
     response = ham.wait_on_response(cid, raise_first_exception=True, timeout=120, return_data=['step-return2'])
