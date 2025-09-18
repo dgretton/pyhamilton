@@ -170,9 +170,13 @@ def pip_transfer(ham_int, tips: List[Tuple[DeckResource, int]] | TrackedTips, so
     '''
 
 
-    vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
-    if max(volumes) > vol_capacity:
-        raise ValueError(f"Volume exceeds tip capacity: {max(volumes)} > {vol_capacity}")
+    liquid_class_vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
+    if max(volumes) > liquid_class_vol_capacity:
+        raise ValueError(f"Volume exceeds tip capacity: {max(volumes)} > {liquid_class_vol_capacity}")
+
+    if tips.volume_capacity != liquid_class_vol_capacity:
+        raise ValueError(f"Liquid class does not match tip capacity: {liquid_class_vol_capacity} != {tips.volume_capacity}")
+
 
     if len(source_positions) > 8:
         raise ValueError("Source positions cannot exceed 8 with single aspiration.")
@@ -242,6 +246,13 @@ def mix_plate(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int]] | 
     '''
     Mix plate with 96 channel head.
     '''
+    liquid_class_vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
+    if tips.volume_capacity != liquid_class_vol_capacity:
+        raise ValueError(f"Liquid class does not match tip capacity: {liquid_class_vol_capacity} != {tips.volume_capacity}")
+    
+    if mixing_volume > liquid_class_vol_capacity:
+        raise ValueError(f"Mixing volume exceeds tip capacity: {mixing_volume} > {liquid_class_vol_capacity}")
+
     mph_tip_pickup_support(ham_int, tips, tip_support, num_tips=num_samples)
 
     cLLD, liquidFollowing = (5, True) if liquid_height == 0 else (0, False)
@@ -325,7 +336,13 @@ def multi_aspirate(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int
     Plate out a reagent in volumes greater than the tip capacity with an outer loop over aspirations and an inner loop over dispenses.
     This works for plating out reagent from a source trough.
     '''
+    
     max_volume_tips = get_liquid_class_volume(liquid_class)  # Fetch the volume for the liquid class
+
+
+    liquid_class_vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
+    if tips.volume_capacity != liquid_class_vol_capacity:
+        raise ValueError(f"Liquid class does not match tip capacity: {liquid_class_vol_capacity} != {tips.volume_capacity}")
 
     column_dispense_positions = batch_columnwise_positions(dispense_positions) # Batch dispense positions into lists of length eight
     column_dispense_volumes = batch_columnwise_positions(volumes) # Batch volumes into lists of length eight
@@ -379,9 +396,13 @@ def transfer_96(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource,int]]|T
     Dispense to multiple positions with 96 channel head.
     '''
 
-    vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
-    if volume > vol_capacity:
-        raise ValueError(f"Volume exceeds tip capacity: {volume} > {vol_capacity}")
+    liquid_class_vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
+    if volume > liquid_class_vol_capacity:
+        raise ValueError(f"Volume exceeds tip capacity: {volume} > {liquid_class_vol_capacity}")
+    
+    if tips.volume_capacity != liquid_class_vol_capacity:
+        raise ValueError(f"Liquid class does not match tip capacity: {liquid_class_vol_capacity} != {tips.volume_capacity}")
+
 
     mph_tip_pickup_support(ham_int, tips, tip_support, num_tips=num_samples)
 
@@ -402,10 +423,15 @@ def double_aspirate_supernatant_96(ham_int: HamiltonInterface, tips: TrackedTips
 
     # Potentially adjust sequence position by 3mm? Yes, because we have to stop liquid following 3mm from the bottom
 
-    vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
+    liquid_class_vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
     volume = first_volume + second_volume
-    if volume > vol_capacity:
-        raise ValueError(f"Volume exceeds tip capacity: {volume} > {vol_capacity}")
+    
+    if volume > liquid_class_vol_capacity:
+        raise ValueError(f"Volume exceeds tip capacity: {volume} > {liquid_class_vol_capacity}")
+
+    if tips.volume_capacity != liquid_class_vol_capacity:
+        raise ValueError(f"Liquid class does not match tip capacity: {liquid_class_vol_capacity} != {tips.volume_capacity}")
+
 
 
     mph_tip_pickup_support(ham_int, tips, tip_support, num_tips=num_samples)

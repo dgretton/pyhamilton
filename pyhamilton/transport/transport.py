@@ -1,6 +1,6 @@
 from ..interface import HamiltonInterface
 from ..liquid_handling_wrappers import move_plate_using_gripper
-from ..resources import DeckResource
+from ..resources import DeckResource, Lid
 
 from dataclasses import dataclass
 from enum import Enum, IntEnum
@@ -244,6 +244,19 @@ def transport_resource(
 
     # .....................................................................
     if iswap:
+        if isinstance(source, Lid) and isinstance(destination, Lid):
+            source = source.layout_name()
+            destination = destination.layout_name()
+            inversion, cmplx_get, cmplx_place, more_opts = params.as_iswap_call()
+            return ham_int.move_by_seq(
+                source,
+                destination,
+                CmplxGetDict=cmplx_get,
+                CmplxPlaceDict=cmplx_place,
+                inversion=inversion,
+                **more_opts,
+            )
+
         if isinstance(source, DeckResource) and isinstance(destination, DeckResource):
             inversion, cmplx_get, cmplx_place, more_opts = params.as_iswap_call()
             return ham_int.move_plate(
@@ -272,6 +285,11 @@ def transport_resource(
     # .....................................................................
     if core_gripper:
         if isinstance(source, DeckResource) and isinstance(destination, DeckResource):
+            # Check whether source and destination are both of the same type
+            if type(source) != type(destination):
+                raise Exception("Source is of type {} and destination is of type {}. " \
+                "Both must be of the same type for CORE gripper movement".format(type(source), type(destination)))
+
             source = source.layout_name()
             destination = destination.layout_name()
         

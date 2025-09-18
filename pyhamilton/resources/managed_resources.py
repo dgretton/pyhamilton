@@ -10,7 +10,7 @@ import sqlite3
 from pathlib import Path
 from contextlib import contextmanager
 from collections import defaultdict
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, TypeVar, Type
 
 # ────────────────────────── HAMILTON imports ──────────────────────────
 from pyhamilton import OEM_LAY_PATH, LAY_BACKUP_DIR        # noqa: F401 (kept for context)
@@ -421,6 +421,7 @@ def _ensure_stacked_table() -> None:
 
 _ensure_stacked_table()          # run at import time
 
+T = TypeVar('T', bound='DeckResource')
 
 class StackedResources:
     """
@@ -430,11 +431,22 @@ class StackedResources:
 
     def __init__(self,
                  resource_names: List[str],
-                 tracker_id: Optional[str] = None,
+                 tracker_id: Optional[str],
+                 lmgr: Optional[LayoutManager],
+                 resource_type: Type[T],
                  reset: bool = True):
+        
         self.resource_names = list(resource_names)  # fixed order definition
         self.tracker_id     = tracker_id or "|".join(resource_names)
         self._stacked: List[str] = list(resource_names)
+        self.resource_type = resource_type
+
+        self.lmgr = lmgr
+        if lmgr is not None:
+            for rname in resource_names:
+                resource_present_in_layfile = any([rname in line for line in lmgr.lines])
+                if not resource_present_in_layfile:
+                    raise ValueError(f"Resource '{rname}' not found in LayoutManager.")
 
         if reset:
             # Hard reset: clear any prior rows for this tracker_id and seed to "full"
@@ -451,6 +463,8 @@ class StackedResources:
                     tracker_id: str,
                     prefix    : str,
                     count     : int,
+                    lmgr      : LayoutManager,
+                    resource_type: Type[T],
                     reset     : bool = True) -> StackedResources:
         """
         Create a stack with HIGHEST index at the TOP (fetched first).
@@ -458,7 +472,7 @@ class StackedResources:
         """
         ascending = [f"{prefix}_{i:04d}" for i in range(1, count + 1)]
         top_first = list(reversed(ascending))
-        return cls(top_first, tracker_id=tracker_id, reset=reset)
+        return cls(top_first, tracker_id=tracker_id, lmgr=lmgr, resource_type=resource_type, reset=reset)
 
     def get_stacked(self) -> List[str]:
         """Return the current list of available resources (top-first)."""
@@ -479,7 +493,8 @@ class StackedResources:
         rname = self._stacked.pop(0)
         self._last_fetched = rname
         self._update_row(rname, available=False)
-        return rname
+        resource = self.resource_type(rname)
+        return resource
 
     def put_back(self) -> str:
         """
@@ -500,8 +515,9 @@ class StackedResources:
         rname = missing[0]          # highest-priority missing item
         self._stacked.insert(0, rname)
         self._update_row(rname, available=True)
-        return rname
-    
+        resource = self.resource_type(rname)
+        return resource
+
     def reset_all(self) -> None:
         """
         Reset all resources to available state and restore the full stack.
@@ -609,6 +625,8 @@ class TipSupportTracker:
         if self.source_rack is None:
             self.tip_support_add_rack(ham_int, tip_tracker, n)
         
+        print("Requested tip volume:", tip_tracker.volume_capacity)
+        print("Current tip support volume:", self.tip_vol)
         if self.tip_vol != tip_tracker.volume_capacity:
             print(f"Tip volume mismatch: support has {self.tip_vol}, tracker has {tip_tracker.volume_capacity}. Replacing rack.")
             self.tip_support_add_rack(ham_int, tip_tracker, n)

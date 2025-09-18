@@ -561,5 +561,10 @@ class FalconCarrier24(DeckResource):
     def position_id(self, idx):
         return self.positions[idx]
 
+class Lid(DeckResource):
+    
+    def __init__(self, layout_name):
+        self._layout_name = layout_name
+
 def layout_item(lmgr, item_class, item_name): 
     return lmgr.assign_unused_resource(ResourceType(item_class, item_name))

@@ -195,7 +195,7 @@ class Protocol:
             )
 
         root = tk.Tk()
-        root.title("PacBio HiFiPlex Protocol - Step Selection")
+        root.title("NGS Protocol - Step Selection")
         root.geometry("550x650")  # Increased height for new elements
         root.resizable(True, True)
 
@@ -316,7 +316,7 @@ class Protocol:
 
         self.tip_support = TipSupportTracker(self.tip_support.resource)
 
-    def run_selected_steps(self, steps: list, simulation: bool = True, windowed: bool = False, persistent: bool = False):
+    def run_selected_steps(self, steps: list, simulation: bool = True, windowed: bool = False, persistent: bool = True):
         # Perhaps we can implement some additional logic here but this seems fine for now
         self.simulation = simulation
         self.windowed = windowed
