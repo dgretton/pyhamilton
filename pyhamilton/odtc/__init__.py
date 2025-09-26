@@ -1,1 +1,1 @@
-from .odtc import run_odtc_protocol
+from .odtc_protocol import ThermalCyclerProtocol

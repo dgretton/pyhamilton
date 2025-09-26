@@ -1,261 +1,241 @@
 {
-  "image_path": ".\\deck.png",
-  "image_dimensions": {
-    "width": 1098,
-    "height": 527
-  },
-  "regions": {
+    "image_path": "deck.png",
+    "image_dimensions": {
+        "width": 1098,
+        "height": 527
+    },
     "rgt_cont_60ml_BC_A00_0001": {
-      "top_left": [
-        553,
-        126
-      ],
-      "bottom_right": [
-        565,
-        154
-      ],
-      "width": 12,
-      "height": 28,
-      "center": [
-        559,
-        140
-      ],
-      "color": [
-        0,
-        0,
-        255
-      ]
+        "points": [
+            [
+                550,
+                128
+            ],
+            [
+                560,
+                127
+            ],
+            [
+                568,
+                153
+            ],
+            [
+                554,
+                152
+            ]
+        ],
+        "color": [
+            14,
+            241,
+            105
+        ],
+        "resource_type": "Reservoir"
     },
     "rgt_cont_60ml_BC_A00_0002": {
-      "top_left": [
-        556,
-        155
-      ],
-      "bottom_right": [
-        569,
-        187
-      ],
-      "width": 13,
-      "height": 32,
-      "center": [
-        562,
-        171
-      ],
-      "color": [
-        0,
-        255,
-        0
-      ]
+        "points": [
+            [
+                569,
+                160
+            ],
+            [
+                571,
+                186
+            ],
+            [
+                560,
+                185
+            ],
+            [
+                555,
+                160
+            ]
+        ],
+        "color": [
+            162,
+            231,
+            152
+        ],
+        "resource_type": "Reservoir"
     },
     "rgt_cont_60ml_BC_A00_0003": {
-      "top_left": [
-        562,
-        192
-      ],
-      "bottom_right": [
-        577,
-        224
-      ],
-      "width": 15,
-      "height": 32,
-      "center": [
-        569,
-        208
-      ],
-      "color": [
-        255,
-        0,
-        0
-      ]
+        "points": [
+            [
+                572,
+                194
+            ],
+            [
+                562,
+                194
+            ],
+            [
+                566,
+                223
+            ],
+            [
+                579,
+                223
+            ]
+        ],
+        "color": [
+            237,
+            199,
+            82
+        ],
+        "resource_type": "Reservoir"
     },
     "rgt_cont_60ml_BC_A00_0004": {
-      "top_left": [
-        569,
-        230
-      ],
-      "bottom_right": [
-        583,
-        262
-      ],
-      "width": 14,
-      "height": 32,
-      "center": [
-        576,
-        246
-      ],
-      "color": [
-        0,
-        255,
-        255
-      ]
+        "points": [
+            [
+                582,
+                231
+            ],
+            [
+                567,
+                231
+            ],
+            [
+                573,
+                265
+            ],
+            [
+                588,
+                266
+            ]
+        ],
+        "color": [
+            223,
+            32,
+            223
+        ],
+        "resource_type": "Reservoir"
     },
     "rgt_cont_60ml_BC_A00_0005": {
-      "top_left": [
-        574,
-        270
-      ],
-      "bottom_right": [
-        589,
-        314
-      ],
-      "width": 15,
-      "height": 44,
-      "center": [
-        581,
-        292
-      ],
-      "color": [
-        255,
-        0,
-        255
-      ]
+        "points": [
+            [
+                587,
+                274
+            ],
+            [
+                574,
+                273
+            ],
+            [
+                579,
+                311
+            ],
+            [
+                591,
+                311
+            ]
+        ],
+        "color": [
+            18,
+            6,
+            249
+        ],
+        "resource_type": "Reservoir"
     },
     "rgt_cont_60ml_BC_A00_0006": {
-      "top_left": [
-        566,
-        125
-      ],
-      "bottom_right": [
-        577,
-        155
-      ],
-      "width": 11,
-      "height": 30,
-      "center": [
-        571,
-        140
-      ],
-      "color": [
-        255,
-        255,
-        0
-      ]
+        "points": [
+            [
+                567,
+                126
+            ],
+            [
+                574,
+                127
+            ],
+            [
+                578,
+                149
+            ],
+            [
+                571,
+                150
+            ]
+        ],
+        "color": [
+            255,
+            128,
+            192
+        ],
+        "resource_type": "Reservoir"
     },
     "rgt_cont_60ml_BC_A00_0007": {
-      "top_left": [
-        570,
-        157
-      ],
-      "bottom_right": [
-        585,
-        187
-      ],
-      "width": 15,
-      "height": 30,
-      "center": [
-        577,
-        172
-      ],
-      "color": [
-        128,
-        0,
-        255
-      ]
-    },
-    "rgt_cont_60ml_BC_A00_0008": {
-      "top_left": [
-        580,
-        192
-      ],
-      "bottom_right": [
-        591,
-        223
-      ],
-      "width": 11,
-      "height": 31,
-      "center": [
-        585,
-        207
-      ],
-      "color": [
-        0,
-        165,
-        255
-      ]
-    },
-    "rgt_cont_60ml_BC_A00_0009": {
-      "top_left": [
-        582,
-        229
-      ],
-      "bottom_right": [
-        597,
-        267
-      ],
-      "width": 15,
-      "height": 38,
-      "center": [
-        589,
-        248
-      ],
-      "color": [
-        255,
-        255,
-        255
-      ]
-    },
-    "rgt_cont_60ml_BC_A00_0010": {
-      "top_left": [
-        590,
-        269
-      ],
-      "bottom_right": [
-        608,
-        312
-      ],
-      "width": 18,
-      "height": 43,
-      "center": [
-        599,
-        290
-      ],
-      "color": [
-        192,
-        192,
-        192
-      ]
+        "points": [
+            [
+                571,
+                161
+            ],
+            [
+                581,
+                158
+            ],
+            [
+                583,
+                185
+            ],
+            [
+                576,
+                187
+            ]
+        ],
+        "color": [
+            255,
+            128,
+            0
+        ],
+        "resource_type": "Reservoir"
     },
     "CPAC_HSP_0001": {
-      "top_left": [
-        746,
-        278
-      ],
-      "bottom_right": [
-        834,
-        325
-      ],
-      "width": 88,
-      "height": 47,
-      "center": [
-        790,
-        301
-      ],
-      "color": [
-        255,
-        255,
-        128
-      ]
+        "points": [
+            [
+                740,
+                277
+            ],
+            [
+                820,
+                277
+            ],
+            [
+                839,
+                318
+            ],
+            [
+                756,
+                317
+            ]
+        ],
+        "color": [
+            64,
+            0,
+            64
+        ],
+        "resource_type": "96-well plate"
     },
     "RGT_Ethanol": {
-      "top_left": [
-        642,
-        226
-      ],
-      "bottom_right": [
-        725,
-        265
-      ],
-      "width": 83,
-      "height": 39,
-      "center": [
-        683,
-        245
-      ],
-      "color": [
-        128,
-        255,
-        128
-      ]
+        "points": [
+            [
+                641,
+                228
+            ],
+            [
+                716,
+                227
+            ],
+            [
+                727,
+                259
+            ],
+            [
+                651,
+                262
+            ]
+        ],
+        "color": [
+            255,
+            255,
+            255
+        ],
+        "resource_type": "Reservoir"
     }
-  }
 }

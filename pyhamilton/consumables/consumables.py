@@ -132,7 +132,29 @@ class ReagentTrackedEppiCarrier32(EppiCarrier32, TrackedReagentVessel):
         self.volumes[well_index] -= volume
 
 
+# Helper function to get the class name of an object
+def get_class_name(obj):
+    """Returns the name of the object's class as a string."""
+    return type(obj).__name__
+
 def generate_reagent_summary(tracked_vessels: list, units_default: str = "uL", output_file: str = None):
+    """
+    Generates a summary of reagent consumption from a list of tracked vessels.
+
+    The summary is a dictionary that includes a 'units_default' key and then
+    details for each vessel that has consumed reagents. Each vessel's entry
+    includes a 'class_name' and a nested dictionary of reagent consumption
+    by position.
+
+    Args:
+        tracked_vessels (list): A list of vessel objects to be processed.
+        units_default (str): The default unit of volume, used for the summary.
+        output_file (str, optional): The path to a JSON file to save the summary.
+                                    If None, the function returns the summary dictionary.
+    
+    Returns:
+        dict: The summary of reagent consumption.
+    """
     summary = {"units_default": units_default}
     
     for vessel in tracked_vessels:
@@ -143,7 +165,10 @@ def generate_reagent_summary(tracked_vessels: list, units_default: str = "uL", o
         if not vessel_data or all(vol <= 0 for vol in vessel_data.values()):
             continue
             
-        summary[vessel_name] = {}
+        summary[vessel_name] = {
+            "class_name": get_class_name(vessel),  # New field for the vessel's class name
+            "positions": {}
+        }
         
         # For each reagent in this vessel, find which positions it occupies
         for reagent_name, total_volume in vessel_data.items():
@@ -158,7 +183,7 @@ def generate_reagent_summary(tracked_vessels: list, units_default: str = "uL", o
                 pos_volume = -vessel.volumes.get(pos, 0) if vessel.volumes.get(pos, 0) < 0 else 0
                 
                 if pos_volume > 0:
-                    summary[vessel_name][pos] = {
+                    summary[vessel_name]["positions"][pos] = {
                         "reagent": reagent_name,
                         "volume": pos_volume,
                         "unit": "uL"
@@ -268,9 +293,7 @@ def tracked_volume_aspirate(ham_int: HamiltonInterface, plate_poss: list[tuple[T
     
     try:
         for (plate, well_index), vol in zip(plate_poss, vols):
-            print(f"Aspirated {vol} uL from {plate.layout_name()} well {well_index}")
             plate.aspirate_volume(well_index, vol)
-            print(plate.volumes)
     except AttributeError:
         return response
     

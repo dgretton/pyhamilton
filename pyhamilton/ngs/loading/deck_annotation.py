@@ -1,496 +1,416 @@
-import cv2
 import numpy as np
 import json
 import sys
+import os
 import tkinter as tk
-from tkinter import simpledialog, messagebox, Toplevel, Button, Label, StringVar, OptionMenu
-from typing import Tuple, Dict, List, Optional
+from tkinter import filedialog, colorchooser, ttk, messagebox
+from PIL import Image, ImageTk, ImageDraw
+from typing import Tuple
 
-# ---------- helpers ----------
+# ---------- User Configuration ----------
+ALPHA = 0.5  # Transparency of polygon fill
+POINT_RADIUS = 3  # Smaller radius for corner points
+POINT_COLOR = (0, 0, 0)  # Black (RGB)
+TABLE_WIDTH = 400  # Increased width for new column
+TABLE_HEIGHT_ROWS = 20
 
-def load_image(path: str) -> np.ndarray:
-    img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
-    if img is None:
-        raise FileNotFoundError(f"Could not read image: {path}")
-    # Ensure uint8, C-contiguous
-    if img.dtype != np.uint8:
-        img = img.astype(np.uint8)
-    if not img.flags["C_CONTIGUOUS"]:
-        img = np.ascontiguousarray(img)
-    # If grayscale, promote to BGR
-    if img.ndim == 2:
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-    return img
+# Resource types
+RESOURCE_TYPES = [
+    "Reservoir",
+    "96-well plate", 
+    "24-well plate",
+    "32-tube rack",
+    "24-tube rack"
+]
 
-def _match_color_to_channels(color_bgr: Tuple[int,int,int], channels: int) -> Tuple[int,...]:
-    if channels == 1:
-        g = int(round(sum(color_bgr)/3))
-        return (g,)
-    if channels == 3:
-        return color_bgr
-    if channels == 4:
-        return (*color_bgr, 255)
-    raise ValueError(f"Unsupported channel count: {channels}")
+# ---------- Globals ----------
+regions = []
+current_points = []
+dragging_point_idx = -1
+dragging_region_idx = -1
+base_img_pil = None
+tk_photo_image = None
+canvas = None
+image_path = None
+json_path = None
+treeview = None
+name_entry_edit = None
+type_combo_edit = None
 
-def draw_transparent_rect(img: np.ndarray,
-                          pt1: Tuple[int,int],
-                          pt2: Tuple[int,int],
-                          color_bgr: Tuple[int,int,int] = (0,0,255),
-                          alpha: float = 0.35,
-                          thickness: int = -1) -> None:
-    overlay = img.copy()
-    color = _match_color_to_channels(color_bgr, img.shape[2])
-    cv2.rectangle(overlay, pt1, pt2, color, thickness)
-    cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, dst=img)
+# ---------- Helpers ----------
+def load_image_pil(path: str):
+    try:
+        return Image.open(path).convert('RGB')
+    except FileNotFoundError:
+        return None
 
-def put_text_safe(img: np.ndarray,
-                  text: str,
-                  org: Tuple[int,int],
-                  scale: float = 0.6,
-                  color_bgr: Tuple[int,int,int] = (255,255,255),
-                  thickness: int = 1,
-                  bg_bgr: Tuple[int,int,int] | None = (0,0,0),
-                  bg_alpha: float = 0.5,
-                  pad: int = 4) -> None:
-    (tw, th), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, scale, thickness)
-    x, y = org
-    if bg_bgr is not None:
-        x1, y1 = x - pad, y - th - pad
-        x2, y2 = x + tw + pad, y + baseline + pad
-        x1, y1 = max(0, x1), max(0, y1)
-        overlay = img.copy()
-        bg_color = _match_color_to_channels(bg_bgr, img.shape[2])
-        cv2.rectangle(overlay, (x1, y1), (x2, y2), bg_color, thickness=-1)
-        cv2.addWeighted(overlay, bg_alpha, img, 1 - bg_alpha, 0, dst=img)
+def load_regions_from_json(path: str):
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        return []
 
-    color = _match_color_to_channels(color_bgr, img.shape[2])[:3]
-    cv2.putText(img, text, org, cv2.FONT_HERSHEY_SIMPLEX, scale, color, thickness, cv2.LINE_AA)
+    loaded = []
+    for name, info in data.items():
+        # NEW: Skip metadata keys like "image_path" and "image_dimensions"
+        if name in ["image_path", "image_dimensions"]:
+            continue
 
-# ---------- Tkinter Dialog Classes ----------
+        loaded.append({
+            "name": name,
+            "points": [tuple(int(c) for c in p) for p in info["points"]],
+            "color": tuple(info.get("color", (255, 255, 255))),
+            "resource_type": info.get("resource_type", "Reservoir")  # Default to Reservoir
+        })
+    return loaded
 
-class ColorDialog:
-    def __init__(self, parent):
-        self.result = None
-        self.dialog = Toplevel(parent)
-        self.dialog.title("Select Region Color")
-        self.dialog.geometry("300x400")
-        self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
-        # Available colors
-        self.color_options = {
-            'Red': (0, 0, 255),
-            'Green': (0, 255, 0),
-            'Blue': (255, 0, 0),
-            'Yellow': (0, 255, 255),
-            'Magenta': (255, 0, 255),
-            'Cyan': (255, 255, 0),
-            'Purple': (128, 0, 255),
-            'Orange': (0, 165, 255),
-            'White': (255, 255, 255),
-            'Light Gray': (192, 192, 192),
-            'Dark Gray': (128, 128, 128),
-            'Pink': (203, 192, 255),
-            'Light Blue': (255, 255, 128),
-            'Light Green': (128, 255, 128),
-        }
-        
-        Label(self.dialog, text="Choose a color:", font=("Arial", 12)).pack(pady=10)
-        
-        # Create color buttons
-        for color_name, color_value in self.color_options.items():
-            # Convert BGR to RGB for display
-            rgb = (color_value[2], color_value[1], color_value[0])
-            hex_color = '#{:02x}{:02x}{:02x}'.format(*rgb)
-            
-            btn = Button(self.dialog, text=color_name, bg=hex_color, 
-                        command=lambda cv=color_value: self.select_color(cv),
-                        width=20, height=1)
-            # Set text color based on brightness
-            brightness = sum(rgb) / 3
-            text_color = "black" if brightness > 128 else "white"
-            btn.config(fg=text_color)
-            btn.pack(pady=2)
-        
-        # Cancel button
-        Button(self.dialog, text="Cancel", command=self.cancel, width=20).pack(pady=10)
-        
-        # Center the dialog
-        self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
-        self.dialog.geometry(f"+{x}+{y}")
-    
-    def select_color(self, color_value):
-        self.result = color_value
-        self.dialog.destroy()
-    
-    def cancel(self):
-        self.dialog.destroy()
-
-class RegionNameDialog:
-    def __init__(self, parent, existing_names, pt1, pt2):
-        self.result = None
-        self.dialog = Toplevel(parent)
-        self.dialog.title("Name Region")
-        self.dialog.geometry("400x200")
-        self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
-        width = pt2[0] - pt1[0]
-        height = pt2[1] - pt1[1]
-        
-        # Info label
-        info_text = f"New region: ({pt1[0]}, {pt1[1]}) to ({pt2[0]}, {pt2[1]})\nSize: {width} x {height} pixels"
-        Label(self.dialog, text=info_text, font=("Arial", 10)).pack(pady=10)
-        
-        # Name entry
-        Label(self.dialog, text="Enter region name:", font=("Arial", 11)).pack(pady=5)
-        
-        self.entry = tk.Entry(self.dialog, width=40, font=("Arial", 11))
-        self.entry.pack(pady=5)
-        self.entry.focus_set()
-        
-        self.existing_names = existing_names
-        
-        # Buttons frame
-        button_frame = tk.Frame(self.dialog)
-        button_frame.pack(pady=10)
-        
-        Button(button_frame, text="OK", command=self.ok_clicked, width=10).pack(side=tk.LEFT, padx=5)
-        Button(button_frame, text="Cancel", command=self.cancel, width=10).pack(side=tk.LEFT, padx=5)
-        
-        # Bind Enter key to OK
-        self.entry.bind('<Return>', lambda e: self.ok_clicked())
-        
-        # Center the dialog
-        self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
-        self.dialog.geometry(f"+{x}+{y}")
-    
-    def ok_clicked(self):
-        name = self.entry.get().strip()
-        if not name:
-            messagebox.showerror("Error", "Name cannot be empty!", parent=self.dialog)
-            return
-        
-        if name in self.existing_names:
-            if not messagebox.askyesno("Confirm", f"Region '{name}' already exists. Overwrite?", parent=self.dialog):
-                return
-        
-        self.result = name
-        self.dialog.destroy()
-    
-    def cancel(self):
-        self.dialog.destroy()
-
-# ---------- Region Annotation Tool ----------
-
-class RegionAnnotationTool:
-    def __init__(self, img_path: str, regions_file: str = None):
-        self.img_path = img_path
-        self.regions_file = regions_file or img_path.replace('.png', '_regions.json').replace('.jpg', '_regions.json')
-        
-        self.original_img = load_image(img_path)
-        self.display_img = self.original_img.copy()
-        
-        # Start with empty regions
-        self.regions = {}
-        
-        # Current drawing state
-        self.current_region_start = None
-        self.drawing = False
-        self.temp_end = None
-        
-        # Initialize Tkinter root (hidden)
-        self.root = tk.Tk()
-        self.root.withdraw()
-        
-        self.window_name = f"Region Annotation Tool - {img_path}"
-        
-    def load_regions(self) -> Dict[str, Dict]:
-        """Load existing regions from JSON file"""
-        try:
-            with open(self.regions_file, 'r') as f:
-                data = json.load(f)
-                return data.get('regions', {})
-        except (FileNotFoundError, json.JSONDecodeError):
-            return {}
-    
-    def save_regions(self):
-        """Save regions to JSON file"""
-        data = {
-            'image_path': self.img_path,
-            'image_dimensions': {
-                'width': self.original_img.shape[1],
-                'height': self.original_img.shape[0]
-            },
-            'regions': self.regions
-        }
-        
-        with open(self.regions_file, 'w') as f:
-            json.dump(data, f, indent=2)
-        print(f"Saved {len(self.regions)} regions to {self.regions_file}")
-    
-    def get_region_color(self, region_data: Dict) -> Tuple[int, int, int]:
-        """Get color for a region from its data"""
-        return tuple(region_data.get('color', [255, 0, 0]))
-    
-    def redraw_image(self):
-        """Redraw the image with all current regions"""
-        self.display_img = self.original_img.copy()
-        
-        # Draw all existing regions (no labels on the image)
-        for region_name, region_data in self.regions.items():
-            pt1 = tuple(region_data['top_left'])
-            pt2 = tuple(region_data['bottom_right'])
-            color = self.get_region_color(region_data)
-            
-            # Draw only transparent rectangle (no border, no label)
-            draw_transparent_rect(self.display_img, pt1, pt2, color, alpha=0.3)
-        
-        # Draw current region being drawn (thin white outline only)
-        if self.drawing and self.current_region_start and self.temp_end:
-            cv2.rectangle(self.display_img, self.current_region_start, self.temp_end, (255, 255, 255), 1)
-            # Draw size info while drawing
-            w = abs(self.temp_end[0] - self.current_region_start[0])
-            h = abs(self.temp_end[1] - self.current_region_start[1])
-            size_text = f"{w}x{h}"
-            put_text_safe(self.display_img, size_text, 
-                         (self.current_region_start[0], self.current_region_start[1] - 25),
-                         scale=0.4, color_bgr=(255, 255, 255))
-        
-        # Show region count in top-left corner
-        region_count_text = f"REGIONS: {len(self.regions)}"
-        put_text_safe(self.display_img, region_count_text, (10, 25), 
-                     scale=0.6, color_bgr=(255, 255, 255), 
-                     bg_bgr=(0, 0, 0), bg_alpha=0.7)
-        
-        cv2.imshow(self.window_name, self.display_img)
-    
-    def get_region_name_and_color(self, pt1: Tuple[int, int], pt2: Tuple[int, int]) -> Optional[Tuple[str, Tuple[int, int, int]]]:
-        """Get region name and color from user using Tkinter dialogs"""
-        # Make sure root window is updated
-        self.root.update()
-        self.root.deiconify()  # Show the root window temporarily
-        
-        # Get color first
-        color_dialog = ColorDialog(self.root)
-        self.root.wait_window(color_dialog.dialog)
-        
-        if color_dialog.result is None:
-            self.root.withdraw()  # Hide root window again
-            return None
-        
-        selected_color = color_dialog.result
-        
-        # Get name
-        name_dialog = RegionNameDialog(self.root, list(self.regions.keys()), pt1, pt2)
-        self.root.wait_window(name_dialog.dialog)
-        
-        self.root.withdraw()  # Hide root window again
-        
-        if name_dialog.result is None:
-            return None
-        
-        return (name_dialog.result, selected_color)
-    
-    def mouse_callback(self, event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDOWN:
-            self.current_region_start = (x, y)
-            self.drawing = True
-            
-        elif event == cv2.EVENT_MOUSEMOVE and self.drawing:
-            self.temp_end = (x, y)
-            self.redraw_image()
-            
-        elif event == cv2.EVENT_LBUTTONUP and self.drawing:
-            self.drawing = False
-            end_point = (x, y)
-            
-            # Check for minimum size
-            if (abs(end_point[0] - self.current_region_start[0]) < 10 or 
-                abs(end_point[1] - self.current_region_start[1]) < 10):
-                print("Region too small, skipping...")
-                self.redraw_image()
-                return
-            
-            # Normalize coordinates
-            pt1 = (min(self.current_region_start[0], end_point[0]),
-                   min(self.current_region_start[1], end_point[1]))
-            pt2 = (max(self.current_region_start[0], end_point[0]),
-                   max(self.current_region_start[1], end_point[1]))
-            
-            # Get region name and color using Tkinter dialogs
-            result = self.get_region_name_and_color(pt1, pt2)
-            if result:
-                region_name, selected_color = result
-                self.regions[region_name] = {
-                    'top_left': list(pt1),
-                    'bottom_right': list(pt2),
-                    'width': pt2[0] - pt1[0],
-                    'height': pt2[1] - pt1[1],
-                    'center': [(pt1[0] + pt2[0]) // 2, (pt1[1] + pt2[1]) // 2],
-                    'color': list(selected_color)
-                }
-                print(f"Added region '{region_name}'")
-                self.save_regions()
-            
-            self.redraw_image()
-            
-        elif event == cv2.EVENT_RBUTTONDOWN:
-            # Right click to delete region
-            self.delete_region_at(x, y)
-    
-    def delete_region_at(self, x: int, y: int):
-        """Delete region that contains the clicked point"""
-        for region_name, region_data in list(self.regions.items()):
-            pt1 = tuple(region_data['top_left'])
-            pt2 = tuple(region_data['bottom_right'])
-            
-            if pt1[0] <= x <= pt2[0] and pt1[1] <= y <= pt2[1]:
-                self.root.deiconify()  # Show root temporarily for messagebox
-                if messagebox.askyesno("Delete Region", f"Delete region '{region_name}'?", parent=self.root):
-                    del self.regions[region_name]
-                    print(f"Deleted region '{region_name}'")
-                    self.save_regions()
-                    self.redraw_image()
-                self.root.withdraw()  # Hide root again
-                break
-    
-    def print_help(self):
-        print("\n" + "="*60)
-        print("REGION ANNOTATION TOOL CONTROLS:")
-        print("="*60)
-        print("• Left click + drag: Create new rectangular region")
-        print("• Right click: Delete region (click inside region)")
-        print("• 'o': Open/load existing regions from JSON file")
-        print("• 'h': Show this help")
-        print("• 'l': List all current regions")
-        print("• 's': Save regions to JSON")
-        print("• 'r': Reset/clear all regions")
-        print("• 'q': Quit and save")
-        print("="*60)
-        print(f"Regions will be saved to: {self.regions_file}")
-        print("="*60 + "\n")
-    
-    def list_regions(self):
-        """Print all current regions"""
-        print(f"\nCurrent regions ({len(self.regions)}):")
-        print("-" * 50)
-        for name, data in self.regions.items():
-            print(f"'{name}': {data['top_left']} to {data['bottom_right']} "
-                  f"({data['width']}x{data['height']})")
-        print("-" * 50 + "\n")
-    
-    def load_existing_regions(self):
-        """Load existing regions from JSON file"""
-        loaded_regions = self.load_regions()
-        if loaded_regions:
-            self.regions = loaded_regions
-            print(f"Loaded {len(self.regions)} regions from {self.regions_file}")
-            self.redraw_image()
-        else:
-            print("No existing regions found or failed to load.")
-    
-    def run(self):
-        """Run the interactive annotation tool"""
-        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
-        cv2.setMouseCallback(self.window_name, self.mouse_callback)
-        
-        self.print_help()
-        print("Starting with clean slate - no regions loaded.")
-        print("Press 'o' to load existing regions if needed.")
-        self.redraw_image()
-        
-        while True:
-            # Process Tkinter events
-            self.root.update_idletasks()
-            self.root.update()
-            
-            key = cv2.waitKey(1) & 0xFF
-            
-            if key == ord('q'):
-                break
-            elif key == ord('o'):
-                self.load_existing_regions()
-            elif key == ord('h'):
-                self.print_help()
-            elif key == ord('l'):
-                self.list_regions()
-            elif key == ord('s'):
-                self.save_regions()
-            elif key == ord('r'):
-                self.root.deiconify()  # Show root temporarily for messagebox
-                if messagebox.askyesno("Clear All Regions", "Clear all regions? This cannot be undone!", parent=self.root):
-                    self.regions = {}
-                    self.save_regions()
-                    self.redraw_image()
-                    print("All regions cleared!")
-                self.root.withdraw()  # Hide root again
-        
-        cv2.destroyAllWindows()
-        self.root.destroy()
-        print(f"\nFinal regions saved to: {self.regions_file}")
-
-# ---------- Usage Functions ----------
-
-def load_regions_from_json(json_file: str) -> Dict[str, Dict]:
-    """Load regions from JSON file for programmatic use"""
-    with open(json_file, 'r') as f:
-        data = json.load(f)
-    return data.get('regions', {})
-
-def annotate_image_with_regions(img_path: str, regions_file: str = None, output_path: str = None, show_labels: bool = True):
-    """Create annotated image using saved regions
-    
-    Args:
-        img_path: Path to the image
-        regions_file: Path to regions JSON file
-        output_path: Path for output image
-        show_labels: Whether to show region names on the image (default: True)
+def save_regions_to_json(path: str, regions_list: list, image_path_str: str, img_dims: Tuple[int, int]):
     """
-    if regions_file is None:
-        regions_file = img_path.replace('.png', '_regions.json').replace('.jpg', '_regions.json')
+    Saves regions data along with image metadata to a JSON file.
+    """
+    save_data = {}
     
-    if output_path is None:
-        output_path = img_path.replace('.png', '_annotated.png').replace('.jpg', '_annotated.jpg')
+    # NEW: Include image path and dimensions in the JSON
+    save_data["image_path"] = os.path.basename(image_path_str) # Save only the file name
+    save_data["image_dimensions"] = {
+        "width": img_dims[0],
+        "height": img_dims[1]
+    }
     
-    img = load_image(img_path)
-    regions = load_regions_from_json(regions_file)
-    
-    for region_name, region_data in regions.items():
-        pt1 = tuple(region_data['top_left'])
-        pt2 = tuple(region_data['bottom_right'])
-        color = tuple(region_data.get('color', [255, 0, 0]))
+    for region in regions_list:
+        save_data[region['name']] = {
+            "points": region["points"],
+            "color": region["color"],
+            "resource_type": region.get("resource_type", "Reservoir")
+        }
+    with open(path, 'w') as f:
+        json.dump(save_data, f, indent=4)
+
+def draw_all_elements(canvas):
+    global tk_photo_image
+
+    overlay = Image.new('RGBA', base_img_pil.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+
+    for region in regions:
+        r, g, b = region['color']
+        fill = (r, g, b, int(ALPHA * 255))
+        draw.polygon(region['points'], fill=fill)
+
+        for x, y in region['points']:
+            draw.ellipse((x-POINT_RADIUS, y-POINT_RADIUS, x+POINT_RADIUS, y+POINT_RADIUS),
+                          fill=POINT_COLOR, outline=POINT_COLOR)
+
+    for x, y in current_points:
+        draw.ellipse((x-POINT_RADIUS, y-POINT_RADIUS, x+POINT_RADIUS, y+POINT_RADIUS),
+                          fill=(0, 255, 0), outline=(0, 255, 0))
+
+    composite = Image.alpha_composite(base_img_pil.convert('RGBA'), overlay)
+    tk_photo_image = ImageTk.PhotoImage(composite)
+    canvas.create_image(0, 0, image=tk_photo_image, anchor='nw')
+    canvas.image = tk_photo_image
+
+def get_closest_point_index(mouse_pos, points, thresh=5):
+    for i, p in enumerate(points):
+        if np.linalg.norm(np.array(mouse_pos) - np.array(p)) < thresh:
+            return i
+    return -1
+
+# ---------- Event Handlers ----------
+def on_mouse_down(event):
+    global dragging_point_idx, dragging_region_idx
+
+    dragging_point_idx = -1
+    dragging_region_idx = -1
+
+    for i, region in enumerate(regions):
+        idx = get_closest_point_index((event.x, event.y), region['points'])
+        if idx != -1:
+            dragging_point_idx = idx
+            dragging_region_idx = i
+            break
+
+    if dragging_region_idx == -1:
+        current_points.append((event.x, event.y))
+        draw_all_elements(canvas)
+        if len(current_points) >= 4:
+            regions.append({
+                "name": f"Region_{len(regions)+1}",
+                "points": list(current_points),
+                "color": (255, 255, 255),
+                "resource_type": "Reservoir"  # Default type
+            })
+            current_points.clear()
+            draw_all_elements(canvas)
+            update_treeview()
+
+def on_mouse_right_click(event):
+    """
+    Clears the list of pending points on a right-click.
+    """
+    global current_points
+    if current_points:
+        current_points.clear()
+        draw_all_elements(canvas)
+
+
+def on_mouse_up(event):
+    global dragging_point_idx, dragging_region_idx
+    dragging_point_idx = -1
+    dragging_region_idx = -1
+
+def on_mouse_move(event):
+    if dragging_point_idx != -1 and dragging_region_idx != -1:
+        regions[dragging_region_idx]['points'][dragging_point_idx] = (event.x, event.y)
+        draw_all_elements(canvas)
+
+def on_key_press(event, root):
+    if event.keysym == 's':
+        save_json()
+    elif event.keysym == 'q':
+        root.quit()
+
+def save_json():
+    # NEW: Pass image path and dimensions to save_regions_to_json
+    if base_img_pil:
+        dims = base_img_pil.size
+    else:
+        dims = (0, 0) # Fallback if image isn't loaded
         
-        # Draw transparent rectangle
-        draw_transparent_rect(img, pt1, pt2, color, alpha=0.3)
-        
-        # Optionally add labels
-        if show_labels:
-            label_pos = (pt1[0], pt1[1] - 5)
-            put_text_safe(img, region_name, label_pos, scale=0.5, 
-                         color_bgr=(255, 255, 255), bg_bgr=color, bg_alpha=0.8)
+    save_regions_to_json(json_path, regions, image_path, dims)
+    messagebox.showinfo("Saved", f"Regions saved to {os.path.basename(json_path)}")
+
+def update_treeview():
+    for i in treeview.get_children():
+        treeview.delete(i)
     
-    cv2.imwrite(output_path, img)
-    print(f"Annotated image saved to: {output_path}")
+    for i, region in enumerate(regions):
+        resource_type = region.get("resource_type", "Reservoir")
+        item_id = treeview.insert("", "end", iid=i, values=(region["name"], "", resource_type))
+        r, g, b = region["color"]
+        color_hex = f'#{r:02x}{g:02x}{b:02x}'
+        treeview.tag_configure(f'color{i}', background=color_hex)
+        treeview.item(item_id, tags=(f'color{i}',))
+
+def on_treeview_click(event):
+    global name_entry_edit, type_combo_edit
+    
+    # Clean up any existing editors
+    if name_entry_edit and name_entry_edit.winfo_exists():
+        name_entry_edit.destroy()
+        name_entry_edit = None
+    if type_combo_edit and type_combo_edit.winfo_exists():
+        type_combo_edit.destroy()
+        type_combo_edit = None
+    
+    item_id = treeview.identify_row(event.y)
+    if not item_id:
+        return
+    column = treeview.identify_column(event.x)
+    
+    if column == '#1':  # Name column
+        edit_name(item_id)
+    elif column == '#2':  # Color column
+        edit_color(item_id)
+    elif column == '#3':  # Resource Type column
+        edit_resource_type(item_id)
+
+def edit_name(item_id):
+    global name_entry_edit
+    if name_entry_edit and name_entry_edit.winfo_exists():
+        name_entry_edit.destroy()
+    bbox = treeview.bbox(item_id, "#1")
+    if not bbox:
+        return
+    x, y, w, h = bbox
+    current = treeview.item(item_id, 'values')[0]
+    name_entry_edit = ttk.Entry(treeview)
+    name_entry_edit.insert(0, current)
+    name_entry_edit.bind("<Return>", lambda e: set_name(item_id))
+    name_entry_edit.bind("<FocusOut>", lambda e: set_name(item_id))
+    name_entry_edit.place(x=x, y=y, width=w, height=h)
+    name_entry_edit.focus_set()
+
+def set_name(item_id):
+    global name_entry_edit
+    if not name_entry_edit or not name_entry_edit.winfo_exists():
+        return
+    new_name = name_entry_edit.get()
+    regions[int(item_id)]['name'] = new_name
+    current_values = list(treeview.item(item_id, 'values'))
+    current_values[0] = new_name
+    treeview.item(item_id, values=tuple(current_values))
+    name_entry_edit.destroy()
+    name_entry_edit = None
+
+def edit_color(item_id):
+    r, g, b = regions[int(item_id)]['color']
+    color_code = colorchooser.askcolor(initialcolor=f'#{r:02x}{g:02x}{b:02x}')
+    if color_code[0]:
+        regions[int(item_id)]['color'] = tuple(int(c) for c in color_code[0])
+        update_treeview()
+        draw_all_elements(canvas)
+
+def edit_resource_type(item_id):
+    global type_combo_edit
+    if type_combo_edit and type_combo_edit.winfo_exists():
+        type_combo_edit.destroy()
+    bbox = treeview.bbox(item_id, "#3")
+    if not bbox:
+        return
+    x, y, w, h = bbox
+    current = regions[int(item_id)].get("resource_type", "Reservoir")
+    
+    type_combo_edit = ttk.Combobox(treeview, values=RESOURCE_TYPES, state="readonly")
+    type_combo_edit.set(current)
+    type_combo_edit.bind("<<ComboboxSelected>>", lambda e: set_resource_type(item_id))
+    type_combo_edit.bind("<FocusOut>", lambda e: set_resource_type(item_id))
+    type_combo_edit.place(x=x, y=y, width=w, height=h)
+    type_combo_edit.focus_set()
+
+def set_resource_type(item_id):
+    global type_combo_edit
+    if not type_combo_edit or not type_combo_edit.winfo_exists():
+        return
+    new_type = type_combo_edit.get()
+    regions[int(item_id)]['resource_type'] = new_type
+    current_values = list(treeview.item(item_id, 'values'))
+    current_values[2] = new_type
+    treeview.item(item_id, values=tuple(current_values))
+    type_combo_edit.destroy()
+    type_combo_edit = None
+
+def delete_selected_region():
+    selected = treeview.selection()
+    if selected:
+        item_id = selected[0]
+        idx = int(item_id)
+        del regions[idx]
+        update_treeview()
+        draw_all_elements(canvas)
 
 # ---------- Main ----------
-
 def main():
+    global canvas, image_path, json_path, base_img_pil, regions, treeview, style
+
+    root = tk.Tk()
+    root.title("Deck Annotation")
+    
+    style = ttk.Style()
+    style.configure("Treeview", background="white", fieldbackground="white")
+    style.map('Treeview',
+              background=[('selected', 'white')],
+              foreground=[('selected', 'black')])
+
     if len(sys.argv) < 2:
-        print("Usage: python annotation_tool.py <image_path> [regions_file]")
-        print("Example: python annotation_tool.py deck.png")
-        print("Example: python annotation_tool.py deck.png custom_regions.json")
-        return
+        image_path = filedialog.askopenfilename(
+            title="Select Image File",
+            filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp *.gif")]
+        )
+        if not image_path:
+            sys.exit(0)
+    else:
+        image_path = sys.argv[1]
+
+    json_path = os.path.splitext(image_path)[0] + "_regions.json"
+    base_img_pil = load_image_pil(image_path)
+    regions = load_regions_from_json(json_path)
+
+    # Create main frame
+    main_frame = ttk.Frame(root)
+    main_frame.pack(fill=tk.BOTH, expand=True)
+
+    # Create paned window
+    paned = tk.PanedWindow(main_frame, orient=tk.HORIZONTAL, sashwidth=5)
+    paned.pack(fill=tk.BOTH, expand=True)
+
+    # Left panel with fixed width
+    left_frame = ttk.Frame(paned)
+    paned.add(left_frame, minsize=TABLE_WIDTH, width=TABLE_WIDTH)
     
-    img_path = sys.argv[1]
-    regions_file = sys.argv[2] if len(sys.argv) > 2 else None
+    # Create treeview with three columns
+    treeview = ttk.Treeview(left_frame, columns=("Name", "Color", "Type"), show="headings", height=TABLE_HEIGHT_ROWS)
+    treeview.heading("Name", text="Name")
+    treeview.heading("Color", text="Color")
+    treeview.heading("Type", text="Resource Type")
+    treeview.column("Name", width=150)
+    treeview.column("Color", width=50, anchor="center")
+    treeview.column("Type", width=150)
+    treeview.bind("<Double-1>", on_treeview_click)
+    treeview.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     
-    tool = RegionAnnotationTool(img_path, regions_file)
-    tool.run()
+    # Button frame
+    button_frame = ttk.Frame(left_frame)
+    button_frame.pack(fill=tk.X, padx=5, pady=5)
+    
+    # Save button
+    save_btn = ttk.Button(button_frame, text="Save to JSON", command=save_json)
+    save_btn.pack(side=tk.LEFT, padx=2)
+    
+    # Delete button
+    delete_btn = ttk.Button(button_frame, text="Delete Selected", command=delete_selected_region)
+    delete_btn.pack(side=tk.LEFT, padx=2)
+    
+    # Instructions label
+    instructions = ttk.Label(left_frame, text="Keys: S=Save, Q=Quit\nDouble-click cells to edit", 
+                             font=("Arial", 9), foreground="gray")
+    instructions.pack(pady=5)
+    
+    update_treeview()
+
+    # Right panel with canvas
+    right_frame = ttk.Frame(paned)
+    paned.add(right_frame)
+    
+    # Create scrollable canvas frame
+    canvas_frame = ttk.Frame(right_frame)
+    canvas_frame.pack(fill=tk.BOTH, expand=True)
+    
+    # Create canvas with exact image dimensions
+    canvas = tk.Canvas(canvas_frame, width=base_img_pil.width, height=base_img_pil.height, 
+                         highlightthickness=0, bd=0)
+    
+    # Add scrollbars if needed
+    v_scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=canvas.yview)
+    h_scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.HORIZONTAL, command=canvas.xview)
+    
+    canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+    canvas.configure(scrollregion=(0, 0, base_img_pil.width, base_img_pil.height))
+    
+    # Pack scrollbars and canvas
+    v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    # Bind events
+    canvas.bind("<Button-1>", on_mouse_down)
+    canvas.bind("<ButtonRelease-1>", on_mouse_up)
+    canvas.bind("<B1-Motion>", on_mouse_move)
+    canvas.bind("<Button-3>", on_mouse_right_click)
+    root.bind("<Key>", lambda e: on_key_press(e, root))
+
+    # Draw initial elements
+    draw_all_elements(canvas)
+    
+    # Calculate optimal window size
+    window_width = TABLE_WIDTH + base_img_pil.width + 50  # Extra space for scrollbars and padding
+    window_height = min(base_img_pil.height + 50, 800)  # Cap at 800px height
+    
+    # Set window size to fit content
+    root.geometry(f"{min(window_width, 1400)}x{window_height}")
+    
+    # Center window on screen
+    root.update_idletasks()
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width - root.winfo_width()) // 2
+    y = (screen_height - root.winfo_height()) // 2
+    root.geometry(f"+{x}+{y}")
+    
+    root.mainloop()
 
 if __name__ == "__main__":
     main()

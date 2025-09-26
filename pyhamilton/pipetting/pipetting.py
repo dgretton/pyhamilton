@@ -67,10 +67,10 @@ def build_dispense_batches(aspiration_volumes, all_dispense_positions, all_dispe
 
     return batches
 
-def split_aspiration_positions(aspiration_positions, dispense_positions):
+def distribute_positions_to_channel_ops(positions_to_distribute, reference_positions):
     '''
-    Expand the aspiration positions into a list of lists so we can sequentially aspirate from the same
-    positions using each of the channels. Use when there are <8 positions to aspirate from.
+    Expand the larger list of positions into a list of lists so we can sequentially operate on those positions
+    using each of the channels. Use when there are <8 positions to aspirate or dispense from.
 
     Example:
     aspiration_positions = [(plate, 0), (plate, 1)]
@@ -84,16 +84,26 @@ def split_aspiration_positions(aspiration_positions, dispense_positions):
         [None, None, None, None, None, None, (plate, 0), (plate, 1)],
     ]
     '''
+    # Sanity check: the set of positions to distribute must not exceed the total channel slots
+    if len(positions_to_distribute) > len(reference_positions):
+        raise ValueError("Positions to distribute must be less than or equal to reference positions")
 
-    num_dispenses = len(dispense_positions)
-    asp_len = len(aspiration_positions)
+    num_reference_positions = len(reference_positions)        # e.g. 8 channels on a pipette head
+    num_positions_to_distribute = len(positions_to_distribute) # e.g. 2 wells to transfer
     result = []
 
-    for i in range(0, num_dispenses, asp_len):
-        row = [None] * num_dispenses
-        for j, asp in enumerate(aspiration_positions):
-            if i + j < num_dispenses:
-                row[i + j] = asp
+    # Slide the smaller set across the larger channel frame in steps
+    # Step size = number of positions to distribute (so each group is aligned together)
+    for i in range(0, num_reference_positions, num_positions_to_distribute):
+        # Start with a "blank" row (all channels set to None)
+        row = [None] * num_reference_positions
+
+        # Place the positions into this row, offset by i
+        for j, pos in enumerate(positions_to_distribute):
+            if i + j < num_reference_positions:  # don’t go past the channel frame
+                row[i + j] = pos
+
+        # Add this row to the list of operation sets
         result.append(row)
 
     return result
@@ -146,7 +156,7 @@ def set_parallel_nones(positions, reference):
             modified_positions[i] = None
     return modified_positions
 
-def pip_transfer(ham_int, tips: List[Tuple[DeckResource, int]] | TrackedTips, source_positions: List[Tuple[DeckResource, int]], 
+def pip_transfer(ham_int: HamiltonInterface, tips: List[Tuple[DeckResource, int]] | TrackedTips, source_positions: List[Tuple[DeckResource, int]], 
                     dispense_positions: List[Tuple[DeckResource, int]], volumes: List[float], liquid_class: str, prewet_cycles=0,
                     mix_cycles=0, prewet_volume=0, vol_mix_dispense=0, aspiration_height=0,
                     dispense_height=0, tip_exchange_during_transfer=True,
@@ -200,7 +210,7 @@ def pip_transfer(ham_int, tips: List[Tuple[DeckResource, int]] | TrackedTips, so
         else:
             ham_int.tip_pick_up(tips)
 
-        aspiration_positions = split_aspiration_positions(source_positions, column) # Aspirate sequentially because container has <8 positions
+        aspiration_positions = distribute_positions_to_channel_ops(source_positions, column) # Aspirate sequentially because container has <8 positions
         for positions in aspiration_positions:
             vols = set_parallel_nones(column_volumes, positions)
             response = tracked_volume_aspirate(ham_int, positions, vols, liquidClass=liquid_class,
@@ -221,6 +231,79 @@ def pip_transfer(ham_int, tips: List[Tuple[DeckResource, int]] | TrackedTips, so
         dispense_heights = response.liquidHeights
 
         ham_int.tip_eject()
+
+def pip_pool(ham_int: HamiltonInterface, tips: List[Tuple[DeckResource, int]] | TrackedTips, source_positions: List[Tuple[DeckResource, int]], 
+                    dispense_positions: List[Tuple[DeckResource, int]], volumes: List[float], liquid_class: str, prewet_cycles=0,
+                    mix_cycles=0, prewet_volume=0, vol_mix_dispense=0, aspiration_height=0,
+                    dispense_height=0, tip_exchange_during_transfer=True,
+                    liquid_following_aspiration=False, liquid_following_dispense=False):
+    '''
+    Transfer liquid from source positions to dispense positions using pipetting. Handles pipetting logic for
+    unmatched lengths of source and dispense positions.
+
+    Arguments:
+    - ham_int: HamiltonInterface instance
+    - tips: List of tuples (DeckResource, int) or TrackedTips instance
+    - source_positions: List of tuples (DeckResource, int) for aspiration positions
+
+        Example: [ (source_plate, 1), (source_plate, 2), (source_plate, 3)... ]
+
+    - dispense_positions: List of tuples (DeckResource, int) for dispense positions
+
+        Example: [ (dest_plate, 1), (dest_plate, 2), (dest_plate, 3)... ]
+
+    - volumes: List of volumes to dispense (should be matched to dispense_positions)
+    '''
+
+
+    liquid_class_vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
+    if max(volumes) > liquid_class_vol_capacity:
+        raise ValueError(f"Volume exceeds tip capacity: {max(volumes)} > {liquid_class_vol_capacity}")
+
+    if tips.volume_capacity != liquid_class_vol_capacity:
+        raise ValueError(f"Liquid class does not match tip capacity: {liquid_class_vol_capacity} != {tips.volume_capacity}")
+
+
+    if len(dispense_positions) > 8:
+        raise ValueError("Dispense positions cannot exceed 8 with single aspiration.")
+
+    aspirate_capacitative_LLD = 5 if aspiration_height == 0 else 0
+
+    column_aspirate_positions = batch_columnwise_positions(source_positions) # Batch source positions into lists of length eight
+    column_volumes_list = batch_columnwise_positions(volumes) # Batch volumes into lists of length eight
+
+    for column, column_volumes in zip(column_aspirate_positions, column_volumes_list):
+        if isinstance(tips, TrackedTips):
+            num_tips = len([pos for pos in column if pos is not None])
+            tracked_tip_pick_up(ham_int, tips, num_tips)
+        else:
+            ham_int.tip_pick_up(tips)
+
+        vols = set_parallel_nones(column_volumes, column)
+        response = ham_int.aspirate(column, vols, liquidClass=liquid_class,
+                                mixCycles=0, mixVolume=0,
+                                liquidHeight=aspiration_height,
+                                capacitiveLLD=aspirate_capacitative_LLD, aspirateMode=2,
+                                submergeDepth=2)
+
+
+        channel_mapped_dispense_positions = distribute_positions_to_channel_ops(dispense_positions, column) # Aspirate sequentially because container has <8 positions
+        for positions in channel_mapped_dispense_positions:
+            vols = set_parallel_nones(column_volumes, positions)
+
+            aspirate_heights = response.liquidHeights
+
+            dispense_capacitative_LLD = 2 if dispense_height == 0 else 0
+            response = ham_int.dispense(positions, vols, liquidClass=liquid_class, 
+                                        mixCycles=mix_cycles, mixVolume=vol_mix_dispense,
+                                        liquidHeight=dispense_height,
+                                        capacitiveLLD=dispense_capacitative_LLD,
+                                        liquidFollowing=liquid_following_dispense)
+            
+            dispense_heights = response.liquidHeights
+
+            ham_int.tip_eject()
+
 
 def shear_plate_96(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int]] | TrackedTips, plate:DeckResource, 
                    mixing_volume:float, mix_cycles:int, liquid_class:str,  liquid_height=0):
@@ -292,11 +375,11 @@ def multi_dispense(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int
             tracked_tip_pick_up(ham_int, tips, n=8)  # Pick up tips for the first column of the batch
         else:
             ham_int.pick_up_tips(tips)
+        
+        aspiration_positions = distribute_positions_to_channel_ops(source_positions, batch[0][0]) # First column of first batch
+        
 
-        aspiration_positions = split_aspiration_positions(source_positions, batch[0][0]) # First column of first batch
-        split_column_volumes = split_aspiration_positions(batch_aspiration_volumes, batch[0][0]) # Split volumes to match aspiration positions
-
-        for positions, vols in zip(aspiration_positions, split_column_volumes):
+        for positions in aspiration_positions:
             vols = set_parallel_nones(batch_aspiration_volumes, positions)
 
             vols = [
@@ -304,10 +387,12 @@ def multi_dispense(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int
                 for v in vols
             ]
 
+            cLLD = 5 if aspiration_height == 0 else 0
+
             tracked_volume_aspirate(ham_int, positions, vols, liquidClass=liquid_class,
                                     mixCycles=0, mixVolume=0,
                                     liquidHeight=aspiration_height,
-                                    capacitiveLLD=0, aspirateMode=2,
+                                    capacitiveLLD=cLLD, aspirateMode=2,
                                     submergeDepth=2)
             
             if pre_dispense_volume > 0:
@@ -358,9 +443,9 @@ def multi_aspirate(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int
 
         else:
             ham_int.pick_up_tips(tips)
-        
-        aspiration_positions = split_aspiration_positions(source_positions, column_dispense_positions[0]) # First column of first batch, fix this later
-        split_column_volumes = split_aspiration_positions(volumes, column_dispense_positions[0])
+
+        aspiration_positions = distribute_positions_to_channel_ops(source_positions, column_dispense_positions[0]) # First column of first batch, fix this later
+        split_column_volumes = distribute_positions_to_channel_ops(volumes, column_dispense_positions[0])
         for positions, vols in zip(aspiration_positions, split_column_volumes):
             vols = set_parallel_nones(volumes, positions)
             tracked_volume_aspirate(ham_int, aspiration_positions, vols, liquidClass=liquid_class,
@@ -411,6 +496,8 @@ def transfer_96(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource,int]]|T
     
     ham_int.dispense_96(target_plate, volume, liquidClass=liquid_class, liquidHeight=dispense_height, 
                         mixCycles=dispense_mix_cycles, mixVolume=dispense_mix_volume)
+    
+    ham_int.tip_eject_96()
 
 
 def double_aspirate_supernatant_96(ham_int: HamiltonInterface, tips: TrackedTips, tip_support: TipSupportTracker, num_samples:int,
@@ -431,7 +518,6 @@ def double_aspirate_supernatant_96(ham_int: HamiltonInterface, tips: TrackedTips
 
     if tips.volume_capacity != liquid_class_vol_capacity:
         raise ValueError(f"Liquid class does not match tip capacity: {liquid_class_vol_capacity} != {tips.volume_capacity}")
-
 
 
     mph_tip_pickup_support(ham_int, tips, tip_support, num_tips=num_samples)
@@ -491,12 +577,9 @@ def pip_mix(ham_int: HamiltonInterface, tips: TrackedTips, positions_to_mix: Lis
         # Create a volume list of zeros where col is not None and None where col is None
         zero_vols = [0 if pos is not None else None for pos in col]
         response = ham_int.aspirate(col, zero_vols, liquidClass=liquid_class, mixVolume=0, mixCycles=0, liquidHeight=0, capacitiveLLD=1)
-        # heights = response.liquidHeights
+        volumes = response.liquidVolumes
 
-        # reagent_volume = col[0][0].height_to_volume(heights[0])  # Placeholder for volume calculation, let's check output of heights
-        # Figure out how to get volumes from heights - very important
-        reagent_volume = 20
-        mixing_volume = reagent_volume*0.75 # Calculate mixing volume based on volume in container
+        mixing_volume = min(volumes)*0.75 # Calculate mixing volume based on volume in container
 
 
         capacitative_LLD, liquidFollowing = (5, True) if liquid_height==0 else (0, False)

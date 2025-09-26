@@ -76,6 +76,12 @@ class ThermalCyclerProtocol:
         }
         return self
 
+    def set_pre_method(self, block_temp=25, lid_temp=110):
+        """Sets the pre-method parameters."""
+        self.pre_method["TargetBlockTemperature"] = block_temp
+        self.pre_method["TargetLidTemp"] = lid_temp
+        return self
+
     def generate_xml(self, filename="protocol.xml"):
         """Generates the XML file from the class data."""
         method_set = ET.Element("MethodSet")
@@ -117,6 +123,7 @@ class ThermalCyclerProtocol:
         tree = ET.ElementTree(method_set)
         ET.indent(tree, space="  ", level=0)
         tree.write(filename, encoding="utf-8", xml_declaration=True)
+
 
 
 if __name__ == "__main__":

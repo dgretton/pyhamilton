@@ -27,7 +27,8 @@ setup(
         'console_scripts': [
             'pyhamilton-new-project = pyhamilton.__init__:create_project',
             'pyhamilton-ai-project = pyhamilton.__init__:create_ai_project',
-            'pyhamilton-configure = pyhamilton.__init__:autoconfig'
+            'pyhamilton-configure = pyhamilton.__init__:autoconfig',
+            'deck-annotator = pyhamilton.ngs.loading.deck_annotation:main',
         ],
     },
 )

@@ -515,6 +515,26 @@ class Reservoir60mL(DeckResource):
     def position_id(self, idx):
         return '12345678'[idx]
 
+class LVKBalanceVial(DeckResource):
+
+    def __init__(self, layout_name):
+        self._layout_name = layout_name
+        self._num_items = 1
+        self.resource_type = DeckResource.types.VESSEL
+        self._items = [Vessel(self, i) for i in range(self._num_items)]
+
+    def well_coords(self, idx):
+        self._assert_idx_in_range(idx)
+        return (0, 0)
+
+    def _alignment_delta(self, start, end):
+        [self._assert_idx_in_range(p) for p in (start, end)]
+        xs, ys = self.well_coords(start)
+        xe, ye = self.well_coords(end)
+        return (xe - xs, ye - ys, [])
+
+    def position_id(self, idx):
+        return '1'
 
 class EppiCarrier32(DeckResource):
 

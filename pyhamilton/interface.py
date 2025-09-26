@@ -544,8 +544,9 @@ class HamiltonInterface:
                     # Attempt the ping
                 self.active = True
                 
+                print("Sending ping to check if interface is open")
                 response_id = self.send_command(command='ping', id=HamiltonCmdTemplate.unique_id())
-                self.wait_on_response(response_id, timeout=1.5)
+                self.wait_on_response(response_id, timeout=5)
                 
                 print("Interface already open")
                 return
@@ -880,7 +881,7 @@ class HamiltonInterface:
         if 'liquidClass' not in more_options:
             raise ValueError('Must specify a liquidClass for aspirate commands')
 
-        if more_options.get('capacitiveLLD') == 1:
+        if more_options.get('capacitiveLLD', 0) not in (0, 5):
             dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
             if 'Surface' not in dispense_mode:
                 raise ValueError('cLLD can only be used with Surface dispense modes')
@@ -935,6 +936,12 @@ class HamiltonInterface:
             
         if 'liquidClass' not in more_options:
             more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        if more_options.get('capacitiveLLD', 0) not in (0, 5):
+            dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
+            if 'Surface' not in dispense_mode:
+                raise ValueError('cLLD can only be used with Surface dispense modes')
+
 
         response = self.wait_on_response(
             self.send_command(
@@ -1080,7 +1087,7 @@ class HamiltonInterface:
         if 'liquidClass' not in more_options:
             raise ValueError('Must specify a liquidClass for aspirate commands')
 
-        if more_options.get('capacitiveLLD') == 1:
+        if more_options.get('capacitiveLLD', 0) not in (0, 5):
             dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
             if 'Surface' not in dispense_mode:
                 raise ValueError('cLLD can only be used with Surface dispense modes')
@@ -1133,6 +1140,12 @@ class HamiltonInterface:
 
         if 'liquidClass' not in more_options:
             more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        if more_options.get('capacitiveLLD', 0) not in (0, 5):
+            dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
+            if 'Surface' not in dispense_mode:
+                raise ValueError('cLLD can only be used with Surface dispense modes')
+
 
         self.wait_on_response(
             self.send_command(

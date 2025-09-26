@@ -294,7 +294,7 @@ def unpack_doubles_dynamic(byte_string: bytes) -> tuple:
     
     return struct.unpack(format_string, byte_string)
 
-def export_flow_rates_to_csv(directory: str = "liquid_class_flow_rates"):
+def export_liquid_classes_to_csv(directory="./liquid_class_data", filename="liquid_class_export.csv", predefined=False):
     """
     Exports a list of liquid classes with their detailed aspirate and dispense
     parameters to a CSV file, sorted by aspirate flow rate, for liquid classes
@@ -307,7 +307,7 @@ def export_flow_rates_to_csv(directory: str = "liquid_class_flow_rates"):
     engine = _build_engine(cfg.liquids_database)
     
     os.makedirs(directory, exist_ok=True)
-    csv_file_path = os.path.join(directory, "liquid_class_parameters_filtered.csv")
+    csv_file_path = os.path.join(directory, filename)
 
     param_columns = [
         'LiquidClassName',
@@ -319,7 +319,10 @@ def export_flow_rates_to_csv(directory: str = "liquid_class_flow_rates"):
     ]
 
     select_string = ", ".join(param_columns)
-    query = f"SELECT {select_string} FROM LiquidClass WHERE OriginalLiquid = 0"
+    query = (
+        f"SELECT {select_string} FROM LiquidClass"
+        + ("" if predefined else " WHERE OriginalLiquid = 0")
+    )
     stmt = text(query)
     
     with engine.connect() as conn:

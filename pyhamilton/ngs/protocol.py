@@ -1,6 +1,7 @@
 from ..consumables import generate_reagent_summary, generate_tip_use_summary
 from ..ngs.loading import LoadingVis
 from ..liquid_handling_wrappers import TipSupportTracker
+from ..interface import HamiltonInterface
 
 
 class Protocol:
@@ -322,8 +323,20 @@ class Protocol:
         self.windowed = windowed
         self.persistent = persistent
         self.reset_tracked_resources()
-        for step in steps:
-            getattr(self, step)()
+        try:
+            for step in steps:
+                getattr(self, step)()
+        except Exception as e:
+            print(f"Error during protocol execution: {e}")
+            self.end()
+            raise e
+        finally:
+            self.end()
+
+    def end(self):
+        with HamiltonInterface(windowed=self.windowed, persistent=True, simulating=self.simulation) as ham_int:
+            ham_int.stop()
+
 
     def run_protocol(self, simulating=False, output_file="reagent_summary.json"):
         """Simulate the protocol and calculate consumables."""
@@ -341,14 +354,15 @@ class Protocol:
         vis = LoadingVis(
             reagent_data="reagent_summary.json",
             tip_data="tip_summary.json",
+            #loading_dir="loading",
             origin_offset=(0, 0),
             auto_crop=False,
             parent=parent
         )
 
         vis.ShowDialogues(
-            tube_offset=(360, 60),           # nudge the scrollable window to the right
-            tube_viewport=(800, 700),        # fixed window size; scroll to see the rest
-            deck_window_name="Deck",
-            plate_window_name="96-well Plate",
+            #tube_offset=(360, 60),           # nudge the scrollable window to the right
+            #tube_viewport=(800, 700),        # fixed window size; scroll to see the rest
+            #deck_window_name="Deck",
+            #plate_window_name="96-well Plate",
         )

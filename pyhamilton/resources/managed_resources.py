@@ -594,6 +594,8 @@ class TipSupportTracker:
     def _update_rack_in_tracker(self, rack, tip_occupancies, tip_tracker, tip_vol):
         """Load a full fresh rack into the support (assumes all wells have tips)."""
         self.occupancy = tip_occupancies
+        print("Updated occupancy map:")
+        print(self.occupancy)
         self.tip_vol = tip_vol
         self.source_rack = rack
         self.source_tip_tracker = tip_tracker
@@ -625,25 +627,27 @@ class TipSupportTracker:
         if self.source_rack is None:
             self.tip_support_add_rack(ham_int, tip_tracker, n)
         
-        print("Requested tip volume:", tip_tracker.volume_capacity)
-        print("Current tip support volume:", self.tip_vol)
         if self.tip_vol != tip_tracker.volume_capacity:
             print(f"Tip volume mismatch: support has {self.tip_vol}, tracker has {tip_tracker.volume_capacity}. Replacing rack.")
             self.tip_support_add_rack(ham_int, tip_tracker, n)
         
         try:
             indices = self._rightmost_indices_for_n_columns(n)
+            print("Indices found in existing rack.")
+            print(indices)
         except ValueError:
             print(f"Not enough tips in support; adding new rack.")
             self.tip_support_add_rack(ham_int, tip_tracker, n)
             indices = self._rightmost_indices_for_n_columns(n)
+            print("Indices found after adding new rack.")
+            print(indices)
 
         # If available, mark and return
         if all(self.occupancy[i] == 1 for i in indices):
             for i in indices:
                 self.occupancy[i] = 0
 
-            leftmost_col_idx = self.NUM_COLS - n + 1  # 1-based column index
+            leftmost_col_idx = indices[0] // self.WELLS_PER_COL + 1
             return leftmost_col_idx
 
         if not all(self.occupancy[i] == 1 for i in indices):
@@ -656,19 +660,23 @@ class TipSupportTracker:
         and load it here. Assumes `tracked_tips.fetch_rack_with_min_columns` returns a rack
         object with tips in the left-most columns populated (or all).
         """
+        
         tip_rack, tip_occupancies = tracked_tips.fetch_rack_with_min_columns(num_columns)
 
         if self.source_rack is not None:
-            print("Ejecting existing rack from tip support:")
-            print(self.source_rack)
             # Place any currently-held tips back and eject the existing rack
             ham_int.tip_pick_up_96(self.resource)
             ham_int.tip_eject_96(self.source_rack)
+            print(f"Ejected existing rack {self.source_rack.layout_name()}.")
+            print(f"Placing back {sum(self.occupancy)} tips.")
             self.source_tip_tracker.fill_rack_from_occupancy_map(self.source_rack, self.occupancy)
 
         # Load the new rack into the support
         # We have to modify the labware property of the tip support at runtime
         ham_int.set_labware_property(self.resource.layout_name(), 'MlStarCore96TipRack', TipType.from_volume(tracked_tips.volume_capacity))
+        
+        print(f"Fetched rack {tip_rack.layout_name()} with occupancy: {sum(tip_occupancies)} of 96 tips and placed on tip support.")
+
         ham_int.tip_pick_up_96(tip_rack)
         ham_int.tip_eject_96(self.resource)
         self._update_rack_in_tracker(tip_rack, tip_occupancies, tracked_tips, tracked_tips.volume_capacity)
