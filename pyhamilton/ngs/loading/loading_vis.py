@@ -858,7 +858,9 @@ class LoadingVis:
             Padding when auto_crop="regions".
         """
 
-        path = os.path.join(os.path.dirname(__file__), "deck_regions.json")
+        path = os.path.join("loading", "deck_regions.json")
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"Could not find overlay JSON at: {path}. Run deck-annotator deck.png to create it.")
         print(f"DEBUG: Loading overlay JSON from: {path}")
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
