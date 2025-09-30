@@ -1,10 +1,10 @@
 from .trough_manager import manage_multiple_troughs
 from ..consumables import tracked_volume_aspirate, tracked_volume_aspirate_96
 import time
-from pyhamilton import (HamiltonInterface, LayoutManager, StackedResources, TrackedTips, 
-                        tracked_tip_pick_up, tracked_tip_pick_up_96, get_liquid_class_volume, DeckResource, 
-                        TipSupportTracker, tip_support_pickup_columns)
-
+from ..liquid_class_db import get_liquid_class_volume
+from ..interface import HamiltonInterface
+from ..resources import DeckResource, LayoutManager, StackedResources, TrackedTips, TipSupportTracker
+from ..liquid_handling_wrappers import normal_logging, tip_support_pickup_columns, tracked_tip_pick_up, tracked_tip_pick_up_96
 from typing import List, Tuple, Iterable, List
 
 
@@ -48,7 +48,7 @@ def build_dispense_batches(aspiration_volumes, all_dispense_positions, all_dispe
     while disp_vols:
         batch_positions = get_fitting_dispense_positions(aspiration_volumes, disp_vols, disp_pos)
         if not batch_positions:
-            raise ValueError("Remaining dispenses exceed available aspiration volume. Check tip capacity.")
+            raise ValueError("Dispense volumes of {} exceed available aspiration volume of {}. Check tip capacity.".format(disp_vols, aspiration_volumes))
 
         n = len(batch_positions)
         batch = batch_positions
@@ -346,7 +346,7 @@ def mix_plate(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int]] | 
 
 def multi_dispense(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int]] | TrackedTips,
                    source_positions:List[Tuple[DeckResource, int]], dispense_positions:List[Tuple[DeckResource, int]],
-                   volumes:List[float], liquid_class:str, pre_dispense_volume = 0, post_dispense_volume = 0,
+                   volumes:List[float], liquid_class:str, pre_aspirate_volume = 0, post_dispense_volume = 0,
                    post_dispense_to_source = False, mix_cycles=0, aspiration_height=0, dispense_height=0):
     '''
     Dispenses a reagent across multiple columns for each aspiration. This is useful for quickly plating out reagent from a source trough.
@@ -382,7 +382,7 @@ def multi_dispense(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int
             vols = set_parallel_nones(batch_aspiration_volumes, positions)
 
             vols = [
-                (v + pre_dispense_volume + post_dispense_volume) if v is not None else None
+                (v + pre_aspirate_volume + post_dispense_volume) if v is not None else None
                 for v in vols
             ]
 
@@ -394,8 +394,8 @@ def multi_dispense(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int
                                     capacitiveLLD=cLLD, aspirateMode=2,
                                     submergeDepth=2)
             
-            if pre_dispense_volume > 0:
-                pre_dispense_vols = [pre_dispense_volume for v in vols if v is not None]
+            if pre_aspirate_volume > 0:
+                pre_dispense_vols = [pre_aspirate_volume for v in vols if v is not None]
                 ham_int.dispense(positions, pre_dispense_vols, liquidClass=liquid_class, liquidHeight=dispense_height)
 
         for column, column_volumes in batch:
@@ -516,6 +516,8 @@ def double_aspirate_supernatant_96(ham_int: HamiltonInterface, tips: TrackedTips
     if tips.volume_capacity != liquid_class_vol_capacity:
         raise ValueError(f"Liquid class does not match tip capacity: {liquid_class_vol_capacity} != {tips.volume_capacity}")
 
+    if second_aspiration_height<=0.5:
+        raise ValueError(f"Second aspiration height must be greater than 0.5 mm to avoid bead disturbance: {second_aspiration_height} <= 0.5")
 
     mph_tip_pickup_support(ham_int, tips, tip_support, num_tips=num_samples)
 

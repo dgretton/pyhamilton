@@ -223,7 +223,7 @@ class TrackedTips:
 
                 return rack, occupancy_map
 
-        return None
+        raise Exception(f"No rack found with at least {min_columns} full columns.")
 
     def reset_all(self) -> None:
         """
