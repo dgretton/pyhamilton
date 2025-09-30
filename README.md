@@ -6,7 +6,7 @@ Hamilton software only works on Windows, so the same goes for PyHamilton.
 
 Developed for Hamilton STAR and STARlet on Windows XP, Windows 7, and Windows 10. VANTAGE series supported with plugin. Other robot models and operating systems not supported yet.
 
-Please post on [labautomation.io](https://forums.pylabrobot.org/) if you have any questions, comments, issues, or feedback! You can also email contactpyhamilton@gmail.com for troubleshooting help.
+Please post on [labautomation.io](https://labautomation.io/) if you have any questions, comments, issues, or feedback! You can also email stefanmgolas@gmail.com for troubleshooting help.
 
 
 **Disclaimer:** PyHamilton is not officially endorsed or supported by the Hamilton Company. Please direct any questions to the above email address, and not to Hamilton Company. 
