@@ -6,3 +6,7 @@ waiter
 SQLalchemy
 pandas
 sqlalchemy-access
+opencv-python
+numpy
+Pillow
+matplotlib

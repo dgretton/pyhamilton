@@ -550,8 +550,8 @@ def ethanol_wash(ham_int: HamiltonInterface, tips: TrackedTips, tip_support: Tip
     # Remove supernatant with double aspiration
     double_aspirate_supernatant_96(ham_int, tips, tip_support, num_samples, magnet_plate, waste_plate, 
                                     first_removal_volume, second_removal_volume,
-                                    first_aspiration_height=0, second_aspiration_height=1,
-                                    liquid_class=liquid_class, mix_cycles=mix_cycles, dispense_height=3)
+                                    second_aspiration_height=0.8, liquid_class=liquid_class, mix_cycles=mix_cycles, 
+                                    dispense_height=3)
 
 
 def pip_mix(ham_int: HamiltonInterface, tips: TrackedTips, positions_to_mix: List[Tuple[DeckResource, int]], liquid_class: str,

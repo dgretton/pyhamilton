@@ -9,8 +9,6 @@ import unicodedata  # (top-level import)
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from pyhamilton_advanced.consumables import ReagentTrackedReservoir60mL
-from pyhamilton import layout_item, LayoutManager, DeckResource
 from pathlib import Path
 import tkinter as tk
 from .rendering_helpers import (

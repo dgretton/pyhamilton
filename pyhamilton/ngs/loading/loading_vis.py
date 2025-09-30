@@ -10,8 +10,7 @@ import unicodedata  # (top-level import)
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from pyhamilton_advanced.consumables import ReagentTrackedReservoir60mL
-from pyhamilton import layout_item, LayoutManager, DeckResource
+from ...resources import DeckResource
 from pathlib import Path
 import tkinter as tk
 from .plate_96_render import render_plate_96
