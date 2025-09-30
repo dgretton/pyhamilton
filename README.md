@@ -21,6 +21,12 @@ if __name__ == "__main__":
         ham_int.wait_on_response(ham_int.send_command(INITIALIZE))
 ```
 
+## Guides
+
+Here is a protocol repository with guides about how to do things like magnetic bead washes and thermal cycling. These are all NGS protocols, but you can use the same steps in many other experiments.
+
+[NGS Protocol Library](https://github.com/stefangolas/ngs-protocols)
+
 ## Documentation
 
 [Available online](https://dgretton.github.io/pyhamilton-docs/).
@@ -75,28 +81,6 @@ The easiest way to test your PyHamilton installation is by running the following
 
 10. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
 
-## AI Coding Assistant
-
-PyHamilton now comes with a project template for using an AI coding assistant that interprets natural language prompts into robot commands via the `assist()` function. To use this project, follow these instructions:
-
-1. Make an OpenAI account and get an API key. Set your key to an environment variable named `OPENAI_API_KEY`.
-
-2. `pip install IPython openai`
-
-3. From the command line, run:
-
-```
-mkdir ai_project
-cd ai_project
-pyhamilton-ai-project
-py robot_method.py
-```
-
-4. Press the green arrow in Run Control to start the method
-
-You now are inside an IPython terminal from which you can run any Python or PyHamilton code that will execute within your Venus session. Use `assist()` to convert a natural language prompt into a robot command. **Warning:** Do not use this outside of simulation mode until you are completely sure of how it works. 
-
-5. `[1]: assist('pick up tips from the eighth column of tips_0')` or `[1]: assist(voice_to_text())`
 
 
 ## Installation Troubleshooting
@@ -107,15 +91,6 @@ You now are inside an IPython terminal from which you can run any Python or PyHa
 3. If your initialization hangs (such as on initial_error_example.py), try these steps:
     </br>a. Make sure you don't have any other program running which is communicating with the robot e.g. Venus run control
     </br>b. Make sure the .dlls referenced in ```__init__.py``` are unblocked. See [this StackOverflow thread](https://stackoverflow.com/questions/28840880/pythonnet-filenotfoundexception-unable-to-find-assembly) for more details.
-
-Please see the list of **Ongoing Projects** for information on other issues with PyHamilton
-
-## Ongoing Projects
-PyHamilton is an open-source project, and we have a ton of work to do! If you'd like to contribute to the PyHamilton project, please consider these following areas of ongoing work and don't hesitate to reach out if you want to discuss collaborating with the team.
-
-- **PyHamilton for Nimbus:** Right now PyHamilton only works on the STAR line of liquid-handling robots, but we have recently received the appropriate libraries for expanding the framework to Hamilton Nimbus, a much more affordable and low-footprint robot. This project is in its very early stages so collaborators will have the opportunity to influence crucial design decisions.
-- **PyHamilton for Linux:** One of the biggest limitations for PyHamilton, Hamilton robots, and much of lab automation in general is their exclusive dependence on Windows as an operating system. We are working to recreate the Venus application (which runs on Windows and which PyHamilton depends on in turn) as a Python library, so that PyHamilton will effectively become OS-agnostic. 
-- **Package Manager**
 
 ## Applications
 
