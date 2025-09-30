@@ -1,5 +1,5 @@
 from .trough_manager import manage_multiple_troughs
-from pyhamilton_advanced.consumables import tracked_volume_aspirate, tracked_volume_aspirate_96
+from ..consumables import tracked_volume_aspirate, tracked_volume_aspirate_96
 import time
 from pyhamilton import (HamiltonInterface, LayoutManager, StackedResources, TrackedTips, 
                         tracked_tip_pick_up, tracked_tip_pick_up_96, get_liquid_class_volume, DeckResource, 
@@ -159,8 +159,7 @@ def set_parallel_nones(positions, reference):
 def pip_transfer(ham_int: HamiltonInterface, tips: List[Tuple[DeckResource, int]] | TrackedTips, source_positions: List[Tuple[DeckResource, int]], 
                     dispense_positions: List[Tuple[DeckResource, int]], volumes: List[float], liquid_class: str, prewet_cycles=0,
                     mix_cycles=0, prewet_volume=0, vol_mix_dispense=0, aspiration_height=0,
-                    dispense_height=0, tip_exchange_during_transfer=True,
-                    liquid_following_aspiration=False, liquid_following_dispense=False):
+                    dispense_height=0, submerge_depth=2, liquid_following_aspiration=False, liquid_following_dispense=False):
     '''
     Transfer liquid from source positions to dispense positions using pipetting. Handles pipetting logic for
     unmatched lengths of source and dispense positions.
@@ -191,7 +190,7 @@ def pip_transfer(ham_int: HamiltonInterface, tips: List[Tuple[DeckResource, int]
     if len(source_positions) > 8:
         raise ValueError("Source positions cannot exceed 8 with single aspiration.")
 
-    aspirate_capacitative_LLD = 5 if aspiration_height == 0 else 0
+    aspirate_capacitative_LLD = 1 if aspiration_height == 0 else 0
 
     total_volume_needed = 0 # Calculate total volume needed for the transfer
     performed_additional_volume_transfer = False
@@ -214,17 +213,17 @@ def pip_transfer(ham_int: HamiltonInterface, tips: List[Tuple[DeckResource, int]
         for positions in aspiration_positions:
             vols = set_parallel_nones(column_volumes, positions)
             response = tracked_volume_aspirate(ham_int, positions, vols, liquidClass=liquid_class,
-                                    mixCycles=0, mixVolume=0,
-                                    liquidHeight=aspiration_height,
+                                    mixCycles=prewet_cycles, mixVolume=prewet_volume,
+                                    liquidHeight=aspiration_height, liquidFollowing=liquid_following_aspiration,
                                     capacitiveLLD=aspirate_capacitative_LLD, aspirateMode=aspirate_mode,
-                                    submergeDepth=2)
+                                    submergeDepth=submerge_depth)
 
             aspirate_heights = response.liquidHeights
 
         dispense_capacitative_LLD = 2 if dispense_height == 0 else 0
         response = ham_int.dispense(column, column_volumes, liquidClass=liquid_class, 
                                     mixCycles=mix_cycles, mixVolume=vol_mix_dispense,
-                                    liquidHeight=dispense_height,
+                                    liquidHeight=dispense_height, 
                                     capacitiveLLD=dispense_capacitative_LLD,
                                     liquidFollowing=liquid_following_dispense)
         
@@ -502,13 +501,11 @@ def transfer_96(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource,int]]|T
 
 def double_aspirate_supernatant_96(ham_int: HamiltonInterface, tips: TrackedTips, tip_support: TipSupportTracker, num_samples:int,
                                     source_plate: DeckResource, destination_plate: DeckResource, first_volume: float, second_volume: float, 
-                                    liquid_class: str, first_aspiration_height: float=0, second_aspiration_height: float=0, mix_cycles=0, dispense_height=0):
+                                    liquid_class: str, second_aspiration_height: float=0.75, mix_cycles=0, dispense_height=0):
     '''
     Double aspiration to remove supernatant from a plate with 96 channel head. Double aspiration is used to
     allow residual liquid to settle between aspirations.
     '''
-
-    # Potentially adjust sequence position by 3mm? Yes, because we have to stop liquid following 3mm from the bottom
 
     liquid_class_vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
     volume = first_volume + second_volume
@@ -543,16 +540,17 @@ def ethanol_wash(ham_int: HamiltonInterface, tips: TrackedTips, tip_support: Tip
     mph_tip_pickup_support(ham_int, tips, tip_support, num_tips=num_samples)
 
     # First ethanol wash
-    tracked_volume_aspirate_96(ham_int, ethanol_plate, wash_volume, liquidClass=liquid_class, mixCycles=mix_cycles, liquidHeight=liquid_height, capacitiveLLD=1, submergeDepth=2)
+    tracked_volume_aspirate_96(ham_int, ethanol_plate, wash_volume, liquidClass=liquid_class, 
+                               mixCycles=mix_cycles, liquidHeight=liquid_height, capacitiveLLD=1, submergeDepth=2)
     ham_int.dispense_96(magnet_plate, wash_volume, liquidClass=liquid_class, dispenseMode=4, liquidHeight=10, airTransportRetractDist=5)
     ham_int.tip_eject_96()
 
     time.sleep(5)  # Brief incubation
 
-    # Remove supernatant with remove volume
-    # Specify heights?
+    # Remove supernatant with double aspiration
     double_aspirate_supernatant_96(ham_int, tips, tip_support, num_samples, magnet_plate, waste_plate, 
                                     first_removal_volume, second_removal_volume,
+                                    first_aspiration_height=0, second_aspiration_height=1,
                                     liquid_class=liquid_class, mix_cycles=mix_cycles, dispense_height=3)
 
 

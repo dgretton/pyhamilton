@@ -11,13 +11,13 @@ from typing import Tuple
 ALPHA = 0.5  # Transparency of polygon fill
 POINT_RADIUS = 3  # Smaller radius for corner points
 POINT_COLOR = (0, 0, 0)  # Black (RGB)
-TABLE_WIDTH = 400  # Increased width for new column
+TABLE_WIDTH = 250  # 🌟 MODIFIED: Decreased width for the left panel
 TABLE_HEIGHT_ROWS = 20
 
 # Resource types
 RESOURCE_TYPES = [
     "Reservoir",
-    "96-well plate", 
+    "96-well plate",
     "24-well plate",
     "32-tube rack",
     "24-tube rack"
@@ -72,14 +72,14 @@ def save_regions_to_json(path: str, regions_list: list, image_path_str: str, img
     Saves regions data along with image metadata to a JSON file.
     """
     save_data = {}
-    
+
     # NEW: Include image path and dimensions in the JSON
     save_data["image_path"] = os.path.basename(image_path_str) # Save only the file name
     save_data["image_dimensions"] = {
         "width": img_dims[0],
         "height": img_dims[1]
     }
-    
+
     for region in regions_list:
         save_data[region['name']] = {
             "points": region["points"],
@@ -179,14 +179,14 @@ def save_json():
         dims = base_img_pil.size
     else:
         dims = (0, 0) # Fallback if image isn't loaded
-        
+
     save_regions_to_json(json_path, regions, image_path, dims)
     messagebox.showinfo("Saved", f"Regions saved to {os.path.basename(json_path)}")
 
 def update_treeview():
     for i in treeview.get_children():
         treeview.delete(i)
-    
+
     for i, region in enumerate(regions):
         resource_type = region.get("resource_type", "Reservoir")
         item_id = treeview.insert("", "end", iid=i, values=(region["name"], "", resource_type))
@@ -197,7 +197,7 @@ def update_treeview():
 
 def on_treeview_click(event):
     global name_entry_edit, type_combo_edit
-    
+
     # Clean up any existing editors
     if name_entry_edit and name_entry_edit.winfo_exists():
         name_entry_edit.destroy()
@@ -205,12 +205,12 @@ def on_treeview_click(event):
     if type_combo_edit and type_combo_edit.winfo_exists():
         type_combo_edit.destroy()
         type_combo_edit = None
-    
+
     item_id = treeview.identify_row(event.y)
     if not item_id:
         return
     column = treeview.identify_column(event.x)
-    
+
     if column == '#1':  # Name column
         edit_name(item_id)
     elif column == '#2':  # Color column
@@ -263,7 +263,7 @@ def edit_resource_type(item_id):
         return
     x, y, w, h = bbox
     current = regions[int(item_id)].get("resource_type", "Reservoir")
-    
+
     type_combo_edit = ttk.Combobox(treeview, values=RESOURCE_TYPES, state="readonly")
     type_combo_edit.set(current)
     type_combo_edit.bind("<<ComboboxSelected>>", lambda e: set_resource_type(item_id))
@@ -298,7 +298,7 @@ def main():
 
     root = tk.Tk()
     root.title("Deck Annotation")
-    
+
     style = ttk.Style()
     style.configure("Treeview", background="white", fieldbackground="white")
     style.map('Treeview',
@@ -330,56 +330,57 @@ def main():
     # Left panel with fixed width
     left_frame = ttk.Frame(paned)
     paned.add(left_frame, minsize=TABLE_WIDTH, width=TABLE_WIDTH)
-    
+
     # Create treeview with three columns
     treeview = ttk.Treeview(left_frame, columns=("Name", "Color", "Type"), show="headings", height=TABLE_HEIGHT_ROWS)
     treeview.heading("Name", text="Name")
     treeview.heading("Color", text="Color")
     treeview.heading("Type", text="Resource Type")
-    treeview.column("Name", width=150)
-    treeview.column("Color", width=50, anchor="center")
-    treeview.column("Type", width=150)
+    # 🌟 MODIFIED: Adjusted column widths to fit TABLE_WIDTH=250
+    treeview.column("Name", width=100)
+    treeview.column("Color", width=40, anchor="center")
+    treeview.column("Type", width=100)
     treeview.bind("<Double-1>", on_treeview_click)
     treeview.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-    
+
     # Button frame
     button_frame = ttk.Frame(left_frame)
     button_frame.pack(fill=tk.X, padx=5, pady=5)
-    
+
     # Save button
     save_btn = ttk.Button(button_frame, text="Save to JSON", command=save_json)
     save_btn.pack(side=tk.LEFT, padx=2)
-    
+
     # Delete button
     delete_btn = ttk.Button(button_frame, text="Delete Selected", command=delete_selected_region)
     delete_btn.pack(side=tk.LEFT, padx=2)
-    
+
     # Instructions label
-    instructions = ttk.Label(left_frame, text="Keys: S=Save, Q=Quit\nDouble-click cells to edit", 
+    instructions = ttk.Label(left_frame, text="Keys: S=Save, Q=Quit\nDouble-click cells to edit",
                              font=("Arial", 9), foreground="gray")
     instructions.pack(pady=5)
-    
+
     update_treeview()
 
     # Right panel with canvas
     right_frame = ttk.Frame(paned)
     paned.add(right_frame)
-    
+
     # Create scrollable canvas frame
     canvas_frame = ttk.Frame(right_frame)
     canvas_frame.pack(fill=tk.BOTH, expand=True)
-    
+
     # Create canvas with exact image dimensions
-    canvas = tk.Canvas(canvas_frame, width=base_img_pil.width, height=base_img_pil.height, 
-                         highlightthickness=0, bd=0)
-    
+    canvas = tk.Canvas(canvas_frame, width=base_img_pil.width, height=base_img_pil.height,
+                             highlightthickness=0, bd=0)
+
     # Add scrollbars if needed
     v_scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=canvas.yview)
     h_scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.HORIZONTAL, command=canvas.xview)
-    
+
     canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
     canvas.configure(scrollregion=(0, 0, base_img_pil.width, base_img_pil.height))
-    
+
     # Pack scrollbars and canvas
     v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
@@ -394,14 +395,14 @@ def main():
 
     # Draw initial elements
     draw_all_elements(canvas)
-    
+
     # Calculate optimal window size
     window_width = TABLE_WIDTH + base_img_pil.width + 50  # Extra space for scrollbars and padding
     window_height = min(base_img_pil.height + 50, 800)  # Cap at 800px height
-    
+
     # Set window size to fit content
     root.geometry(f"{min(window_width, 1400)}x{window_height}")
-    
+
     # Center window on screen
     root.update_idletasks()
     screen_width = root.winfo_screenwidth()
@@ -409,7 +410,7 @@ def main():
     x = (screen_width - root.winfo_width()) // 2
     y = (screen_height - root.winfo_height()) // 2
     root.geometry(f"+{x}+{y}")
-    
+
     root.mainloop()
 
 if __name__ == "__main__":

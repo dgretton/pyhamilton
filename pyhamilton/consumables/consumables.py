@@ -1,4 +1,5 @@
-from pyhamilton import (HamiltonInterface, DeckResource, layout_item, LayoutManager)
+from ..interface import HamiltonInterface
+from ..resources import DeckResource, ResourceType,layout_item, LayoutManager
 from ..resources import BulkReagentPlate, FalconCarrier24, EppiCarrier32, Reservoir60mL, Plate24, Plate96
 from pathlib import Path
 import json
@@ -25,9 +26,9 @@ class TrackedContainer:
         )
 
 class TrackedReagentVessel(TrackedContainer):
-    def __init__(self):
-        self.reagent_map = {}   
-
+    def __init__(self, *args, **kwargs):
+        self.reagent_map = {}
+   
     def assign_reagent_map(self, reagent_name: str, positions: list[int]) -> list[tuple[TrackedContainer, int]]:
         '''
         Assigns reagent positions for a specific reagent and returns the tuple of (container, position) for each position
@@ -49,7 +50,7 @@ class TrackedReagentVessel(TrackedContainer):
 
         # Right now this only handles single-well reagents but should be extended to handle reagents distributed across
         # Multiple wells
-        return -sum(self.volumes[pos] for pos in self.reagent_map[reagent_name])
+        return -sum(self.volumes[pos] for pos in self.reagent_map[reagent_name]) + self.dead_volume
 
     def all_required_reagent_volumes(self):
         return {self.layout_name(): {reagent: self.calculate_required_reagent_volume(reagent) for reagent in self.reagent_map}}
@@ -63,6 +64,8 @@ class ReagentTrackedPlate96(Plate96, TrackedReagentVessel):
         Plate96.__init__(self, *args, **kwargs)
         TrackedReagentVessel.__init__(self)
         self.volumes = {k:v for k,v in [(idx, 0) for idx in range(96)]}
+        self.dead_volume = kwargs.get('dead_volume', 10) # uL
+
 
     def aspirate_volume(self, well_index, volume):
         self.volumes[well_index] -= volume
@@ -72,6 +75,7 @@ class ReagentTrackedBulkPlate(BulkReagentPlate, TrackedReagentVessel):
         Plate96.__init__(self, *args, **kwargs)
         TrackedReagentVessel.__init__(self)
         self.volumes = {0: 0}
+        self.dead_volume = 100
 
     # The plate is a single container, so we subtract all volumes from one element in the tracker. This overrides the base method.
     def aspirate_volume(self, well_index, volume):
@@ -84,13 +88,15 @@ class ReagentTrackedBulkPlate(BulkReagentPlate, TrackedReagentVessel):
     
     def calculate_required_reagent_volume(self, reagent_name):
         # Use the negative volume from the tracker to determine reagent consumption for this tracked resource
-        return -self.volumes[0]
+        return -self.volumes[0] + self.dead_volume
 
 class ReagentTrackedPlate24(Plate24, TrackedReagentVessel):
     def __init__(self, *args, **kwargs):
         Plate24.__init__(self, *args, **kwargs)
         TrackedReagentVessel.__init__(self)
         self.volumes = {k:v for k,v in [(idx, 0) for idx in range(24)]}
+        self.dead_volume = kwargs.get('dead_volume', 20) # uL
+
 
     def aspirate_volume(self, well_index, volume):
         self.volumes[well_index] -= volume
@@ -100,6 +106,7 @@ class ReagentTrackedReservoir60mL(Reservoir60mL, TrackedReagentVessel):
         Reservoir60mL.__init__(self, *args, **kwargs)
         TrackedReagentVessel.__init__(self)
         self.volumes = {0: 0}
+        self.dead_volume = kwargs.get('dead_volume', 200) # uL
 
     # The 60mL trough is a single well, so we subtract all volumes from one element in the tracker. This overrides the base method.
     def aspirate_volume(self, well_index, volume):
@@ -107,7 +114,7 @@ class ReagentTrackedReservoir60mL(Reservoir60mL, TrackedReagentVessel):
 
     def calculate_required_reagent_volume(self, reagent_name):
         # Use the negative volume from the tracker to determine reagent consumption for this tracked resource
-        return -self.volumes[0]
+        return -self.volumes[0] + self.dead_volume
 
 
     def height_to_volume(self, height):
@@ -118,6 +125,8 @@ class ReagentTrackedFalconCarrier24(FalconCarrier24, TrackedReagentVessel):
         FalconCarrier24.__init__(self, *args, **kwargs)
         TrackedReagentVessel.__init__(self)
         self.volumes = {k:v for k,v in [(idx, 0) for idx in range(24)]}
+        self.dead_volume = kwargs.get('dead_volume', 10) # uL
+
 
     def aspirate_volume(self, well_index, volume):
         self.volumes[well_index] -= volume
@@ -127,6 +136,8 @@ class ReagentTrackedEppiCarrier32(EppiCarrier32, TrackedReagentVessel):
         EppiCarrier32.__init__(self, *args, **kwargs)
         TrackedReagentVessel.__init__(self)
         self.volumes = {k:v for k,v in [(idx, 0) for idx in range(32)]}
+        self.dead_volume = kwargs.get('dead_volume', 10) # uL
+
 
     def aspirate_volume(self, well_index, volume):
         self.volumes[well_index] -= volume

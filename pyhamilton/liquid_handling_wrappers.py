@@ -295,9 +295,6 @@ def tip_support_pickup_columns(ham_int: HamiltonInterface, tips:TrackedTips, tip
     Pick up n columns from the right side of the tip support rack.
     """
     column_idx = tip_support_tracker.fetch_n_columns(ham_int, num_columns, tips)
-    print("Tip support occupancy:", end=' ')
-    print(sum(tip_support_tracker.occupancy))
-    print("Picked up columns", column_idx, "from tip support", tip_support_tracker.resource.layout_name())
     ham_int.tip_pick_up_mph_columns(tip_support_tracker.resource, num_columns_from_left=column_idx)
 
 

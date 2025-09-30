@@ -447,11 +447,11 @@ class HamiltonServerThread(Thread):
 
     def __init__(self, address, port):
         super().__init__()
+        self.daemon = True  # CRITICAL: Make this a daemon thread
         self.server_address = (address, port)
         self.should_continue = True
         self.exited = False
 
-        # You can define a function for indexing the response by 'id'
         def index_on_resp_id(response_str):
             try:
                 response = json.loads(response_str)
@@ -461,24 +461,42 @@ class HamiltonServerThread(Thread):
                 pass
             return None
 
-        # Set that function on the SINGLE global handler class
         HamiltonServerHandler.indexing_fn = index_on_resp_id
-
-        # We'll serve the global handler class
         self.httpd = None
 
     def run(self):
         self.exited = False
-        self.httpd = server.HTTPServer(self.server_address, HamiltonServerHandler)
-        while self.should_continue:
-            self.httpd.handle_request()
-        self.exited = True
+        try:
+            self.httpd = server.HTTPServer(self.server_address, HamiltonServerHandler)
+            # Set a short timeout so we don't block forever
+            self.httpd.timeout = 0.5
+            
+            while self.should_continue:
+                try:
+                    self.httpd.handle_request()
+                except OSError:
+                    # Socket was closed, exit gracefully
+                    break
+                    
+        except Exception as e:
+            print(f"Server thread exception: {e}")
+        finally:
+            if self.httpd:
+                try:
+                    self.httpd.server_close()
+                except:
+                    pass
+            self.exited = True
+            print("Server thread run() method completed")
 
     def disconnect(self):
+        """Simple disconnect without calling shutdown() to avoid deadlocks"""
         self.should_continue = False
+        # Don't call httpd.shutdown() here - it can cause deadlocks
 
     def has_exited(self):
         return self.exited
+
 
 class HamiltonInterface:
     """Main class to automatically set up and tear down an interface to a Hamilton robot.
@@ -599,21 +617,18 @@ class HamiltonInterface:
         #self.active = True
 
     def stop(self):
-        """Stop this HamiltonInterface and clean up associated async processes.
-
-        Kills the pyhamilton interpreter subprocess and executable and stops the local
-        web server thread.
-
-        When used with a `with` block, called automatically on exiting the block.
-        """
+        """Stop this HamiltonInterface and clean up associated async processes."""
 
         if not self.active:
             return
+        
         try:
             if self.windowed or self.simulating or self.server_mode:
                 self.log('sending end run command to simulator')
                 try:
+                    print("Sending end command")
                     self.wait_on_response(self.send_command(command='end', id=hex(0)), timeout=1.5)
+                    print("End command sent")
                 except HamiltonTimeoutError:
                     pass
             else:
@@ -630,19 +645,33 @@ class HamiltonInterface:
                 else:
                     self.log('Could not kill oem process, moving on with shutdown', 'warn')
         finally:
+            print("Stopping server thread")
             self.active = False
-            self.server_thread.disconnect()
-            self.log('disconnected from server')
-            time.sleep(.1)
-            if not self.server_thread.has_exited():
-                self.log('server did not exit yet, sending dummy request to exit its loop')
-                session = requests.Session()
-                adapter = requests.adapters.HTTPAdapter(max_retries=20)
-                session.mount('http://', adapter)
-                session.get('http://' + HamiltonInterface.default_address + ':' + str(HamiltonInterface.default_port))
-                self.log('dummy get request sent to server')
-            self.server_thread.join()
-            self.log('server thread exited')
+            
+            # Don't call disconnect() - it can cause deadlocks
+            # Instead, just signal the thread to stop and force close the server
+            self.server_thread.should_continue = False
+            
+            if hasattr(self.server_thread, 'httpd') and self.server_thread.httpd:
+                print("Force closing HTTP server")
+                try:
+                    # Close the server socket immediately without waiting
+                    self.server_thread.httpd.server_close()
+                    self.log('HTTP server socket closed')
+                except Exception as e:
+                    print(f"Error closing server: {e}")
+            
+            print("Joining server thread with timeout")
+            # Give the thread a very short time to exit gracefully
+            self.server_thread.join(timeout=1.0)
+            
+            if self.server_thread.is_alive():
+                print("Server thread still alive, this is expected in some cases")
+                self.log('server thread did not exit within timeout (this may be normal)', 'info')
+                # Don't try to force kill - just let it be a daemon thread
+            else:
+                print("Server thread exited successfully")
+                self.log('server thread exited successfully')
 
     def __enter__(self):
         self.start()

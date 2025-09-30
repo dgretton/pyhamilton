@@ -2,7 +2,8 @@ from ..consumables import generate_reagent_summary, generate_tip_use_summary
 from ..ngs.loading import LoadingVis
 from ..liquid_handling_wrappers import TipSupportTracker
 from ..interface import HamiltonInterface
-
+import sys
+import traceback
 
 class Protocol:
 
@@ -10,9 +11,15 @@ class Protocol:
         self.num_samples = 0
         self.sample_volume = 0
         self.simulation = False
+        self.windowed = True # Initialize for safety
+        self.persistent = True # Initialize for safety
         self.tracked_reagent_vessels = {}  # Add this to store tracked vessels
         self.simulation_completed = False  # Track if simulation has been run
         self.loading_dialogues_completed = False  # Track if loading dialogues have been shown
+        # Assuming these are initialized elsewhere, adding placeholders for safety
+        self.tracked_tips = []
+        self.stacked_resources = []
+        self.tip_support = None
 
     def prompt_step_selection(self):
         """
@@ -20,9 +27,7 @@ class Protocol:
         """
         import tkinter as tk
         from tkinter import ttk
-        import sys
-
-
+        
         selected_methods = []
         action_taken = None  # Track which action was taken
 
@@ -86,25 +91,39 @@ class Protocol:
             root.destroy()
 
         def on_loading_dialogues():
-            """Show loading dialogues and mark as completed."""
             if not self.simulation_completed:
                 warning_label.config(text="Please run 'Simulate & Calculate' first!", foreground="red")
                 return
 
-            # Show status message before launching dialogues
             warning_label.config(text="Showing loading dialogues...", foreground="blue")
-            root.update()
+            root.update()  # Force refresh
 
-            # Show loading dialogues - let exceptions bubble up for debugging
-            self.show_loading_dialogues(parent=root)
+            # CRITICAL SAFETY: Ensure any Toplevel windows are handled on exit
+            try:
+                # Show loading dialogues using the main root as parent
+                self.show_loading_dialogues(parent=root)
 
-            # Mark loading dialogues as completed
-            self.loading_dialogues_completed = True
+                # Destroy any remaining Toplevels created by LoadingVis
+                # This ensures the main root.mainloop() thread doesn't hang waiting for a ghost child.
+                for w in root.winfo_children():
+                    if isinstance(w, tk.Toplevel):
+                        try:
+                            w.destroy()
+                        except tk.TclError:
+                            # Catch error if Toplevel was already destroyed (e.g., by user closing it)
+                            pass
 
-            # Don’t update warning_label here since the widget may no longer exist
-            # Just update the button states instead
-            update_button_states()
+                # Mark loading dialogues as completed
+                self.loading_dialogues_completed = True
 
+                update_button_states()
+                warning_label.config(text="Loading dialogues completed.", foreground="green")
+
+            except Exception as e:
+                print(f"Loading dialogues aborted or failed: {e}")
+                self.loading_dialogues_completed = False
+                warning_label.config(text=f"Loading dialogues failed: {e}", foreground="red")
+                    
         def update_button_states():
             """Update button states based on completion status."""
             # Enable/disable run button based on prerequisites
@@ -149,6 +168,7 @@ class Protocol:
                 # Generate reagent summary
                 output_file = "reagent_summary.json"
                 generate_reagent_summary(self.tracked_reagent_vessels, output_file=output_file)
+                # Assuming self.tracked_tips is correctly populated during simulation
                 tip_summary = generate_tip_use_summary(self.tracked_tips, output_file="tip_summary.json")
 
                 # Mark simulation as completed
@@ -156,15 +176,15 @@ class Protocol:
                 
                 # Show success message
                 warning_label.config(text=f"Simulation complete! Reagent summary saved to {output_file}", 
-                                   foreground="green")
+                                      foreground="green")
                 
                 print(f"Simulation complete. Reagent summary saved to {output_file}")
                 
                 # Update button states
                 update_button_states()
+                print("Updated button states")
                 
             except Exception as e:
-                import traceback
                 full_traceback = traceback.format_exc()
                 warning_label.config(text=f"Simulation failed: {str(e)}", foreground="red")
                 print(f"Simulation error - Full traceback:")
@@ -178,9 +198,13 @@ class Protocol:
             for var in checkbox_vars:
                 var.set(False)
 
-        def on_cancel():
+        def on_cancel_or_close():
+            """Handle Cancel button or window close ('X' button)."""
+            print("DEBUG: prompt_step_selection: Protocol cancelled or window closed. Destroying root.")
             root.destroy()
-            sys.exit("Protocol cancelled by user")
+            nonlocal action_taken
+            action_taken = "cancel"  # Signal cancellation instead of exiting
+
 
         def update_info_label():
             """Update the info label when input values change."""
@@ -197,8 +221,10 @@ class Protocol:
 
         root = tk.Tk()
         root.title("NGS Protocol - Step Selection")
-        root.geometry("550x650")  # Increased height for new elements
+        root.geometry("550x650") 
         root.resizable(True, True)
+
+        root.protocol("WM_DELETE_WINDOW", on_cancel_or_close)
 
         style = ttk.Style()
         style.configure('Title.TLabel', font=('Arial', 12, 'bold'))
@@ -211,7 +237,7 @@ class Protocol:
         root.rowconfigure(0, weight=1)
 
         title_label = ttk.Label(main_frame, text="Select Protocol Steps to Execute",
-                                style='Title.TLabel')
+                                 style='Title.TLabel')
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 10))
 
         # Input section
@@ -234,12 +260,12 @@ class Protocol:
 
         # Info label (now dynamically updated)
         info_label = ttk.Label(main_frame,
-                            text=f"Samples: {self.num_samples} | Volume: {self.sample_volume}µL | Mode: {'Simulation' if self.simulation else 'Live'}",
-                            style='Info.TLabel')
+                                 text=f"Samples: {self.num_samples} | Volume: {self.sample_volume}µL | Mode: {'Simulation' if self.simulation else 'Live'}",
+                                 style='Info.TLabel')
         info_label.grid(row=2, column=0, columnspan=2, pady=(10, 15))
 
         ttk.Separator(main_frame, orient='horizontal').grid(row=3, column=0, columnspan=2,
-                                                        sticky="ew", pady=(0, 10))
+                                                           sticky="ew", pady=(0, 10))
 
         checkbox_frame = ttk.LabelFrame(main_frame, text="Available Steps", padding="10")
         checkbox_frame.grid(row=4, column=0, columnspan=2, sticky="nsew", pady=(0, 10))
@@ -267,11 +293,11 @@ class Protocol:
 
         # Status label for workflow progress
         status_label = ttk.Label(main_frame, text="Next: Run simulation", foreground="orange", 
-                                font=('Arial', 9, 'italic'))
+                                 font=('Arial', 9, 'italic'))
         status_label.grid(row=7, column=0, columnspan=2, pady=(5, 0))
 
         ttk.Separator(main_frame, orient='horizontal').grid(row=8, column=0, columnspan=2,
-                                                        sticky="ew", pady=(10, 10))
+                                                           sticky="ew", pady=(10, 10))
 
         # Action buttons frame - now with 4 buttons
         action_frame = ttk.Frame(main_frame)
@@ -287,7 +313,7 @@ class Protocol:
         run_button = ttk.Button(action_frame, text="3. Run Live Protocol", command=on_submit, state="disabled")
         run_button.grid(row=0, column=2, padx=3)
         
-        ttk.Button(action_frame, text="Cancel", command=on_cancel).grid(row=0, column=3, padx=3)
+        ttk.Button(action_frame, text="Cancel", command=on_cancel_or_close).grid(row=0, column=3, padx=3)
 
         # Center window
         root.update_idletasks()
@@ -297,72 +323,104 @@ class Protocol:
         root.geometry(f"{width}x{height}+{x}+{y}")
 
         root.mainloop()
-        
+
         # Return selected methods only if "Run Selected Steps" was clicked
         if action_taken == "run":
             return selected_methods
-        else:
+        elif action_taken == "cancel":
+            print("Protocol cancelled by user")
             return []
 
     def reset_tracked_resources(self):
         """Reset all tracked resources to initial state."""
-        for tips in self.tracked_tips:
-            tips.reset_all()
+        # Ensure self.tracked_tips is iterable
+        if hasattr(self, 'tracked_tips') and self.tracked_tips:
+            for tips in self.tracked_tips:
+                if hasattr(tips, 'reset_all'):
+                    tips.reset_all()
         
-        for vessel in self.tracked_reagent_vessels:
-            vessel.reset_volumes()
+        if self.tracked_reagent_vessels:
+            for vessel in self.tracked_reagent_vessels:
+                if hasattr(vessel, 'reset_volumes'):
+                    vessel.reset_volumes()
         
-        for stacked_resource in self.stacked_resources:
-            stacked_resource.reset_all()
+        if hasattr(self, 'stacked_resources') and self.stacked_resources:
+            for stacked_resource in self.stacked_resources:
+                if hasattr(stacked_resource, 'reset_all'):
+                    stacked_resource.reset_all()
 
-        self.tip_support = TipSupportTracker(self.tip_support.resource)
+        if hasattr(self, 'tip_support') and self.tip_support and hasattr(self.tip_support, 'resource'):
+            self.tip_support = TipSupportTracker(self.tip_support.resource)
+
 
     def run_selected_steps(self, steps: list, simulation: bool = True, windowed: bool = False, persistent: bool = True):
-        # Perhaps we can implement some additional logic here but this seems fine for now
+        # NOTE: Must set these attributes for self.end() to work without arguments
         self.simulation = simulation
         self.windowed = windowed
         self.persistent = persistent
-        self.reset_tracked_resources()
+        
+        # NOTE: Resetting resources here is vital for a fresh run, whether simulation or live.
+        self.reset_tracked_resources() 
+        
         try:
             for step in steps:
+                # Use print for visibility
+                print(f"--- Executing step: {step} ---")
                 getattr(self, step)()
         except Exception as e:
-            print(f"Error during protocol execution: {e}")
-            self.end()
-            raise e
-        finally:
-            self.end()
+            if self.simulation:
+                self.end()
+            raise
+
+
 
     def end(self):
-        with HamiltonInterface(windowed=self.windowed, persistent=True, simulating=self.simulation) as ham_int:
-            ham_int.stop()
+        """
+        Safely stop the Hamilton interface using current self attributes. 
+        This is the minimal, non-hanging implementation based on the user's working example.
+        """
+        try:
+            # Using attributes set by run_selected_steps()
+            with HamiltonInterface(simulating = self.simulation, windowed=False, persistent=True) as ham_int:
+                print("DEBUG: end: Successfully connected to existing/new HSL process. Sending ham_int.stop().")
+                ham_int.stop()
+                print("DEBUG: end: STOP command returned. Hamilton interface stopped cleanly.")
+        except Exception as e:
+            # Catch all exceptions during this critical cleanup phase
+            print(f"WARNING: Protocol cleanup failed during interface connection: {e}")
+            # This prints a warning if the interface is already stopped or the second connection fails.
 
 
     def run_protocol(self, simulating=False, output_file="reagent_summary.json"):
-        """Simulate the protocol and calculate consumables."""
-        print("Simulating protocol...")
-
+        """
+        Main entry point for the protocol execution.
+        Includes top-level cleanup for unhandled exceptions or Ctrl+C.
+        """
         steps = self.prompt_step_selection()
+        
         if steps:  # Only run if steps were selected and "Run" was clicked
+            # run_selected_steps sets self.simulation to False
             self.run_selected_steps(steps, simulation=False, windowed=True, persistent=True)
+                
+            # 2. Generate final summary upon successful completion
             generate_reagent_summary(self.tracked_reagent_vessels, output_file=output_file)
-
-
+            print(f"Live protocol successful. Summary saved to {output_file}")
+                
+                
     def show_loading_dialogues(self, parent=None):
         """Show loading dialogues during protocol execution."""
         
         vis = LoadingVis(
             reagent_data="reagent_summary.json",
             tip_data="tip_summary.json",
-            #loading_dir="loading",
             origin_offset=(0, 0),
             auto_crop=False,
             parent=parent
         )
 
         vis.ShowDialogues(
-            #tube_offset=(360, 60),           # nudge the scrollable window to the right
-            #tube_viewport=(800, 700),        # fixed window size; scroll to see the rest
+            #tube_offset=(360, 60),
+            #tube_viewport=(800, 700),
             #deck_window_name="Deck",
             #plate_window_name="96-well Plate",
         )
