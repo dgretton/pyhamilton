@@ -16,6 +16,11 @@ try:
 except Exception:
     pass
 
+from .defaults import defaults
+
+cfg = defaults()
+
+
 defaults_by_cmd = { # 'field':None indicates field is required when assembling command
 
     'initialize':('INITIALIZE', {
@@ -211,7 +216,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'plateLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
         'lidSequence':'', # leave empty if you don´t use lid or if you are going to provide specific plate labware-positions below or ejecting to default waste
         'lidLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
-        'toolSequence':'COREGripTool', # sequence name of the CO-RE Gripper
+        'toolSequence': cfg.core_gripper_sequence, # sequence name of the CO-RE Gripper
         'gripForce':3, # (integer) 0-9, from lowest to highest
         'gripperToolChannel':8, # specifies the higher of two consecutive integers representing the CO-RE gripper channels.
         'sequenceCounting':0, # (integer) 0=don´t autoincrement plate sequence,  1=Autoincrement
@@ -239,7 +244,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'plateLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
         'lidSequence':'', # leave empty if you don´t use lid or if you are going to provide specific plate labware-positions below or ejecting to default waste
         'lidLabwarePositions':'', # leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1; 
-        'toolSequence':'COREGripTool', # sequence name of the iSWAP. leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1;
+        'toolSequence':cfg.core_gripper_sequence, # sequence name of the iSWAP. leave empty if you are going to provide a plate sequence name above. LabwareId1, positionId1;
         'sequenceCounting':0, # (integer) 0=don´t autoincrement plate sequence,  1=Autoincrement
         'movementType':0, # (integer) 0=To carrier, 1=Complex movement
         'transportMode':0, # (integer) 0=Plate only, 1=Lid only ,2=Plate with lid
@@ -255,6 +260,10 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'yDisplacement':'',
         'zDisplacement':'',
     }),
+    'copyLiquidClass':('COPY_LIQ_CLASS',{
+        'TemplateLiquidClass':'',
+        'NewLiquidClass':'',
+    }),
     'setAspirateParam':('SET_ASP_PARAM',{
         'LiquidClass':'',
         'Parameter':'',
@@ -264,6 +273,24 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'LiquidClass':'',
         'Parameter':'',
         'Value':'',
+    }),
+    'setTipType':('SET_TIP_TYPE',{
+        'LiquidClass':'',
+        'TipType':'', # int from the TipType enum
+    }),
+    'setCorrectionCurve':('SET_CORR_CURVE',{
+        'LiquidClass':'',
+        'NominalArray':'',
+        'CorrectedArray':'',
+    }),
+    'setDispenseMode':('SET_DISP_MODE',{
+        'LiquidClass':'',
+        'DispenseMode':'', # int from the DispenseMode enum
+    }),
+    'setLabwareProperty':('SET_LABWARE_PROPERTY',{
+        'LabwareID':'',
+        'PropertyName':'',
+        'PropertyValue':'',
     }),
     'TEC_Initialize':('TEC_INIT', {
 
@@ -281,8 +308,14 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'DeviceID':'', # (integer); 
         'TargetTemperature':'', # (float); 
     }),
-    'TEC_StopTemperatureControl':('TEC_STOP', {
+    
+    'TEC_GetTemperature':('TEC_GET_TEMPERATURE', {
 
+        'ControllerID':'', # (integer)
+        'DeviceID':'', # (integer); 
+        'Selector':'', # (integer); 
+    }),
+    'TEC_StopTemperatureControl':('TEC_STOP', {
         'ControllerID':'', # (integer)
         'DeviceID':'', # (integer); 
     }),
@@ -313,6 +346,15 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     'BarcodeReader_Read':('BC_READ',{
 
     }),
+
+    'loadCarrier':('LOAD_CARRIER', {
+        'carrierName': '', # (string) name of the carrier to load
+        'barcodeFileName': '', # (string) name of the barcode file to load
+        'barcodeReadPositions': '', # (string) path to the barcode file
+    }),
+    'unloadCarrier':('UNLOAD_CARRIER', {
+        'carrierName': '', # (string) name of the carrier to unload
+    }), 
     'pH_Initialize':('PH_INIT',{
         'Comport' : '' , # (int)
         'SimulationMode' : '' # (boolean)
@@ -529,12 +571,11 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     }),
     'ODTC_EvaluateError':('ODTC_EVAL', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string); 
+        'LockID':0, # (string); 
     }),
     'ODTC_ExecuteMethod':('ODTC_EXCT', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string);
-        'LockID':'', # (string); 
+        'LockID':0, # (integer);
         'MethodName':'', # (string)
         'Priority':'', # (integer); 
     }),
@@ -543,15 +584,15 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     }),
     'ODTC_OpenDoor':('ODTC_OPEN', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string);
+        'LockID':0, # (integer);
     }),
     'ODTC_ReadActualTemperature':('ODTC_READ', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string); 
+        'LockID':0, # (integer);
     }),
     'ODTC_Reset':('ODTC_RESET', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string); 
+        'LockID':0, # (integer);
         'SimulationMode': '', # (boolean)
         'TimeToWait': '', # 0=False, 1=True
         'strDeviceID': '', # (string)
@@ -559,7 +600,7 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
     }),
     'ODTC_StopMethod':('ODTC_STOP', {
         'DeviceID':'', # (integer)
-        'LockID':'', # (string); 
+        'LockID':0, # (integer);
     }),
     'ODTC_Terminate':('ODTC_TERM', {
         'DeviceID':'', # (integer)

@@ -1,7 +1,4 @@
 import sys
-
-
-
 import time, json, signal, os, requests, string, logging, subprocess
 from dataclasses import dataclass, field
 from enum import auto, Enum, unique
@@ -13,6 +10,19 @@ from multiprocessing import Process
 from pyhamilton import OEM_RUN_EXE_PATH, OEM_HSL_PATH
 from .oemerr import * #TODO: specify
 from .defaultcmds import defaults_by_cmd
+from .liquid_class_db import get_liquid_class_volume, get_liquid_class_dispense_mode
+
+def invert_columns(pos_str: str, sep: str = ';') -> str:
+    parts = pos_str.split(sep)
+    wells_per_col = 8
+    num_cols = 12
+
+    if len(parts) != wells_per_col * num_cols:
+        raise ValueError(f"Expected {wells_per_col * num_cols} entries, got {len(parts)}")
+
+    cols = [parts[i*wells_per_col:(i+1)*wells_per_col] for i in range(num_cols)]
+    inverted = cols[::-1]
+    return sep.join(item for col in inverted for item in col)
 
 class HamiltonCmdTemplate:
     """
@@ -121,6 +131,12 @@ for cmd in defaults_by_cmd:
     globals()[const_name] = const_template
     _builtin_templates_by_cmd[cmd] = const_template
 
+def labware_pos_str(labware, idx):
+    return labware.layout_name() + ', ' + labware.position_id(idx)
+
+
+def _make_new_hamilton_serv_handler(resp_indexing_fn):
+    """Make HTTP request handler to aggregate responses according to an index function."""
 
 
     
@@ -413,16 +429,29 @@ class HamiltonResponse:
         if self.status == HamiltonResponseStatus.SUCCESS:
             raise HamiltonReturnParseError('Inconsistency: Venus returns SUCCESS while error code {firstErrorCode} found! ( response: ' + self.raw + ' )')
 
+@dataclass
+class DispenseResult:
+    liquidHeights: float
+    liquidVolumes: float
+    raw: HamiltonResponse # keep the raw object if callers need extras
+
+@dataclass
+class AspirateResult:
+    liquidHeights: float        
+    liquidVolumes: float
+    raw: HamiltonResponse # keep the raw object if callers need extras
+
+
 class HamiltonServerThread(Thread):
     """Private threaded local HTTP server with graceful shutdown flag."""
 
     def __init__(self, address, port):
         super().__init__()
+        self.daemon = True  # CRITICAL: Make this a daemon thread
         self.server_address = (address, port)
         self.should_continue = True
         self.exited = False
 
-        # You can define a function for indexing the response by 'id'
         def index_on_resp_id(response_str):
             try:
                 response = json.loads(response_str)
@@ -432,24 +461,42 @@ class HamiltonServerThread(Thread):
                 pass
             return None
 
-        # Set that function on the SINGLE global handler class
         HamiltonServerHandler.indexing_fn = index_on_resp_id
-
-        # We'll serve the global handler class
         self.httpd = None
 
     def run(self):
         self.exited = False
-        self.httpd = server.HTTPServer(self.server_address, HamiltonServerHandler)
-        while self.should_continue:
-            self.httpd.handle_request()
-        self.exited = True
+        try:
+            self.httpd = server.HTTPServer(self.server_address, HamiltonServerHandler)
+            # Set a short timeout so we don't block forever
+            self.httpd.timeout = 0.5
+            
+            while self.should_continue:
+                try:
+                    self.httpd.handle_request()
+                except OSError:
+                    # Socket was closed, exit gracefully
+                    break
+                    
+        except Exception as e:
+            print(f"Server thread exception: {e}")
+        finally:
+            if self.httpd:
+                try:
+                    self.httpd.server_close()
+                except:
+                    pass
+            self.exited = True
+            print("Server thread run() method completed")
 
     def disconnect(self):
+        """Simple disconnect without calling shutdown() to avoid deadlocks"""
         self.should_continue = False
+        # Don't call httpd.shutdown() here - it can cause deadlocks
 
     def has_exited(self):
         return self.exited
+
 
 class HamiltonInterface:
     """Main class to automatically set up and tear down an interface to a Hamilton robot.
@@ -515,8 +562,9 @@ class HamiltonInterface:
                     # Attempt the ping
                 self.active = True
                 
+                print("Sending ping to check if interface is open")
                 response_id = self.send_command(command='ping', id=HamiltonCmdTemplate.unique_id())
-                self.wait_on_response(response_id, timeout=1.5)
+                self.wait_on_response(response_id, timeout=5)
                 
                 print("Interface already open")
                 return
@@ -569,21 +617,18 @@ class HamiltonInterface:
         #self.active = True
 
     def stop(self):
-        """Stop this HamiltonInterface and clean up associated async processes.
-
-        Kills the pyhamilton interpreter subprocess and executable and stops the local
-        web server thread.
-
-        When used with a `with` block, called automatically on exiting the block.
-        """
+        """Stop this HamiltonInterface and clean up associated async processes."""
 
         if not self.active:
             return
+        
         try:
             if self.windowed or self.simulating or self.server_mode:
                 self.log('sending end run command to simulator')
                 try:
+                    print("Sending end command")
                     self.wait_on_response(self.send_command(command='end', id=hex(0)), timeout=1.5)
+                    print("End command sent")
                 except HamiltonTimeoutError:
                     pass
             else:
@@ -600,28 +645,49 @@ class HamiltonInterface:
                 else:
                     self.log('Could not kill oem process, moving on with shutdown', 'warn')
         finally:
+            print("Stopping server thread")
             self.active = False
-            self.server_thread.disconnect()
-            self.log('disconnected from server')
-            time.sleep(.1)
-            if not self.server_thread.has_exited():
-                self.log('server did not exit yet, sending dummy request to exit its loop')
-                session = requests.Session()
-                adapter = requests.adapters.HTTPAdapter(max_retries=20)
-                session.mount('http://', adapter)
-                session.get('http://' + HamiltonInterface.default_address + ':' + str(HamiltonInterface.default_port))
-                self.log('dummy get request sent to server')
-            self.server_thread.join()
-            self.log('server thread exited')
+            
+            # Don't call disconnect() - it can cause deadlocks
+            # Instead, just signal the thread to stop and force close the server
+            self.server_thread.should_continue = False
+            
+            if hasattr(self.server_thread, 'httpd') and self.server_thread.httpd:
+                print("Force closing HTTP server")
+                try:
+                    # Close the server socket immediately without waiting
+                    self.server_thread.httpd.server_close()
+                    self.log('HTTP server socket closed')
+                except Exception as e:
+                    print(f"Error closing server: {e}")
+            
+            print("Joining server thread with timeout")
+            # Give the thread a very short time to exit gracefully
+            self.server_thread.join(timeout=1.0)
+            
+            if self.server_thread.is_alive():
+                print("Server thread still alive, this is expected in some cases")
+                self.log('server thread did not exit within timeout (this may be normal)', 'info')
+                # Don't try to force kill - just let it be a daemon thread
+            else:
+                print("Server thread exited successfully")
+                self.log('server thread exited successfully')
 
     def __enter__(self):
         self.start()
         return self
 
-    def __exit__(self, type, value, tb):
-        if not self.persistent:
+    def __exit__(self, exc_type, exc_value, tb):
+        if exc_type is not None:
+            # There was an error, always stop
             self.stop()
-        pass
+        elif not self.persistent:
+            # Normal exit, but not persistent → stop
+            self.stop()
+        # else: persistent and normal exit → keep running
+
+        # Returning False means exceptions propagate normally
+        return False
 
     def is_open(self):
         """Return `True` if the HamiltonInterface has been started and not stopped."""
@@ -770,6 +836,691 @@ class HamiltonInterface:
         self.log(repr(err), 'error')
         raise err
 
+    @staticmethod
+    def _channel_var(pos_tuples):
+        """Create channel pattern string for commands"""
+        ch_var = ['0']*16
+        for i, pos_tup in enumerate(pos_tuples):
+            if pos_tup is not None:
+                ch_var[i] = '1'
+        return ''.join(ch_var)
+
+    @staticmethod
+    def _compound_pos_str(pos_tuples):
+        """Create position string for commands"""
+        present_pos_tups = [pt for pt in pos_tuples if pt is not None]
+        return ';'.join((pt[0].layout_name() + ', ' + pt[0].position_id(pt[1]) 
+                        for pt in present_pos_tups))
+
+    @staticmethod
+    def _compound_pos_str_96(labware96):
+        """Create position string for 96-well commands"""
+        return ';'.join((labware96.layout_name() + ', ' + labware96.position_id(idx) 
+                        for idx in range(96)))
+
+    @staticmethod
+    def _assert_parallel_nones(list1, list2):
+        """Verify two lists have None values in the same positions"""
+        if not (len(list1) == len(list2) and 
+                all([(i1 is None) == (i2 is None) for i1, i2 in zip(list1, list2)])):
+            raise ValueError('Lists must have parallel None entries')
+
+    def initialize(self, **more_options):
+        """Initialize the Hamilton robot with optional parameters.
+
+        Args:
+            **more_options: Additional command options to pass to the initialize command.
+        """
+        self.log('initialize: Initializing Hamilton robot with options ' + str(more_options))
+        response = self.wait_on_response(
+            self.send_command(
+                INITIALIZE,
+                **more_options
+            ),
+            timeout=300,
+            raise_first_exception=True,
+            return_data=['step-return2', 'step-return3']
+        )
+        return response
+    
+    def aspirate(self, pos_tuples, vols, **more_options) -> AspirateResult:
+        """Aspirate liquid from specified positions.
+        
+        Args:
+            pos_tuples: List of (labware, idx) tuples specifying positions
+            vols: List of volumes to aspirate
+            **more_options: Additional command options
+
+        Returns
+        -------
+        AspirateResult:
+            .liquidHeights liquid heights after aspirate
+            .liquidVolumes liquid volumes after aspirate
+            .raw           raw HamiltonResponse object
+        """
+        self.log('aspirate: Aspirate volumes ' + str(vols) + ' from positions [' +
+                '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
+                (']' if not more_options else '] with extra options ' + str(more_options)))
+
+        if len(pos_tuples) > 8:
+            raise ValueError('Can only aspirate with 8 channels at a time')
+            
+        self._assert_parallel_nones(pos_tuples, vols)
+            
+        if 'liquidClass' not in more_options:
+            raise ValueError('Must specify a liquidClass for aspirate commands')
+
+        if more_options.get('capacitiveLLD', 0) not in (0, 5):
+            dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
+            if 'Surface' not in dispense_mode:
+                raise ValueError('cLLD can only be used with Surface dispense modes')
+        
+        response = self.wait_on_response(
+            self.send_command(
+                ASPIRATE,
+                channelVariable=self._channel_var(pos_tuples),
+                labwarePositions=self._compound_pos_str(pos_tuples), 
+                volumes=[v for v in vols if v is not None],
+                **more_options
+            ),
+            raise_first_exception=True,
+            return_data=['step-return2', 'step-return3']
+        )
+
+        if self.simulating:
+            # In simulation mode, we don't get liquid heights and volumes
+            res = AspirateResult(
+                liquidHeights=[2.0] * len(pos_tuples),
+                liquidVolumes=[10.0] * len(pos_tuples),
+                raw=response
+            )
+            return res
+        
+        else:
+            res = AspirateResult(
+                liquidHeights=[float(x) for x in response.return_data[0].split(';')],
+                liquidVolumes=[float(x) for x in response.return_data[1].split(';')],
+                raw=response
+            )
+            return res
+
+
+    def dispense(self, pos_tuples, vols, **more_options) -> DispenseResult:
+        """Dispense liquid into specified positions.
+        
+        Args:
+            pos_tuples: List of (labware, idx) tuples specifying positions
+            vols: List of volumes to dispense
+            **more_options: Additional command options
+        
+        """
+        self.log('dispense: Dispense volumes ' + str(vols) + ' into positions [' +
+                '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
+                (']' if not more_options else '] with extra options ' + str(more_options)))
+
+        if len(pos_tuples) > 8:
+            raise ValueError('Can only dispense with 8 channels at a time')
+            
+        self._assert_parallel_nones(pos_tuples, vols)
+            
+        if 'liquidClass' not in more_options:
+            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        if more_options.get('capacitiveLLD', 0) not in (0, 5):
+            dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
+            if 'Surface' not in dispense_mode:
+                raise ValueError('cLLD can only be used with Surface dispense modes')
+
+
+        response = self.wait_on_response(
+            self.send_command(
+                DISPENSE,
+                channelVariable=self._channel_var(pos_tuples),
+                labwarePositions=self._compound_pos_str(pos_tuples),
+                volumes=[v for v in vols if v is not None],
+                **more_options
+            ),
+            raise_first_exception=True,
+            return_data=['step-return2', 'step-return3']
+        )
+
+
+        if self.simulating:
+            # In simulation mode, we don't get liquid heights and volumes
+            res = DispenseResult(
+                liquidHeights=[2.0] * len(pos_tuples),
+                liquidVolumes=[10.0] * len(pos_tuples),
+                raw=response
+            )
+            return res
+        
+        else:
+            res = DispenseResult(
+                liquidHeights=[float(x) for x in response.return_data[0].split(';')],
+                liquidVolumes=[float(x) for x in response.return_data[1].split(';')],
+                raw=response
+            )
+            return res
+
+
+
+    def tip_pick_up(self, pos_tuples, **more_options):
+        """Pick up tips from specified positions.
+        
+        Args:
+            pos_tuples: List of (labware, idx) tuples specifying tip positions
+            **more_options: Additional command options
+        """
+        self.log('tip_pick_up: Pick up tips at ' + '; '.join((labware_pos_str(*pt) if pt else '(skip)' 
+                for pt in pos_tuples)) + ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if len(pos_tuples) > 8:
+            raise ValueError('Can only pick up 8 tips at a time')
+
+        self.wait_on_response(
+            self.send_command(
+                PICKUP,
+                labwarePositions=self._compound_pos_str(pos_tuples),
+                channelVariable=self._channel_var(pos_tuples),
+                **more_options
+            ), 
+            raise_first_exception=True
+        )
+
+    def tip_eject(self, pos_tuples=None, **more_options):
+        """Eject tips to specified positions or default waste.
+        
+        Args:
+            pos_tuples: Optional list of (labware, idx) tuples specifying tip positions.
+                       If None, eject to default waste.
+            **more_options: Additional command options
+        """
+        if pos_tuples is None:
+            self.log('tip_eject: Eject tips to default waste' + 
+                    ('' if not more_options else ' with extra options ' + str(more_options)))
+            more_options['useDefaultWaste'] = 1
+            from .resources.deckresource import Tip96
+            dummy = Tip96('')
+            pos_tuples = [(dummy, 0)] * 8
+        else:
+            self.log('tip_eject: Eject tips to ' + '; '.join((labware_pos_str(*pt) if pt else '(skip)' 
+                    for pt in pos_tuples)) + ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if len(pos_tuples) > 8:
+            raise ValueError('Can only eject up to 8 tips')
+
+        self.wait_on_response(
+            self.send_command(
+                EJECT,
+                labwarePositions=self._compound_pos_str(pos_tuples),
+                channelVariable=self._channel_var(pos_tuples),
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def tip_pick_up_96(self, tip96, **more_options):
+        """Pick up tips from a 96-well tip rack.
+        
+        Args:
+            tip96: 96-well tip rack labware
+            **more_options: Additional command options
+        """
+        self.log('tip_pick_up_96: Pick up tips at ' + tip96.layout_name() +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+        self.wait_on_response(
+            self.send_command(
+                PICKUP96,
+                labwarePositions=self._compound_pos_str_96(tip96),
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def tip_eject_96(self, tip96=None, **more_options):
+        """Eject tips to a 96-well tip rack or default waste.
+        
+        Args:
+            tip96: Optional 96-well tip rack labware. If None, eject to default waste.
+            **more_options: Additional command options
+        """
+        self.log('tip_eject_96: Eject tips to ' + (tip96.layout_name() if tip96 else 'default waste') +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if tip96 is None:
+            labware_poss = ''
+            more_options.update({'tipEjectToKnownPosition': 2})  # 2 is default waste
+        else:
+            labware_poss = self._compound_pos_str_96(tip96)
+
+        self.wait_on_response(
+            self.send_command(
+                EJECT96,
+                labwarePositions=labware_poss,
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def aspirate_96(self, plate96, vol, **more_options):
+        """Aspirate liquid from a 96-well plate.
+        
+        Args:
+            plate96: 96-well plate labware
+            vol: Volume to aspirate
+            **more_options: Additional command options
+        """
+        self.log('aspirate_96: Aspirate volume ' + str(vol) + ' from ' + plate96.layout_name() +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if 'liquidClass' not in more_options:
+            raise ValueError('Must specify a liquidClass for aspirate commands')
+
+        if more_options.get('capacitiveLLD', 0) not in (0, 5):
+            dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
+            if 'Surface' not in dispense_mode:
+                raise ValueError('cLLD can only be used with Surface dispense modes')
+
+        self.wait_on_response(
+            self.send_command(
+                ASPIRATE96,
+                labwarePositions=self._compound_pos_str_96(plate96),
+                aspirateVolume=vol,
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def tip_pick_up_mph_columns(self, tip_96, num_columns_from_left, **more_options):
+        """Pick up tips from a 96-well tip rack in a multi-channel fashion.
+
+        Args:
+            tip_96: 96-well tip rack labware
+            num_columns: Number of columns to pick up
+            **more_options: Additional command options
+        """
+        self.log('tip_pick_up_mph_columns: Pick up tips at ' + tip_96.layout_name() +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+        num_columns_from_right = 12 - num_columns_from_left + 1 # Convert to right-side pickup
+        channelVariable = '1'*num_columns_from_right*8 + '0'*(12-num_columns_from_right)*8
+        positions = self._compound_pos_str_96(tip_96)
+        flipped_positions = invert_columns(positions) # Sequences have to be inverted for right-side pickup
+        self.wait_on_response(
+            self.send_command(
+                PICKUP96,
+                labwarePositions=flipped_positions,
+                channelVariable=channelVariable,
+                reducedPatternMode=3,  # (integer) 0=All (not reduced), 1=One channel, 2=One row  3=One column
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def dispense_96(self, plate96, vol, **more_options):
+        """Dispense liquid into a 96-well plate.
+        
+        Args:
+            plate96: 96-well plate labware
+            vol: Volume to dispense
+            **more_options: Additional command options
+        """
+        self.log('dispense_96: Dispense volume ' + str(vol) + ' into ' + plate96.layout_name() +
+                ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if 'liquidClass' not in more_options:
+            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        if more_options.get('capacitiveLLD', 0) not in (0, 5):
+            dispense_mode = get_liquid_class_dispense_mode(more_options['liquidClass'])
+            if 'Surface' not in dispense_mode:
+                raise ValueError('cLLD can only be used with Surface dispense modes')
+
+
+        self.wait_on_response(
+            self.send_command(
+                DISPENSE96,
+                labwarePositions=self._compound_pos_str_96(plate96),
+                dispenseVolume=vol,
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+
+    def aspirate_384_quadrant(self, plate384, quadrant, vol, **more_options):
+        """Aspirate liquid from a 384-well plate quadrant.
+        
+        Args:
+            plate384: 384-well plate labware
+            quadrant: Quadrant number (0-3)
+            vol: Volume to aspirate
+            **more_options: Additional command options
+        """
+        self.log('aspirate_384_quadrant: Aspirate volume ' + str(vol) + ' from ' + plate384.layout_name() +
+                ' quadrant ' + str(quadrant) + ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if 'liquidClass' not in more_options:
+            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        self.wait_on_response(
+            self.send_command(
+                ASPIRATE96,
+                labwarePositions=self._compound_pos_str_384_quad(plate384, quadrant),
+                aspirateVolume=vol,
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def dispense_384_quadrant(self, plate384, quadrant, vol, **more_options):
+        """Dispense liquid into a 384-well plate quadrant.
+        
+        Args:
+            plate384: 384-well plate labware
+            quadrant: Quadrant number (0-3)
+            vol: Volume to dispense
+            **more_options: Additional command options
+        """
+        self.log('dispense_384_quadrant: Dispense volume ' + str(vol) + ' into ' + plate384.layout_name() +
+                ' quadrant ' + str(quadrant) + ('' if not more_options else ' with extra options ' + str(more_options)))
+
+        if 'liquidClass' not in more_options:
+            more_options['liquidClass'] = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
+
+        self.wait_on_response(
+            self.send_command(
+                DISPENSE96,
+                labwarePositions=self._compound_pos_str_384_quad(plate384, quadrant),
+                dispenseVolume=vol,
+                **more_options
+            ),
+            raise_first_exception=True
+        )
+
+    def set_labware_property(self, labware_id, property_name, property_value):
+        """Set a property for a specific labware item.
+
+        Args:
+            labware_id: The ID of the labware item
+            property_name: The name of the property to set
+            property_value: The value to set the property to
+        """
+        self.log(f'set_labware_property: Setting {property_name} of {labware_id} to {property_value}')
+
+        self.wait_on_response(
+            self.send_command(
+                SET_LABWARE_PROPERTY,
+                LabwareID=labware_id,
+                PropertyName=property_name,
+                PropertyValue=property_value
+            ),
+            raise_first_exception=True
+        )
+
+    @staticmethod
+    def _compound_pos_str_384_quad(plate384, quadrant):
+        """Create position string for 384-well quadrant commands"""
+        def get_384w_quadrant(quadrant):
+            def cells_96_to_384(well, idx):
+                return well*2+idx%2+(idx//2)*16+16*(well//8)
+            return [cells_96_to_384(idx, quadrant) for idx in range(96)]
+        
+        return ';'.join((plate384.layout_name() + ', ' + plate384.position_id(idx) 
+                        for idx in get_384w_quadrant(quadrant)))
+
+    def move_plate(self, source_plate, target_plate, CmplxGetDict=None, CmplxPlaceDict=None, inversion=None, **more_options):
+        """Move a plate from source to target position using iSWAP.
+        
+        Args:
+            source_plate: Source plate labware
+            target_plate: Target plate labware
+            CmplxGetDict: Optional complex movement parameters for get operation
+            CmplxPlaceDict: Optional complex movement parameters for place operation
+            inversion: Optional inversion setting (0 or 1)
+            **more_options: Additional command options
+        """
+        self.log('move_plate: Moving plate ' + source_plate.layout_name() + ' to ' + target_plate.layout_name())
+        
+        src_pos = source_plate.layout_name() + ', ' + source_plate.position_id(0)
+        trgt_pos = target_plate.layout_name() + ', ' + target_plate.position_id(0)
+        
+        if not inversion:
+            try_inversions = (0, 1)
+        else:
+            try_inversions = (inversion,)
+        
+        getCmplxMvmnt, getRetractDist, getLiftUpHeight, getOrientation = (0, 0.0, 20.0, 1)
+        placeCmplxMvmnt, placeRetractDist, placeLiftUpHeight, placeOrientation = (0, 0.0, 20.0, 1)
+        
+        if CmplxGetDict:
+            getCmplxMvmnt = 1
+            getRetractDist = CmplxGetDict['retractDist']
+            getLiftUpHeight = CmplxGetDict['liftUpHeight']
+            getOrientation = CmplxGetDict['labwareOrientation']
+        
+        if CmplxPlaceDict:
+            placeCmplxMvmnt = 1
+            placeRetractDist = CmplxPlaceDict['retractDist']
+            placeLiftUpHeight = CmplxPlaceDict['liftUpHeight']
+            placeOrientation = CmplxPlaceDict['labwareOrientation']
+
+        for inv in try_inversions:
+            cid = self.send_command(ISWAP_GET,
+                                   plateLabwarePositions=src_pos,
+                                   inverseGrip=inv,
+                                   movementType=getCmplxMvmnt,
+                                   retractDistance=getRetractDist,
+                                   liftUpHeight=getLiftUpHeight,
+                                   labwareOrientation=getOrientation,
+                                   **more_options)
+            try:
+                self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+                break
+            except PositionError:
+                self.log("trying inverse", 'info')
+                pass
+
+        cid = self.send_command(ISWAP_PLACE,
+                               plateLabwarePositions=trgt_pos,
+                               movementType=placeCmplxMvmnt,
+                               retractDistance=placeRetractDist,
+                               liftUpHeight=placeLiftUpHeight,
+                               labwareOrientation=placeOrientation)
+        try:
+            self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+        except PositionError:
+            raise IOError
+
+    def move_by_seq(self, source_plate_seq, target_plate_seq, CmplxGetDict=None, CmplxPlaceDict=None, inversion=None, **more_options):
+        """Move a plate by sequence using iSWAP.
+
+        Used to have defaults: grip_height=0, inversion=None, gripForce=2, width_before=132,
+        
+        Args:
+            source_plate_seq: Source plate sequence
+            target_plate_seq: Target plate sequence
+            CmplxGetDict: Optional complex movement parameters for get operation
+            CmplxPlaceDict: Optional complex movement parameters for place operation
+            grip_height: Grip height parameter
+            inversion: Optional inversion setting (0 or 1)
+            gripForce: Grip force parameter
+            width_before: Width before parameter
+            **more_options: Additional command options
+        """
+        self.log('move_by_seq: Moving plate ' + source_plate_seq + ' to ' + target_plate_seq)
+        
+        if not inversion:
+            try_inversions = (0, 1)
+        else:
+            try_inversions = (inversion,)
+
+        getCmplxMvmnt, getRetractDist, getLiftUpHeight, getOrientation = (0, 0.0, 20.0, 1)
+        placeCmplxMvmnt, placeRetractDist, placeLiftUpHeight, placeOrientation = (0, 0.0, 20.0, 1)
+        
+        if CmplxGetDict:
+            getCmplxMvmnt = 1
+            getRetractDist = CmplxGetDict['retractDist']
+            getLiftUpHeight = CmplxGetDict['liftUpHeight']
+            getOrientation = CmplxGetDict['labwareOrientation']
+        
+        if CmplxPlaceDict:
+            placeCmplxMvmnt = 1
+            placeRetractDist = CmplxPlaceDict['retractDist']
+            placeLiftUpHeight = CmplxPlaceDict['liftUpHeight']
+            placeOrientation = CmplxPlaceDict['labwareOrientation']
+
+        for inv in try_inversions:
+            cid = self.send_command(ISWAP_GET, plateSequence=source_plate_seq,
+                                   inverseGrip=inv,
+                                   movementType=placeCmplxMvmnt,
+                                   retractDistance=placeRetractDist,
+                                   liftUpHeight=placeLiftUpHeight,
+                                   labwareOrientation=placeOrientation,
+                                   **more_options)
+            try:
+                self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+                break
+            except PositionError:
+                pass
+        else:
+            raise IOError
+            
+        cid = self.send_command(ISWAP_PLACE,
+                               plateSequence=target_plate_seq,
+                               movementType=placeCmplxMvmnt,
+                               retractDistance=placeRetractDist,
+                               liftUpHeight=placeLiftUpHeight,
+                               labwareOrientation=placeOrientation)
+        try:
+            self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+        except PositionError:
+            raise IOError
+
+    def get_plate_gripper_seq(self, source_plate_seq, gripHeight, gripWidth, openWidth, lid, tool_sequence, gripForce, **more_options):
+        """Get a plate using the gripper by sequence.
+        
+        Args:
+            source_plate_seq: Source plate sequence
+            gripHeight: Grip height parameter
+            gripWidth: Grip width parameter
+            openWidth: Open width parameter
+            lid: Whether this is a lid operation
+            tool_sequence: Tool sequence parameter
+            **more_options: Additional command options
+        """
+        self.log('get_plate_gripper_seq: Getting plate ' + source_plate_seq)
+        
+        if lid:
+            cid = self.send_command(GRIP_GET, plateSequence=source_plate_seq, transportMode=1,
+                                   gripHeight=gripHeight, gripWidth=gripWidth, widthBefore=openWidth,
+                                   toolSequence=tool_sequence)
+        else:
+            cid = self.send_command(GRIP_GET, plateSequence=source_plate_seq, transportMode=0,
+                                   gripHeight=gripHeight, gripWidth=gripWidth, widthBefore=openWidth,
+                                   toolSequence=tool_sequence, **more_options)
+        self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+    def move_plate_gripper_seq(self, dest_plate_seq, **more_options):
+        """Move a plate using the gripper by sequence.
+        
+        Args:
+            dest_plate_seq: Destination plate sequence
+            **more_options: Additional command options
+        """
+        self.log('move_plate_gripper_seq: Moving plate ' + dest_plate_seq)
+        cid = self.send_command(GRIP_MOVE, plateSequence=dest_plate_seq)
+        self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+    def place_plate_gripper_seq(self, dest_plate_seq, tool_sequence, **more_options):
+        """Place a plate using the gripper by sequence.
+        
+        Args:
+            dest_plate_seq: Destination plate sequence
+            tool_sequence: Tool sequence parameter
+            **more_options: Additional command options
+        """
+        self.log('place_plate_gripper_seq: Placing plate ' + dest_plate_seq)
+        cid = self.send_command(GRIP_PLACE, plateSequence=dest_plate_seq, toolSequence=tool_sequence, **more_options)
+        self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+    def move_plate_gripper(self, source_poss, dest_poss, **more_options):
+        """Move a plate using the gripper by positions.
+        
+        Args:
+            source_poss: Source positions
+            dest_poss: Destination positions
+            **more_options: Additional command options
+        """
+        labware_poss = self._compound_pos_str(dest_poss)
+        cid = self.send_command(GRIP_MOVE, plateLabwarePositions=labware_poss, **more_options)
+        self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+    def move_sequence(self, sequence, xDisplacement=0, yDisplacement=0, zDisplacement=0):
+        """Move a sequence with optional displacement parameters.
+        
+        Args:
+            sequence: Input sequence to move
+            xDisplacement: X displacement (default 0)
+            yDisplacement: Y displacement (default 0)
+            zDisplacement: Z displacement (default 0)
+        """
+        self.log('move_sequence: Moving sequence with displacements x=' + str(xDisplacement) + 
+                ', y=' + str(yDisplacement) + ', z=' + str(zDisplacement))
+        cid = self.send_command(MOVE_SEQ, inputSequence=sequence, 
+                               xDisplacement=xDisplacement, yDisplacement=yDisplacement, 
+                               zDisplacement=zDisplacement)
+        self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+    def load_carrier(self, carrier_name, **more_options):
+        """Load a carrier with the specified name.
+        
+        Args:
+            carrier_name: Name of the carrier to load
+            **more_options: Additional command options
+
+        Returns
+        -------
+        LoadCarrierResult
+            .carrierName   name you passed in
+            .barcodeReads  value of 'step-return2'
+            .barcodeMasks  value of 'step-return3'
+            .positionIds   value of 'step-return4'
+            .raw           underlying HamiltonResponse (for diagnostics)
+        """
+
+        self.log('load_carrier: Loading carrier ' + carrier_name)
+        cid = self.send_command(LOAD_CARRIER, carrierName=carrier_name, **more_options)
+        response = self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+        @dataclass
+        class LoadCarrierResult:
+            carrierName: str
+            barcodeReads: Any
+            barcodeMasks: Any
+            positionIds: Any
+            raw: "HamiltonResponse"
+
+        # 3. Wrap the raw list in the dataclass and return it
+        return LoadCarrierResult(
+            carrierName=carrier_name,
+            barcodeReads=response.return_data[0],
+            barcodeMasks=response.return_data[1],
+            positionIds=response.return_data[2],
+            raw=response
+        )
+
+
+    def unload_carrier(self, carrier_name, **more_options):
+        """Unload a carrier with the specified name.
+        
+        Args:
+            carrier_name: Name of the carrier to unload
+            **more_options: Additional command options
+        """
+        self.log('unload_carrier: Unloading carrier ' + carrier_name)
+        cid = self.send_command(UNLOAD_CARRIER, carrierName=carrier_name, **more_options)
+        self.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
 class JSONLogger:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -784,4 +1535,3 @@ class JSONLogger:
         formatter = logging.Formatter('%(message)s')
         hdlr.setFormatter(formatter)
         self.logger.addHandler(hdlr)
-        

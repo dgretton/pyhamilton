@@ -3,33 +3,26 @@
 Created on Wed Mar  9 12:01:01 2022
 
 @author: stefa
-@author: yang
 """
 
 import sys, os, time, logging, importlib
 from threading import Thread
 
 from .interface import HamiltonInterface
-from .deckresource import LayoutManager, ResourceType, Plate24, Plate96, Tip96
+from .resources.deckresource import LayoutManager, ResourceType, Plate24, Plate96, Tip96, resource_list_with_prefix, layout_item, DeckResource
 from .oemerr import PositionError
 from .interface import (INITIALIZE, PICKUP, EJECT, ASPIRATE, DISPENSE, ISWAP_GET, ISWAP_PLACE, HEPA,
 WASH96_EMPTY, PICKUP96, EJECT96, ASPIRATE96, DISPENSE96, ISWAP_MOVE, MOVE_SEQ, TILT_INIT, TILT_MOVE, GRIP_GET,
-GRIP_MOVE, GRIP_PLACE, SET_ASP_PARAM, SET_DISP_PARAM)
-from .liquid_class_dict import liquidclass_params_asp, liquidclass_params_dsp
+GRIP_MOVE, GRIP_PLACE, SET_ASP_PARAM, SET_DISP_PARAM, COPY_LIQ_CLASS, SET_CORR_CURVE, SET_TIP_TYPE, SET_LABWARE_PROPERTY)
+from .resources.managed_resources import TrackedTips
+from typing import List, Tuple
+from .defaults import defaults
+from .resources.enums import TipType
+from .resources.managed_resources import TipSupportTracker
 
-def resource_list_with_prefix(layout_manager, prefix, res_class, num_ress, order_key=None, reverse=False):
-    def name_from_line(line):
-        field = LayoutManager.layline_objid(line)
-        if field:
-            return field
-        return LayoutManager.layline_first_field(line)
-    layline_test = lambda line: LayoutManager.field_starts_with(name_from_line(line), prefix)
-    res_type = ResourceType(res_class, layline_test, name_from_line)
-    res_list = [layout_manager.assign_unused_resource(res_type, order_key=order_key, reverse=reverse) for _ in range(num_ress)]
-    return res_list
+cfg = defaults()
 
-def layout_item(lmgr, item_class, item_name):
-    return lmgr.assign_unused_resource(ResourceType(item_class, item_name))
+
 
 def labware_pos_str(labware, idx):
     return labware.layout_name() + ', ' + labware.position_id(idx)
@@ -89,118 +82,13 @@ def wash_empty_refill(ham, asynch=False, **more_options):
     return cmd
 
 
-def move_plate(ham, source_plate, target_plate, CmplxGetDict = None, CmplxPlaceDict = None, inversion = None, **more_options):
-    
-    logging.info('move_plate: Moving plate ' + source_plate.layout_name() + ' to ' + target_plate.layout_name())
-    src_pos = labware_pos_str(source_plate, 0)
-    trgt_pos = labware_pos_str(target_plate, 0)
-    
-    if not inversion:
-        try_inversions=(0,1)
-    else:
-        try_inversions = (inversion,)
-    
-    getCmplxMvmnt, getRetractDist, getLiftUpHeight, getOrientation = (0, 0.0, 20.0, 1)
-    placeCmplxMvmnt, placeRetractDist, placeLiftUpHeight, placeOrientation = (0, 0.0, 20.0, 1)
-    
-    
-    if CmplxGetDict:
-        getCmplxMvmnt = 1
-        getRetractDist = CmplxGetDict['retractDist']
-        getLiftUpHeight = CmplxGetDict['liftUpHeight']
-        getOrientation = CmplxGetDict['labwareOrientation']
-    
-    if CmplxPlaceDict:
-        placeCmplxMvmnt = 1
-        placeRetractDist = CmplxPlaceDict['retractDist']
-        placeLiftUpHeight = CmplxPlaceDict['liftUpHeight']
-        placeOrientation = CmplxPlaceDict['labwareOrientation']
+def move_plate(ham, source_plate, target_plate, CmplxGetDict=None, CmplxPlaceDict=None, inversion=None, **more_options):
+    """Legacy wrapper for backward compatibility"""
+    return ham.move_plate(source_plate, target_plate, CmplxGetDict, CmplxPlaceDict, inversion, **more_options)
 
-    for inv in try_inversions:    
-        cid = ham.send_command(ISWAP_GET, 
-                               plateLabwarePositions=src_pos, 
-                               inverseGrip=inv, 
-                               movementType = getCmplxMvmnt,
-                               retractDistance = getRetractDist,
-                               liftUpHeight = getLiftUpHeight,
-                               labwareOrientation = getOrientation,
-                               **more_options
-                               )
-        try:
-            ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
-            break
-        except PositionError:
-            print("trying inverse")
-            pass
-
-    cid = ham.send_command(ISWAP_PLACE, 
-                           plateLabwarePositions=trgt_pos, 
-                           movementType = placeCmplxMvmnt, 
-                           retractDistance = placeRetractDist,
-                           liftUpHeight = placeLiftUpHeight,
-                           labwareOrientation = placeOrientation
-                           )
-    try:
-        ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
-    except PositionError:
-        raise IOError
-
-
-def move_by_seq(ham, source_plate_seq, target_plate_seq, CmplxGetDict = None, CmplxPlaceDict = None, grip_height = 0, inversion=None, gripForce = 2, width_before = 132, **more_options):
-    logging.info('move_lid_by_seq: Moving plate ' + source_plate_seq + ' to ' + target_plate_seq)
-    
-    if not inversion:
-        try_inversions=(0,1)
-    else:
-        try_inversions = (inversion,)
-
-    getCmplxMvmnt, getRetractDist, getLiftUpHeight, getOrientation = (0, 0.0, 20.0, 1)
-    placeCmplxMvmnt, placeRetractDist, placeLiftUpHeight, placeOrientation = (0, 0.0, 20.0, 1)
-    
-    
-    if CmplxGetDict:
-        getCmplxMvmnt = 1
-        getRetractDist = CmplxGetDict['retractDist']
-        getLiftUpHeight = CmplxGetDict['liftUpHeight']
-        getOrientation = CmplxGetDict['labwareOrientation']
-    
-    if CmplxPlaceDict:
-        placeCmplxMvmnt = 1
-        placeRetractDist = CmplxPlaceDict['retractDist']
-        placeLiftUpHeight = CmplxPlaceDict['liftUpHeight']
-        placeOrientation = CmplxPlaceDict['labwareOrientation']
-
-    
-    for inv in try_inversions:
-        cid = ham.send_command(ISWAP_GET, plateSequence=source_plate_seq, 
-                                gripHeight=grip_height, 
-                                gripForce=gripForce, 
-                                inverseGrip=inv,
-                                transportMode=0, 
-                                widthBefore = width_before,
-                                movementType = placeCmplxMvmnt, 
-                                retractDistance = placeRetractDist,
-                                liftUpHeight = placeLiftUpHeight,
-                                labwareOrientation = placeOrientation,
-                                **more_options)
-        try:
-            ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
-            break
-        except PositionError:
-            pass
-    else:
-        raise IOError
-    cid = ham.send_command(ISWAP_PLACE, 
-                            plateSequence=target_plate_seq,
-                            movementType = placeCmplxMvmnt, 
-                            retractDistance = placeRetractDist,
-                            liftUpHeight = placeLiftUpHeight,
-                            labwareOrientation = placeOrientation
-                            )
-    try:
-        r = ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
-    except PositionError:
-        raise IOError
+def move_by_seq(ham, source_plate_seq, target_plate_seq, CmplxGetDict=None, CmplxPlaceDict=None, grip_height=0, inversion=None, gripForce=2, width_before=132, **more_options):
+    """Legacy wrapper for backward compatibility"""
+    return ham.move_by_seq(source_plate_seq, target_plate_seq, CmplxGetDict, CmplxPlaceDict, grip_height, inversion, gripForce, width_before, **more_options)
 
 def channel_var(pos_tuples):
     ch_var = ['0']*16
@@ -210,137 +98,97 @@ def channel_var(pos_tuples):
     return ''.join(ch_var)
 
 def tip_pick_up(ham_int, pos_tuples, **more_options):
-    logging.info('tip_pick_up: Pick up tips at ' + '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    num_channels = len(pos_tuples)
-    if num_channels > 8:
-        raise ValueError('Can only pick up 8 tips at a time')
-    ch_patt = channel_var(pos_tuples)
-    labware_poss = compound_pos_str(pos_tuples)
-    ham_int.wait_on_response(ham_int.send_command(PICKUP,
-        labwarePositions=labware_poss,
-        channelVariable=ch_patt,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.tip_pick_up(pos_tuples, **more_options)
 
 def tip_eject(ham_int, pos_tuples=None, **more_options):
-    if pos_tuples is None:
-        logging.info('tip_eject: Eject tips to default waste' + ('' if not more_options else ' with extra options ' + str(more_options)))
-        more_options['useDefaultWaste'] = 1
-        dummy = Tip96('')
-        pos_tuples = [(dummy, 0)] * 8
-    else:
-        logging.info('tip_eject: Eject tips to ' + '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
-                ('' if not more_options else ' with extra options ' + str(more_options)))
-    num_channels = len(pos_tuples)
-    if num_channels > 8:
-        raise ValueError('Can only eject up to 8 tips')
-    ch_patt = channel_var(pos_tuples)
-    labware_poss = compound_pos_str(pos_tuples)
-    ham_int.wait_on_response(ham_int.send_command(EJECT,
-        labwarePositions=labware_poss,
-        channelVariable=ch_patt,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.tip_eject(pos_tuples, **more_options)
 
 def assert_parallel_nones(list1, list2):
-    if not (len(list1) == len(list2) and all([(i1 is None) == (i2 is None) for i1, i2 in zip(list1, list2)])):
-        raise ValueError('Lists must have parallel None entries')
+    """Legacy wrapper for backward compatibility"""
+    return HamiltonInterface._assert_parallel_nones(list1, list2)
+
+import threading
+
+class TimerHandle:
+    def __init__(self, seconds):
+        self._event = threading.Event()
+        self._timer = threading.Timer(seconds, self._event.set)
+        self._timer.daemon = True   
+        self._timer.start()
+
+    def wait(self, skip=False):
+        """Block until the timer finishes."""
+        if skip:
+            return
+        self._event.wait()
+
+def start_timer(seconds):
+    """Start a timer in the background and return a handle."""
+    return TimerHandle(seconds)
+
 
 default_liq_class = 'HighVolumeFilter_Water_DispenseJet_Empty_with_transport_vol'
 
-
 def aspirate(ham_int, pos_tuples, vols, **more_options):
-    assert_parallel_nones(pos_tuples, vols)
-    logging.info('aspirate: Aspirate volumes ' + str(vols) + ' from positions [' +
-            '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
-            (']' if not more_options else '] with extra options ' + str(more_options)))
-    if len(pos_tuples) > 8:
-        raise ValueError('Can only aspirate with 8 channels at a time')
-    if 'liquidClass' not in more_options:
-        more_options.update({'liquidClass':default_liq_class})
-    response = ham_int.wait_on_response(ham_int.send_command(ASPIRATE,
-        channelVariable=channel_var(pos_tuples),
-        labwarePositions=compound_pos_str(pos_tuples),
-        volumes=[v for v in vols if v is not None],
-        **more_options), raise_first_exception=True, return_data=['step-return2', 'step-return3'])
-    return response
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.aspirate(pos_tuples, vols, **more_options)
 
 def dispense(ham_int, pos_tuples, vols, **more_options):
-    assert_parallel_nones(pos_tuples, vols)
-    logging.info('dispense: Dispense volumes ' + str(vols) + ' into positions [' +
-            '; '.join((labware_pos_str(*pt) if pt else '(skip)' for pt in pos_tuples)) +
-            (']' if not more_options else '] with extra options ' + str(more_options)))
-    if len(pos_tuples) > 8:
-        raise ValueError('Can only aspirate with 8 channels at a time')
-    if 'liquidClass' not in more_options:
-        more_options.update({'liquidClass':default_liq_class})
-    response = ham_int.wait_on_response(ham_int.send_command(DISPENSE,
-        channelVariable=channel_var(pos_tuples),
-        labwarePositions=compound_pos_str(pos_tuples),
-        volumes=[v for v in vols if v is not None],
-        **more_options), raise_first_exception=True, return_data=['step-return2', 'step-return3'])
-    return response
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.dispense(pos_tuples, vols, **more_options)
     
 
 def tip_pick_up_96(ham_int, tip96, **more_options):
-    logging.info('tip_pick_up_96: Pick up tips at ' + tip96.layout_name() +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    labware_poss = compound_pos_str_96(tip96)
-    ham_int.wait_on_response(ham_int.send_command(PICKUP96,
-        labwarePositions=labware_poss,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.tip_pick_up_96(tip96, **more_options)
 
 def tip_eject_96(ham_int, tip96=None, **more_options):
-    logging.info('tip_eject_96: Eject tips to ' + (tip96.layout_name() if tip96 else 'default waste') +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    if tip96 is None:
-        labware_poss = ''
-        more_options.update({'tipEjectToKnownPosition':2}) # 2 is default waste
-    else:   
-        labware_poss = compound_pos_str_96(tip96)
-    ham_int.wait_on_response(ham_int.send_command(EJECT96,
-        labwarePositions=labware_poss,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.tip_eject_96(tip96, **more_options)
 
 def aspirate_96(ham_int, plate96, vol, **more_options):
-    logging.info('aspirate_96: Aspirate volume ' + str(vol) + ' from ' + plate96.layout_name() +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    if 'liquidClass' not in more_options:
-        more_options.update({'liquidClass':default_liq_class})
-    ham_int.wait_on_response(ham_int.send_command(ASPIRATE96,
-        labwarePositions=compound_pos_str_96(plate96),
-        aspirateVolume=vol,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.aspirate_96(plate96, vol, **more_options)
 
 def dispense_96(ham_int, plate96, vol, **more_options):
-    logging.info('dispense_96: Dispense volume ' + str(vol) + ' into ' + plate96.layout_name() +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    if 'liquidClass' not in more_options:
-        more_options.update({'liquidClass':default_liq_class})
-    ham_int.wait_on_response(ham_int.send_command(DISPENSE96,
-        labwarePositions=compound_pos_str_96(plate96),
-        dispenseVolume=vol,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.dispense_96(plate96, vol, **more_options)
 
 def aspirate_384_quadrant(ham_int, plate384, quadrant, vol, **more_options):
-    logging.info('aspirate_96: Aspirate volume ' + str(vol) + ' from ' + plate384.layout_name() +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    if 'liquidClass' not in more_options:
-        more_options.update({'liquidClass':default_liq_class})
-    ham_int.wait_on_response(ham_int.send_command(ASPIRATE96,
-        labwarePositions=compound_pos_str_384_quad(plate384, quadrant),
-        aspirateVolume=vol,
-        **more_options), raise_first_exception=True)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.aspirate_384_quadrant(plate384, quadrant, vol, **more_options)
 
 def dispense_384_quadrant(ham_int, plate384, quadrant, vol, **more_options):
-    logging.info('dispense_96: Dispense volume ' + str(vol) + ' into ' + plate384.layout_name() +
-            ('' if not more_options else ' with extra options ' + str(more_options)))
-    if 'liquidClass' not in more_options:
-        more_options.update({'liquidClass':default_liq_class})
-    ham_int.wait_on_response(ham_int.send_command(DISPENSE96,
-        labwarePositions=compound_pos_str_384_quad(plate384, quadrant),
-        dispenseVolume=vol,
-        **more_options), raise_first_exception=True)       
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.dispense_384_quadrant(plate384, quadrant, vol, **more_options)
 
+liquidclass_params_asp = {
+    "FlowRate": -533331950,
+    "MixFlowRate": -533331949,
+    "AirTransportVolume": -533331948,
+    "BlowOutVolume": -533331947,
+    "SwapSpeed": -533331946,
+    "SettlingTime": -533331945,
+    "OverAspirateVolume": -533331936,
+    "ClotRetractHeight": -533331935
+}
+
+liquidclass_params_dsp = {
+    "FlowRate": -533331950,
+    "MixFlowRate": -533331949,
+    "AirTransportVolume": -533331948,
+    "BlowOutVolume": -533331947,
+    "SwapSpeed": -533331946,
+    "SettlingTime": -533331945,
+    "StopFlowRate": -533331920,
+    "StopBackVolume": -533331919,
+}
+
+def copy_liquid_class(ham_int, template_liquid_class, new_liquid_class):
+    cid = ham_int.send_command(COPY_LIQ_CLASS, TemplateLiquidClass = template_liquid_class, NewLiquidClass = new_liquid_class)
+    ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
 def set_aspirate_parameter(ham_int, LiquidClass, Parameter, Value):
     param_key = liquidclass_params_asp[Parameter]
@@ -352,10 +200,17 @@ def set_dispense_parameter(ham_int, LiquidClass, Parameter, Value):
     cid = ham_int.send_command(SET_DISP_PARAM, LiquidClass = LiquidClass, Parameter = param_key, Value = Value)
     ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
+def set_tip_type(ham_int, LiquidClass, TipType):
+    cid = ham_int.send_command(SET_TIP_TYPE, LiquidClass = LiquidClass, TipType = TipType)
+    ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
+
+def set_correction_curve(ham_int, LiquidClass, NominalArray, CorrectedArray):
+    cid = ham_int.send_command(SET_CORR_CURVE, LiquidClass = LiquidClass, NominalArray = NominalArray, CorrectedArray = CorrectedArray)
+    ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
 def move_sequence(ham_int, sequence, xDisplacement=0, yDisplacement=0, zDisplacement=0):
-    cid = ham_int.send_command(MOVE_SEQ, inputSequence=sequence, xDisplacement=xDisplacement, yDisplacement=yDisplacement, zDisplacement=zDisplacement)
-    ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
+    """Legacy wrapper for backward compatibility"""
+    return ham_int.move_sequence(sequence, xDisplacement, yDisplacement, zDisplacement)
 
 def tilt_module_initialize(ham_int, module_name, comport, trace_level, simulate):
     cid = ham_int.send_command(TILT_INIT, ModuleName = module_name, 
@@ -368,30 +223,79 @@ def tilt_module_move(ham_int, module_name, angle):
     cid = ham_int.send_command(TILT_MOVE, ModuleName = module_name, Angle = angle)
     ham_int.wait_on_response(cid, raise_first_exception=True, timeout=120)
 
-def get_plate_gripper_seq(ham, source_plate_seq,  gripHeight, gripWidth, openWidth, lid, tool_sequence, **more_options):
-    logging.info('get_plate: Getting plate ' + source_plate_seq )
-    
-    if lid:
-        cid = ham.send_command(GRIP_GET, plateSequence=source_plate_seq, transportMode=1, gripHeight=gripHeight, gripWidth=gripWidth, widthBefore=openWidth, toolSequence=tool_sequence)
-    else:
-        cid = ham.send_command(GRIP_GET, plateSequence=source_plate_seq, transportMode=0, gripHeight=gripHeight, gripWidth=gripWidth, widthBefore=openWidth, toolSequence=tool_sequence)
-    ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
+def get_plate_gripper_seq(ham, source_plate_seq, gripHeight, gripWidth, openWidth, lid, tool_sequence, **more_options):
+    """Legacy wrapper for backward compatibility"""
+    return ham.get_plate_gripper_seq(source_plate_seq, gripHeight, gripWidth, openWidth, lid, tool_sequence, **more_options)
 
 def move_plate_gripper_seq(ham, dest_plate_seq, **more_options):
-    logging.info('move_plate: Moving plate ' + dest_plate_seq)
-    cid = ham.send_command(GRIP_MOVE, plateSequence=dest_plate_seq)
-    ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
+    """Legacy wrapper for backward compatibility"""
+    return ham.move_plate_gripper_seq(dest_plate_seq, **more_options)
     
 def place_plate_gripper_seq(ham, dest_plate_seq, tool_sequence, **more_options):
-    logging.info('place_plate: Placing plate ' + dest_plate_seq )
-    cid = ham.send_command(GRIP_PLACE, plateSequence=dest_plate_seq, toolSequence=tool_sequence)
-    ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
+    """Legacy wrapper for backward compatibility"""
+    return ham.place_plate_gripper_seq(dest_plate_seq, tool_sequence, **more_options)
 
 def move_plate_gripper(ham, dest_poss, **more_options):
-    labware_poss = compound_pos_str(dest_poss)
-    #logging.info('move_plate: Moving plate ' + dest_plate_seq)
-    cid = ham.send_command(GRIP_MOVE, plateLabwarePositions=labware_poss, **more_options)
-    ham.wait_on_response(cid, raise_first_exception=True, timeout=120)
+    """Legacy wrapper for backward compatibility"""
+    return ham.move_plate_gripper(dest_poss, **more_options)
+
+
+def move_plate_using_gripper(ham_int: HamiltonInterface, source: str, destination: str, gripHeight: float, gripWidth: float = 81, 
+                             openWidth: float = 87, lid: bool = False, tool_sequence: str = cfg.core_gripper_sequence, 
+                             gripForce: int = 8, ejectToolWhenFinish: int = 1, gripperToolChannel: int = 5):
+
+    ham_int.get_plate_gripper_seq(source, gripHeight, gripWidth, openWidth, lid, tool_sequence, 
+                                  gripForce=gripForce, gripperToolChannel=gripperToolChannel)
+
+    ham_int.place_plate_gripper_seq(destination, tool_sequence=tool_sequence, ejectToolWhenFinish=ejectToolWhenFinish)
+
+def tracked_tip_pick_up(ham_int: HamiltonInterface, tips_tracker: TrackedTips, n: int) -> List[Tuple[DeckResource, int]]:
+    """
+    Pick up `n` tips from the tracker, marking them as occupied.
+    Returns a list of (DeckResource, position_within_rack).
+    """
+
+
+    if n > tips_tracker.count_remaining():
+        raise ValueError(f"Only {tips_tracker.count_remaining()} tips available; {n} requested.")
+    
+    tips_poss = tips_tracker.fetch_next(n)
+    try:
+        ham_int.tip_pick_up(tips_poss)
+    except Exception as e:
+        tips_tracker.mark_occupied(tips_poss)
+        raise e
+    return tips_poss
+
+def tracked_tip_eject(ham_int: HamiltonInterface, tips_tracker: TrackedTips, eject_poss: List[Tuple[DeckResource, int]]):
+    """
+    Eject tips from the tracker, marking them as free.
+    If `eject_positions` is None, eject all tips in the tracker.
+    """
+
+    ham_int.tip_eject(eject_poss)
+    tips_tracker.mark_occupied(eject_poss, occupied=True)
+
+    return eject_poss
+
+def tracked_tip_pick_up_96(ham_int: HamiltonInterface, tips_tracker: TrackedTips, rack = None):
+    """
+    Pick up `n` tips from the tracker, marking them as occupied.
+    Returns a list of (DeckResource, position_within_rack).
+    """
+    if rack is None:
+        tip_rack = tips_tracker.fetch_rack()
+    else:
+        tips_tracker.mark_unoccupied(rack)
+    ham_int.tip_pick_up_96(tip_rack)
+
+
+def tip_support_pickup_columns(ham_int: HamiltonInterface, tips:TrackedTips, tip_support_tracker: TipSupportTracker, num_columns):
+    """
+    Pick up n columns from the right side of the tip support rack.
+    """
+    column_idx = tip_support_tracker.fetch_n_columns(ham_int, num_columns, tips)
+    ham_int.tip_pick_up_mph_columns(tip_support_tracker.resource, num_columns_from_left=column_idx)
 
 
 class StderrLogger:

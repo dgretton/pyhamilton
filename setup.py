@@ -10,12 +10,24 @@ except(IOError, ImportError):
 
 setup(
     name='pyhamilton',
-    version='1.491.20',
+    version='1.6',
     packages=find_packages(exclude=['tests*', 'examples*']),
     license='MIT',
     description='Python for Hamilton liquid handling robots',
     long_description='Forthcoming due to markdown incompatibility',
-    install_requires=['requests', 'pythonnet', 'pyserial', 'parse', 'waiter'],
+    install_requires=[
+    'requests',
+    'parse',
+    'pythonnet',
+    'pyserial',
+    'waiter',
+    'SQLalchemy',
+    'pandas',
+    'sqlalchemy-access',
+    'opencv-python',
+    'numpy',
+    'Pillow',
+    'matplotlib'],
     package_data={'pyhamilton': ['star-oem/*', 'star-oem/VENUS_Method/*', 'bin/*','library/*','project-template/*',
                                  'library/HSLInhecoTEC/*','library/HSLAppsLib/*','library/ASWStandard/*',
                                  'library/ASWStandard/ASWGlobal/*','library/ASWStandard/TraceLevel/*',
@@ -27,7 +39,8 @@ setup(
         'console_scripts': [
             'pyhamilton-new-project = pyhamilton.__init__:create_project',
             'pyhamilton-ai-project = pyhamilton.__init__:create_ai_project',
-            'pyhamilton-configure = pyhamilton.__init__:autoconfig'
+            'pyhamilton-configure = pyhamilton.__init__:autoconfig',
+            'deck-annotator = pyhamilton.ngs.loading.deck_annotation:main',
         ],
     },
 )
