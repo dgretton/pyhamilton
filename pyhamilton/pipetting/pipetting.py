@@ -394,7 +394,7 @@ def multi_dispense(ham_int: HamiltonInterface, tips:List[Tuple[DeckResource, int
                                     submergeDepth=2)
             
             if pre_aspirate_volume > 0:
-                pre_dispense_vols = [pre_aspirate_volume for v in vols if v is not None]
+                pre_dispense_vols = [pre_aspirate_volume if v is not None else None for v in vols]
                 ham_int.dispense(positions, pre_dispense_vols, liquidClass=liquid_class, liquidHeight=dispense_height)
 
         for column, column_volumes in batch:
