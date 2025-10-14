@@ -440,6 +440,12 @@ class DeckResource:
         for i in self._items:
             yield i
 
+    def assign_label(self, label: str):
+        """Assign a custom label to this vessel for visualization purposes."""
+        self.custom_label = label
+        return self
+
+
 
 class Standard96(DeckResource):
     """Labware types with 96 positions that use a letter-number id scheme like `'A1'`.

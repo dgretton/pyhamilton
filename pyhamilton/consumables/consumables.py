@@ -37,6 +37,8 @@ class TrackedReagentVessel(TrackedContainer):
         self.reagent_map[reagent_name] = positions
         return self.reagent_positions(reagent_name)
     
+
+    
     def reset_volumes(self):
         """
         Resets all volume trackers in the container to 0.
@@ -58,6 +60,7 @@ class TrackedReagentVessel(TrackedContainer):
     def reagent_positions(self, reagent_name):
         # List comprehension of form [(self, pos) for pos in self.reagent_map[reagent_name]]
         return [(self, pos) for pos in self.reagent_map[reagent_name]]
+    
 
 class ReagentTrackedPlate96(Plate96, TrackedReagentVessel):
     def __init__(self, *args, **kwargs):
@@ -151,35 +154,33 @@ def get_class_name(obj):
 def generate_reagent_summary(tracked_vessels: list, units_default: str = "uL", output_file: str = None):
     """
     Generates a summary of reagent consumption from a list of tracked vessels.
-
-    The summary is a dictionary that includes a 'units_default' key and then
-    details for each vessel that has consumed reagents. Each vessel's entry
-    includes a 'class_name' and a nested dictionary of reagent consumption
-    by position.
-
-    Args:
-        tracked_vessels (list): A list of vessel objects to be processed.
-        units_default (str): The default unit of volume, used for the summary.
-        output_file (str, optional): The path to a JSON file to save the summary.
-                                    If None, the function returns the summary dictionary.
-    
-    Returns:
-        dict: The summary of reagent consumption.
+    Now also includes vessels with custom labels even if they have no reagent consumption.
     """
     summary = {"units_default": units_default}
     
     for vessel in tracked_vessels:
         vessel_name = vessel.layout_name()
-        vessel_data = vessel.all_required_reagent_volumes()[vessel_name]
+
+        if isinstance(vessel, TrackedReagentVessel):
+            vessel_data = vessel.all_required_reagent_volumes()[vessel_name]
+        else:
+            vessel_data = {}
+
+        # Check if vessel has a custom label
+        has_custom_label = hasattr(vessel, 'custom_label') and vessel.custom_label is not None
         
-        # Skip vessels with no reagents or no consumption
-        if not vessel_data or all(vol <= 0 for vol in vessel_data.values()):
+        # Skip vessels with no reagents AND no custom label
+        if not has_custom_label and (not vessel_data or all(vol <= 0 for vol in vessel_data.values())):
             continue
-            
+        
         summary[vessel_name] = {
-            "class_name": get_class_name(vessel),  # New field for the vessel's class name
+            "class_name": get_class_name(vessel),
             "positions": {}
         }
+        
+        # Add custom label if present
+        if has_custom_label:
+            summary[vessel_name]["custom_label"] = vessel.custom_label
         
         # For each reagent in this vessel, find which positions it occupies
         for reagent_name, total_volume in vessel_data.items():
@@ -208,6 +209,7 @@ def generate_reagent_summary(tracked_vessels: list, units_default: str = "uL", o
         print(f"Reagent summary written to {output_file}")
     
     return summary
+
 
 def generate_tip_use_summary(tracked_tips_list, output_file=None):
     """

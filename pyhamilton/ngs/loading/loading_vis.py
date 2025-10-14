@@ -321,7 +321,7 @@ class LoadingVis:
 
     def _load_reagent_map(self, reagent_data: Union[str, Path, Dict]) -> None:
         """
-        Load reagent map.
+        Load reagent map, now with support for custom labels.
         """
         if isinstance(reagent_data, (str, Path)):
             with open(reagent_data, "r", encoding="utf-8") as f:
@@ -333,6 +333,7 @@ class LoadingVis:
         self.reagent_map: Dict[str, Dict[str, Any]] = {}
         self.tube_racks_map: Dict[str, Dict[int, Dict[str, Any]]] = {}
         self.plate96_map: Dict[str, Dict[int, Dict[str, Any]]] = {}
+        self.custom_labels: Dict[str, str] = {}  # Add this line
 
         
         for vessel_name, vessel_data in d.items():
@@ -342,6 +343,10 @@ class LoadingVis:
             vessel_key = _norm_key(vessel_name)
             pos_map = vessel_data.get("positions") if isinstance(vessel_data, dict) else None
             vessel_class_name = vessel_data.get('class_name', '')
+            
+            # Check for custom label
+            if "custom_label" in vessel_data:
+                self.custom_labels[vessel_key] = vessel_data["custom_label"]
             
             if 'Plate96' in vessel_class_name:
                 self.plate96_map.update({vessel_key: vessel_data.get('positions', {})})
@@ -403,7 +408,11 @@ class LoadingVis:
             
             color = region.color_bgr
 
-            if prefer_reagent_map and key_norm in self.reagent_map:
+            # Priority 1: Check for custom label first
+            if key_norm in self.custom_labels:
+                label_text = _ascii_label(self.custom_labels[key_norm])
+            # Priority 2: Check reagent map if preferred
+            elif prefer_reagent_map and key_norm in self.reagent_map:
                 reagent_info = self.reagent_map[key_norm]
                 name = reagent_info.get("name", region.name)
                 volume = reagent_info.get("volume")
@@ -423,6 +432,7 @@ class LoadingVis:
                         label_text = _ascii_label(alias_label)
                     else:
                         label_text = _ascii_label(name)
+            # Priority 3: Fall back to alias rules or region name
             else:
                 alias_label = self._apply_alias_rules(region.name)
                 if alias_label:
@@ -432,13 +442,16 @@ class LoadingVis:
             
             items.append((region, color, label_text))
 
+        # Draw transparent polygons for all regions
         for region, color, _ in items:
             _draw_transparent_polygon(
                 canvas, region.points, color, alpha=alpha
             )
+        
         if not draw_labels:
             return canvas
 
+        # Prepare for label placement
         overlay_rects = [_rect_xyxy(r.top_left, r.bottom_right) for (r, _, _) in items]
         placed_label_rects = []
         label_px = 16
@@ -449,13 +462,14 @@ class LoadingVis:
         except Exception:
             font_fp = None
 
+        # Place labels with collision avoidance
         for region, color, label_text in items:
             print(f"Placing label '{label_text}' for region '{region.name}'")
 
             polygon_bbox, min_area_center = _get_polygon_min_area_rect_center_and_bbox(region.points)
             
             anchor_xyxy = _rect_xyxy(region.top_left, region.bottom_right)
-            anchor_poly_points = region.points # Pass the actual points!
+            anchor_poly_points = region.points
 
             preferred_side = _preferred_side_for_key(_norm_key(region.name))
 
@@ -479,9 +493,12 @@ class LoadingVis:
                 scale=font_scale,
                 thickness=font_thickness,
             )
+            
+            # Draw label background
             x1, y1, x2, y2 = label_rect
             cv2.rectangle(canvas, (x1, y1), (x2, y2), (0, 0, 0), thickness=-1)
 
+            # Draw label text
             draw_text_pillow(
                 canvas, label_text, org,
                 font_path=font_fp or ARIAL_TTF,
@@ -617,12 +634,18 @@ class LoadingVis:
                 prefer_reagent_map=deck_prefer_reagent_map,
             )
             self.show(img_deck, window_name=deck_window_name,
-                      scale=deck_scale, wait_ms=0, resizable=deck_resizable)
+                    scale=deck_scale, wait_ms=0, resizable=deck_resizable)
             
-        # 2) 96-well Plate view (OpenCV)
+        # 2) 96-well Plate view (OpenCV) - only show if there's actual reagent data
         if plate_enabled:
             for plate_key in self.plate96_map.keys():
                 plate_data = self.plate96_map.get(plate_key, {})
+                
+                # Skip plates with no reagent position data (custom labels only)
+                if not plate_data or len(plate_data) == 0:
+                    print(f"Skipping plate display for '{plate_key}' - no reagent volume data")
+                    continue
+                
                 img_plate = render_plate_96(
                     plate_key,
                     plate_data,
@@ -632,10 +655,10 @@ class LoadingVis:
                 )
                 window_name = f"{plate_key} - Plate Reagent Map"
                 self.show(img_plate, 
-                          window_name=window_name,
-                          scale=plate_scale_in_window, 
-                          wait_ms=0, 
-                          resizable=plate_resizable)
+                        window_name=window_name,
+                        scale=plate_scale_in_window, 
+                        wait_ms=0, 
+                        resizable=plate_resizable)
         
         # 3) Tube rack view (Tkinter modal)
         if tube_enabled and self.tube_racks_map:
@@ -677,7 +700,6 @@ class LoadingVis:
         
         if destroy_windows:
             self._cleanup_cv_windows(deck_window_name, plate_enabled)
-
 
 
     def ShowDialogues(self, *args, **kwargs):
