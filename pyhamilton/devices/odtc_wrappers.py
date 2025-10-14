@@ -81,6 +81,8 @@ def odtc_execute_protocol(ham, device_id, method_name, simulating, priority=1, l
         return ODTCExecuteResponse(duration=response.return_data[0], resultID=response.return_data[1], raw=response)
 
 def odtc_get_status(ham, device_id, simulating):
+    print("Checking ODTC status...")
+    print(simulating)
 
     return_fields = ['step-return2', 'step-return3', 'step-return4', 'step-return5',
                      'step-return6', 'step-return7', 'step-return8']
@@ -96,6 +98,7 @@ def odtc_get_status(ham, device_id, simulating):
         raw: HamiltonResponse # keep the raw object if callers need extras
 
     if ham.simulating or simulating:
+        print("Simulating ODTC status as 'idle'")
         return ODTCStatusResponse(state='idle', raw=None)
     
     else:
@@ -159,7 +162,7 @@ def odtc_wait_for_idle(ham, device_id, simulating, check_interval=5, max_wait=30
     
     start_time = time.time()
     while True:
-        status = odtc_get_status(ham, device_id)
+        status = odtc_get_status(ham, device_id, simulating)
         if status.state == 'idle':
             return
         elif time.time() - start_time > max_wait:

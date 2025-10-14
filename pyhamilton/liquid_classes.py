@@ -1,12 +1,12 @@
 from enum import Enum, IntEnum
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 
 from .interface import (COPY_LIQ_CLASS, SET_ASP_PARAM, SET_DISP_PARAM, SET_TIP_TYPE, SET_CORR_CURVE,
                         SET_DISP_MODE)
 from .resources.enums import TipType
-from .liquid_class_db import DispenseMode, check_liquid_class_exists
-
+from .liquid_class_db import DispenseMode, check_liquid_class_exists, liquid_class_has_parameter, load_liquid_classes
+import os
 
 class AspirateParameter(Enum):
     FLOW_RATE = -533331950
@@ -27,6 +27,29 @@ class DispenseParameter(Enum):
     SETTLING_TIME = -533331945
     STOP_FLOW_RATE = -533331920
     STOP_BACK_VOLUME = -533331919
+
+aspirate_params_to_db = {
+    'FLOW_RATE': 'AsFlowRate',
+    'MIX_FLOW_RATE': 'AsMixFlowRate',
+    'AIR_TRANSPORT_VOLUME': 'AsAirTransportVolume',
+    'BLOW_OUT_VOLUME': 'AsBlowOutVolume',
+    'SWAP_SPEED': 'AsSwapSpeed',
+    'SETTLING_TIME': 'AsSettlingTime',
+    'OVER_ASPIRATE_VOLUME': 'AsOverAspirateVolume',
+    'CLOT_RETRACT_HEIGHT': 'AsClotRetractHeight',
+}
+
+dispense_params_to_db = {
+    'FLOW_RATE': 'DsFlowRate',
+    'MIX_FLOW_RATE': 'DsMixFlowRate',
+    'AIR_TRANSPORT_VOLUME': 'DsAirTransportVolume',
+    'BLOW_OUT_VOLUME': 'DsBlowOutVolume',
+    'SWAP_SPEED': 'DsSwapSpeed',
+    'SETTLING_TIME': 'DsSettlingTime',
+    'STOP_FLOW_RATE': 'DsStopFlowRate',
+    'STOP_BACK_VOLUME': 'DsStopBackVolume',
+}
+
 
 def copy_liquid_class(ham_int, template_liquid_class: str, new_liquid_class: str):
     """Copy an existing liquid class to create a new one."""
@@ -134,65 +157,35 @@ def validate_liquid_class_definitions(definitions: list):
             raise ValueError(f"Liquid class '{definition['name']}' has invalid dispense_mode: {e}")
 
 
-def create_liquid_class_from_json(ham_int, 
-                                  liquid_classes_json: str):
+def create_liquid_class_from_dict(
+    ham_int,
+    definitions: Union[list, dict]
+):
     """
-    Create new liquid classes from a JSON list of definitions after validation.
-    
+    Core logic: create new liquid classes from a dict/list of definitions.
+
     Args:
         ham_int: Hamilton interface object
-        liquid_classes_json: JSON string containing a list of liquid class definitions
-        
-    Expected JSON structure:
-    [
-        {
-            "name": "MyLiquidClass_1",
-            "aspirate": {
-                "FLOW_RATE": 1000,
-                "MIX_FLOW_RATE": 500,
-                "AIR_TRANSPORT_VOLUME": 5,
-                "BLOW_OUT_VOLUME": 10,
-                "SWAP_SPEED": 100,
-                "SETTLING_TIME": 1.0,
-                "OVER_ASPIRATE_VOLUME": 2,
-                "CLOT_RETRACT_HEIGHT": 0.5
-            },
-            "dispense": {
-                "FLOW_RATE": 800,
-                "MIX_FLOW_RATE": 400,
-                "AIR_TRANSPORT_VOLUME": 5,
-                "BLOW_OUT_VOLUME": 10,
-                "SWAP_SPEED": 100,
-                "SETTLING_TIME": 1.0,
-                "STOP_FLOW_RATE": 100,
-                "STOP_BACK_VOLUME": 2
-            },
-            "tip_type": {
-                "volume": 300,
-                "has_filter": true
-            },
-            "dispense_mode": "Surface Empty",
-            "correction_curve": {
-                "nominal": [10, 50, 100, 200],
-                "corrected": [9.8, 49.5, 99.2, 198.5]
-            }
-        }
-    ]
+        definitions: List (or single dict) of liquid class definitions
     """
-    # Step 1: Load and validate the JSON structure
-    with open(liquid_classes_json, 'r') as f:
-        definitions = json.load(f)
+    # Normalize single dict into list
+    if isinstance(definitions, dict):
+        definitions = [definitions]
+    elif not isinstance(definitions, list):
+        raise TypeError("definitions must be a dict or list of dicts")
 
     validate_liquid_class_definitions(definitions)
+
+
 
     for definition in definitions:
         new_liquid_class = definition["name"]
 
-        if check_liquid_class_exists(new_liquid_class):
-            print(f"Liquid class '{new_liquid_class}' already exists. Skipping creation.")
-            continue
-        
-        template_liquid_class = "Tip_50ulFilter_Water_DispenseSurface_Empty"  # Default template. We expect to overwrite all parameters.
+        if not check_liquid_class_exists(new_liquid_class):
+            template_liquid_class = "Tip_50ulFilter_Water_DispenseSurface_Empty"  # default template
+        else:
+            print(f"Liquid class '{new_liquid_class}' already exists. It will be overwritten.")
+            template_liquid_class = new_liquid_class  # overwrite existing
         parameters = {
             "aspirate": definition["aspirate"],
             "dispense": definition["dispense"]
@@ -208,7 +201,9 @@ def create_liquid_class_from_json(ham_int,
         for param_name, value in parameters["aspirate"].items():
             try:
                 aspirate_param = AspirateParameter[param_name.upper()]
-                set_aspirate_parameter(ham_int, new_liquid_class, aspirate_param, value)
+                cache_param_name = aspirate_params_to_db.get(param_name.upper())
+                if not liquid_class_has_parameter(new_liquid_class, cache_param_name, value):
+                    set_aspirate_parameter(ham_int, new_liquid_class, aspirate_param, value)
             except KeyError:
                 print(f"Warning: Unknown aspirate parameter '{param_name}' for '{new_liquid_class}' ignored.")
 
@@ -216,43 +211,67 @@ def create_liquid_class_from_json(ham_int,
         for param_name, value in parameters["dispense"].items():
             try:
                 dispense_param = DispenseParameter[param_name.upper()]
-                set_dispense_parameter(ham_int, new_liquid_class, dispense_param, value)
+                cache_param_name = dispense_params_to_db.get(param_name.upper())
+                if not liquid_class_has_parameter(new_liquid_class, cache_param_name, value):
+                    set_dispense_parameter(ham_int, new_liquid_class, dispense_param, value)
             except KeyError:
                 print(f"Warning: Unknown dispense parameter '{param_name}' for '{new_liquid_class}' ignored.")
 
         # Step 5: Determine and set the tip type
         volume = tip_info["volume"]
         has_filter = tip_info["has_filter"]
-        
+
         selected_tip = None
         for tip_enum in TipType:
             if tip_enum.volume == volume:
                 if has_filter == tip_enum.has_filter and not tip_enum.is_needle:
                     selected_tip = tip_enum
                     break
-        
+
         if selected_tip:
             set_tip_type(ham_int, new_liquid_class, selected_tip.value)
             print(f"Set tip type to {selected_tip.name} for liquid class '{new_liquid_class}'.")
         else:
-            raise ValueError(f"Could not find a suitable tip type for volume {volume} with filter={has_filter} for liquid class '{new_liquid_class}'.")
+            raise ValueError(f"Could not find a suitable tip type for volume {volume} with filter={has_filter}.")
 
         # Step 6: Set dispense mode
         try:
             dispense_mode_enum = DispenseMode.from_string(dispense_mode_str)
             set_dispense_mode(ham_int, new_liquid_class, dispense_mode_enum.to_code())
-            print(f"Set dispense mode to '{dispense_mode_str}' (code: {dispense_mode_enum.to_code()}) for liquid class '{new_liquid_class}'.")
+            print(f"Set dispense mode to '{dispense_mode_str}' for liquid class '{new_liquid_class}'.")
         except ValueError as e:
             raise ValueError(f"Invalid dispense mode for liquid class '{new_liquid_class}': {e}")
 
         # Step 7: Set correction curve if provided
         if correction_curve:
             if "nominal" in correction_curve and "corrected" in correction_curve:
-                set_correction_curve(ham_int, new_liquid_class, 
-                                     correction_curve["nominal"], 
-                                     correction_curve["corrected"])
+                set_correction_curve(
+                    ham_int, new_liquid_class,
+                    correction_curve["nominal"],
+                    correction_curve["corrected"]
+                )
                 print(f"Set correction curve for liquid class '{new_liquid_class}'.")
             else:
                 raise ValueError(f"Correction curve for '{new_liquid_class}' requires both 'nominal' and 'corrected' arrays.")
 
         print(f"Successfully configured liquid class '{new_liquid_class}' from template '{template_liquid_class}'.")
+
+
+def create_liquid_class_from_json(
+    ham_int,
+    json_path: str
+):
+    """
+    Wrapper: load JSON from file and pass it into create_liquid_class_from_dict.
+
+    Args:
+        ham_int: Hamilton interface object
+        json_path: Path to a JSON file containing one or more liquid class definitions
+    """
+    if not os.path.isfile(json_path):
+        raise FileNotFoundError(f"File not found: {json_path}")
+    
+    with open(json_path, 'r') as f:
+        definitions = json.load(f)
+
+    return create_liquid_class_from_dict(ham_int, definitions)
