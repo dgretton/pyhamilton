@@ -178,7 +178,6 @@ def pip_transfer(ham_int: HamiltonInterface, tips: List[Tuple[DeckResource, int]
     - volumes: List of volumes to dispense (should be matched to dispense_positions)
     '''
 
-
     liquid_class_vol_capacity = get_liquid_class_volume(liquid_class, nominal=True)  # Fetch the volume for the liquid class
     if max(volumes) > liquid_class_vol_capacity:
         raise ValueError(f"Volume exceeds tip capacity: {max(volumes)} > {liquid_class_vol_capacity}")
@@ -580,7 +579,8 @@ def pip_mix(ham_int: HamiltonInterface, tips: TrackedTips, positions_to_mix: Lis
         volumes = response.liquidVolumes
 
         mixing_volume = min(volumes)*0.75 # Calculate mixing volume based on volume in container
-
+        if mixing_volume < 0:
+            mixing_volume = max(5, min(volumes))
 
         capacitative_LLD, liquidFollowing = (5, True) if liquid_height==0 else (0, False)
 

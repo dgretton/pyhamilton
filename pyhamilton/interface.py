@@ -1102,6 +1102,7 @@ class HamiltonInterface:
             raise_first_exception=True
         )
 
+
     def aspirate_96(self, plate96, vol, **more_options):
         """Aspirate liquid from a 96-well plate.
         

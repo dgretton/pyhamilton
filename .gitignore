@@ -9,3 +9,4 @@ dist
 build/
 dist/
 *.egg-info/
+**/tadm_report_*.html

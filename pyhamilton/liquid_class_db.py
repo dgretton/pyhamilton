@@ -77,6 +77,60 @@ def _build_engine(mdb_path: str):
     uri = f"access+pyodbc:///?odbc_connect={quote_plus(odbc_str)}"
     return create_engine(uri, future=True)
 
+def load_liquid_classes():
+    """
+    Load liquid classes from the Access database into memory for fast searching.
+    This is called once at startup and cached.
+    """
+    global LIQUID_CLASSES_CACHE
+    
+    try:
+        # Get the database path from your config
+        cfg = defaults()
+        engine = _build_engine(cfg.liquids_database)
+        
+        param_columns = [
+            'LiquidClassName',
+            'AsFlowRate', 'AsMixFlowRate', 'AsAirTransportVolume', 'AsBlowOutVolume', 
+            'AsSwapSpeed', 'AsSettlingTime', 'AsOverAspirateVolume', 'AsClotRetractHeight', 
+            'DsFlowRate', 'DsMixFlowRate', 'DsAirTransportVolume', 'DsBlowOutVolume', 
+            'DsSwapSpeed', 'DsSettlingTime', 'DsStopFlowRate', 'DsStopBackVolume', 
+            'DispenseMode', 'TipType', 'CorrectionCurve'
+        ]
+        
+        select_string = ", ".join(param_columns)
+        query = f"SELECT {select_string} FROM LiquidClass WHERE OriginalLiquid = 0"
+        stmt = text(query)
+        
+        with engine.connect() as conn:
+            result = conn.execute(stmt).fetchall()
+        
+        LIQUID_CLASSES_CACHE = []
+        for row in result:
+            lc_data = dict(row._mapping)
+            # Unpack the CorrectionCurve for the API response
+            if 'CorrectionCurve' in lc_data and lc_data['CorrectionCurve']:
+                try:
+                    unpacked_data = unpack_doubles_dynamic(lc_data['CorrectionCurve'])
+                    lc_data['CorrectionCurve'] = unpacked_data
+                except Exception as e:
+                    print(f"Failed to unpack CorrectionCurve for {lc_data['LiquidClassName']}: {e}")
+                    lc_data['CorrectionCurve'] = None
+            
+            LIQUID_CLASSES_CACHE.append(lc_data)
+        
+        print(f"Loaded {len(LIQUID_CLASSES_CACHE)} liquid classes into cache")
+        # Debug: Print first few liquid class names
+        if LIQUID_CLASSES_CACHE:
+            print("Sample liquid classes:")
+            for i, lc in enumerate(LIQUID_CLASSES_CACHE[:5]):
+                print(f"  - {lc.get('LiquidClassName', 'Unknown')}")
+        
+    except Exception as e:
+        print(f"Warning: Could not load liquid classes from database: {e}")
+        LIQUID_CLASSES_CACHE = []
+
+
 def _get_liquid_class_data(liquid_class_name: str, columns: Union[str, List[str]]):
     """
     General helper function to query a specific liquid class for given columns.
@@ -134,6 +188,32 @@ def check_liquid_class_exists(liquid_class_name: str) -> bool:
     with engine.connect() as conn:
         result = conn.execute(stmt, {"name": liquid_class_name}).fetchone()
         return result[0] > 0
+
+def liquid_class_has_parameter(liquid_class_name: str, parameter: str, value: Any) -> bool:
+    """
+    Check if a given liquid class has a specific parameter set to a given value
+    using the in-memory LIQUID_CLASSES_CACHE.
+
+    Args:
+        liquid_class_name: Name of the liquid class to check.
+        parameter: Parameter/column name to check.
+        value: Value to compare against.
+
+    Returns:
+        True if the liquid class exists in cache and the parameter matches the value, False otherwise.
+    """
+    global LIQUID_CLASSES_CACHE
+    
+    if 'LIQUID_CLASSES_CACHE' not in globals() or not LIQUID_CLASSES_CACHE:
+        load_liquid_classes()
+        
+    for lc in LIQUID_CLASSES_CACHE:
+        if lc.get("LiquidClassName") == liquid_class_name:
+            return lc.get(parameter) == value
+    
+    # Liquid class not found
+    return False
+
 
 def get_liquid_class_column_details() -> List[Dict[str, Any]]:
     """

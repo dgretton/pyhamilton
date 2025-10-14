@@ -238,6 +238,147 @@ def format_channel_info(lh_cmd: LiquidHandlerCommand) -> str:
     
     return f"{lh_cmd.container}: [{formatted_channels}]"
 
+def generate_json_report(associations: List, output_file: str):
+    """
+    Generate a JSON report with all command and USB data information.
+    
+    Args:
+        associations: List of Association objects
+        output_file: Path to output JSON file
+    """
+    report_data = {
+        "report_metadata": {
+            "generated_at": datetime.now().isoformat(),
+            "report_type": "Liquid Handler USB TADM Report",
+            "total_commands": len(associations)
+        },
+        "commands": []
+    }
+    
+    for i, assoc in enumerate(associations, 1):
+        lh = assoc.liquid_handler_cmd
+        
+        # Build command data structure
+        command_data = {
+            "index": i,
+            "timestamp": lh.timestamp.isoformat(),
+            "command_type": lh.command_type,
+            "status": lh.status,
+            "line_number": lh.line_number,
+            "container": lh.container,
+            "channel_info": [
+                {
+                    "position": pos,
+                    "volume": vol
+                }
+                for pos, vol in lh.channel_info
+            ] if lh.channel_info else [],
+            "liquid_class": lh.liquid_class,
+            "aspirate_flow_rate_uL_per_s": lh.aspirate_flow_rate,
+            "dispense_flow_rate_uL_per_s": lh.dispense_flow_rate
+        }
+        
+        # Add USB block data if available
+        if assoc.usb_block:
+            usb_data = {
+                "block_id": assoc.usb_block["id"],
+                "block_type": assoc.usb_block["type"],
+                "block_index": assoc.usb_block["index"],
+                "channels": {
+                    channel: data
+                    for channel, data in assoc.usb_block["channels"].items()
+                }
+            }
+            command_data["usb_block"] = usb_data
+        else:
+            command_data["usb_block"] = None
+        
+        if assoc.time_offset_ms is not None:
+            command_data["time_offset_ms"] = assoc.time_offset_ms
+        
+        report_data["commands"].append(command_data)
+    
+    # Write JSON to file with pretty formatting
+    with open(output_file, "w") as f:
+        json.dump(report_data, f, indent=2)
+    
+    print(f"JSON report saved to {output_file}")
+
+def get_last_usb_data_block() -> Optional[dict]:
+    """
+    Parses the USB trace file, gets the last data block, and extracts the 
+    numerical channel data from it.
+
+    Args:
+        filename: Path to the HxUsbComm*.trc file.
+
+    Returns:
+        A dictionary representing the last USB data block with numerical 
+        data in the 'channels' key, or None if no blocks are found.
+    """
+    # Instantiate the existing parser
+    log_dir = Path(r"C:\Program Files (x86)\Hamilton\Logfiles")
+    usb_file = find_most_recent_trace_file(log_dir, "HxUsbComm*.trc")
+    usb_parser = USBTraceParser()
+    
+    # Parse the entire file to get all blocks
+    blocks = usb_parser.parse_file(usb_file)
+
+    # Check if any blocks were found and return the last one
+    if blocks:
+        # The 'channels' key in the returned dictionary already holds the 
+        # numerical data (a defaultdict of lists of ints)
+        return blocks[-1]
+    else:
+        return None
+
+# Example usage (assuming 'some_file.trc' exists):
+# last_block = get_last_usb_data_block('some_file.trc')
+# if last_block:
+#     print(f"Last Block ID: {last_block['id']}")
+#     print(f"Numerical Data (P1 channel): {last_block['channels'].get('P1')[:5]}...") # print first 5 points
+
+
+def generate_tadm_report_with_json(html_output="tadm_report.html", json_output="tadm_report.json"):
+    """
+    Modified version of generate_tadm_report that creates both HTML and JSON outputs.
+    """
+    log_dir = Path(r"C:\Program Files (x86)\Hamilton\Logfiles")
+
+    # Automatically find the most recent trace files
+    lh_file = find_most_recent_trace_file(log_dir, "*_Trace.trc")
+    usb_file = find_most_recent_trace_file(log_dir, "HxUsbComm*.trc")
+    
+    if not lh_file:
+        print(f"No liquid handler trace file ending with '_Trace.trc' found in {log_dir}. Exiting.")
+        return
+    elif not usb_file:
+        print(f"No USB trace file starting with 'HxUsbComm' found in {log_dir}. Exiting.")
+        return
+
+    print(f"Using Liquid Handler file: {lh_file}")
+    print(f"Using USB file: {usb_file}")
+
+    parser = TraceParser(debug=False)
+
+    with open(lh_file, encoding='latin-1') as f:
+        parser.parse_liquid_handler_trace(f.read())
+
+    usb_parser = USBTraceParser()
+    parser.usb_blocks = usb_parser.parse_file(usb_file)
+
+    associations = parser.associate_commands()
+
+    # Add timestamp to both output files
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    html_output_timestamped = html_output.replace(".html", f"_{timestamp}.html")
+    json_output_timestamped = json_output.replace(".json", f"_{timestamp}.json")
+    
+    # Generate both reports
+    generate_html_report(associations, html_output_timestamped)
+    generate_json_report(associations, json_output_timestamped)
+
+
 # ------------------------------
 # Generate HTML report
 # ------------------------------
