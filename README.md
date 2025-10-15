@@ -36,16 +36,17 @@ https://www.youtube.com/watch?v=G92neaVfvyw
 
 ## Installation
 
-1. **Install and test the standard Hamilton software suite for your system.** We no longer host the link here, please contact Hamilton for a copy of the Venus 4 software if you don't have one already
+1. **Install and test the standard Hamilton software suite for your system.** We no longer host the link here, please contact Hamilton for a copy of the Venus software if you don't have one already
 2. **Install [Python <=3.13](https://www.python.org/downloads/windows/)**
 3. **Make sure git is installed.** https://git-scm.com/download/win
 4. **Make sure you have .NET framework 4.0 or higher installed.** https://www.microsoft.com/en-us/download/details.aspx?id=17851
-5. **Update your pip and setuptools.**
+5. [**Install Microsoft SQL ODBC driver**](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver17)
+6. **Update your pip and setuptools.**
     ```
     > python -m pip install --upgrade pip
     > pip install --upgrade setuptools
     ```
-6. **Install pyhamilton.**
+7. **Install pyhamilton.**
    
    ```
    git clone https://github.com/dgretton/pyhamilton
