@@ -37,7 +37,7 @@ https://www.youtube.com/watch?v=G92neaVfvyw
 ## Installation
 
 1. **Install and test the standard Hamilton software suite for your system.** We no longer host the link here, please contact Hamilton for a copy of the Venus 4 software if you don't have one already
-2. **Install 32-bit python**, preferably using the executable installer [here](https://www.python.org/downloads/release/python-3119/). Python 3.12+ is known to cause an installation issue with some required pythonnet modules.
+2. **Install Python**
 3. **Make sure git is installed.** https://git-scm.com/download/win
 4. **Make sure you have .NET framework 4.0 or higher installed.** https://www.microsoft.com/en-us/download/details.aspx?id=17851
 5. **Update your pip and setuptools.**
@@ -47,12 +47,6 @@ https://www.youtube.com/watch?v=G92neaVfvyw
     ```
 6. **Install pyhamilton.**
    
-   **If** you want to install normally:
-   ```
-    pip install pyhamilton
-    ```
-
-   **Or, if** you plan on adding new functionality or changing pyhamilton, do a project install:
    ```
    git clone https://github.com/dgretton/pyhamilton
    cd pyhamilton
