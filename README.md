@@ -87,7 +87,7 @@ The easiest way to test your PyHamilton installation is by running the following
     </br>a. Make sure you don't have any other program running which is communicating with the robot e.g. Venus run control
     </br>b. Make sure the .dlls referenced in ```__init__.py``` are unblocked. See [this StackOverflow thread](https://stackoverflow.com/questions/28840880/pythonnet-filenotfoundexception-unable-to-find-assembly) for more details.
 
-4. If you get an error like `pyhamilton-configure is not recognized as an internal or external command, operable program or batch file,` make sure the directory containing your Python interpreter is on the path.
+4. If you get an error like `pyhamilton-configure is not recognized as an internal or external command, operable program or batch file,` make sure the directory containing your Python interpreter is in your `path` environment variable.
 
 ## Applications
 
