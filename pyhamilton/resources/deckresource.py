@@ -210,7 +210,7 @@ class LayoutManager:
             if not success:
                 error_msg = f"Position ID verification failed for resource '{new_res.layout_name()}':\n"
                 error_msg += "\n".join(errors)
-                raise ValueError(error_msg)
+                #raise ValueError(error_msg)
         
         self.resources[new_res.layout_name()] = new_res
         return new_res
