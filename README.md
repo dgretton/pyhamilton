@@ -40,7 +40,7 @@ https://www.youtube.com/watch?v=G92neaVfvyw
 2. **Install [Python <=3.13.](https://www.python.org/downloads/windows/)** Make sure to check the box that asks if you want to add Python to your path variable.
 3. **Make sure git is installed.** https://git-scm.com/download/win
 4. **Make sure you have .NET framework 4.0 or higher installed.** https://www.microsoft.com/en-us/download/details.aspx?id=17851
-5. [**Install Microsoft SQL ODBC driver**](https://www.microsoft.com/en-us/download/details.aspx?id=54920)
+5. [**Install Microsoft Access database engine**](https://www.microsoft.com/en-us/download/details.aspx?id=54920). This must have the same bit number (32-bit or 64-bit) as your Microsoft Office install.
 6. **Update your pip and setuptools.**
     ```
     > python -m pip install --upgrade pip
