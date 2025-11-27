@@ -88,7 +88,7 @@ def move_plate(ham, source_plate, target_plate, CmplxGetDict=None, CmplxPlaceDic
 
 def move_by_seq(ham, source_plate_seq, target_plate_seq, CmplxGetDict=None, CmplxPlaceDict=None, grip_height=0, inversion=None, gripForce=2, width_before=132, **more_options):
     """Legacy wrapper for backward compatibility"""
-    return ham.move_by_seq(source_plate_seq, target_plate_seq, CmplxGetDict, CmplxPlaceDict, grip_height, inversion, gripForce, width_before, **more_options)
+    return ham.move_by_seq(source_plate_seq, target_plate_seq, CmplxGetDict=CmplxGetDict, CmplxPlaceDict=CmplxPlaceDict, gripHeight=grip_height, inversion=inversion, gripForce=gripForce, widthBefore=width_before, **more_options)
 
 def channel_var(pos_tuples):
     ch_var = ['0']*16
