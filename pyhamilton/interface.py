@@ -414,43 +414,57 @@ class HamiltonResponse:
             raise HamiltonReturnParseError('Inconsistency: Venus returns SUCCESS while error code {firstErrorCode} found! ( response: ' + self.raw + ' )')
 
 class HamiltonServerThread(Thread):
-    """Private threaded local HTTP server with graceful shutdown flag."""
+    """Private threaded local HTTP server with reliable shutdown (no shutdown() deadlocks)."""
 
     def __init__(self, address, port):
         super().__init__()
+        self.daemon = True                 # ✅ like working code: don't block interpreter exit
         self.server_address = (address, port)
-        self.should_continue = True
+        self.should_continue = True        # ✅ stop flag
         self.exited = False
+        self.httpd = None                 # ✅ create inside run (cleaner re: thread affinity)
 
-        # You can define a function for indexing the response by 'id'
-        def index_on_resp_id(response_str):
+        def index_on_resp_id(response_bytes):
             try:
-                response = json.loads(response_str)
-                if 'id' in response:
-                    return response['id']
-            except json.decoder.JSONDecodeError:
-                pass
-            return None
+                response = json.loads(response_bytes)
+                return response.get("id")
+            except Exception:
+                return None
 
-        # Set that function on the SINGLE global handler class
         HamiltonServerHandler.indexing_fn = index_on_resp_id
-
-        # We'll serve the global handler class
-        self.httpd = None
 
     def run(self):
         self.exited = False
-        self.httpd = server.HTTPServer(self.server_address, HamiltonServerHandler)
-        while self.should_continue:
-            self.httpd.handle_request()
-        self.exited = True
+        try:
+            self.httpd = server.HTTPServer(self.server_address, HamiltonServerHandler)
+            self.httpd.timeout = 0.5       # ✅ critical: prevents blocking forever
+
+            while self.should_continue:
+                try:
+                    self.httpd.handle_request()
+                except OSError:
+                    # socket closed while waiting -> exit
+                    break
+        finally:
+            if self.httpd:
+                try:
+                    self.httpd.server_close()
+                except Exception:
+                    pass
+            self.exited = True
 
     def disconnect(self):
+        # ✅ like working code: DO NOT call shutdown()
         self.should_continue = False
+        if self.httpd:
+            try:
+                self.httpd.server_close()  # kick accept()/handle_request()
+            except Exception:
+                pass
 
     def has_exited(self):
         return self.exited
-
+        
 class HamiltonInterface:
     """Main class to automatically set up and tear down an interface to a Hamilton robot.
 
@@ -566,7 +580,7 @@ class HamiltonInterface:
         #self.server_thread.start()
         print("started the server thread")
         self.log('started the server thread')
-        #self.active = True
+        self.active = True
 
     def stop(self):
         """Stop this HamiltonInterface and clean up associated async processes.
@@ -601,18 +615,15 @@ class HamiltonInterface:
                     self.log('Could not kill oem process, moving on with shutdown', 'warn')
         finally:
             self.active = False
+
+        if self.server_thread is not None:
             self.server_thread.disconnect()
-            self.log('disconnected from server')
-            time.sleep(.1)
-            if not self.server_thread.has_exited():
-                self.log('server did not exit yet, sending dummy request to exit its loop')
-                session = requests.Session()
-                adapter = requests.adapters.HTTPAdapter(max_retries=20)
-                session.mount('http://', adapter)
-                session.get('http://' + HamiltonInterface.default_address + ':' + str(HamiltonInterface.default_port))
-                self.log('dummy get request sent to server')
-            self.server_thread.join()
-            self.log('server thread exited')
+            self.server_thread.join(timeout=1.0)   # ✅ bounded join
+
+            if self.server_thread.is_alive():
+                self.log('server thread did not exit within timeout (daemon thread)', 'info')
+            else:
+                self.log('server thread exited', 'info')    
 
     def __enter__(self):
         self.start()

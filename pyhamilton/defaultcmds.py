@@ -125,7 +125,11 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'mixCycles':0, # (integer) number of mixing cycles (1 cycle = 1 asp + 1 disp)
         'mixPosition':0.0, # (float) additional immersion mm below aspiration position to start mixing
         'mixVolume':0.0, # (float) mix volume
-        'airTransportRetractDist':10.0 # (float) mm to move up in Z after finishing the aspiration at a fixed height before aspirating 'transport air'
+        'airTransportRetractDist':10.0, # (float) mm to move up in Z after finishing the aspiration at a fixed height before aspirating 'transport air'
+        'xDisplacement':0.0,
+        'yDisplacement':0.0,
+        'zDisplacement':0.0,
+
     }),
 
     'mph96Dispense':('DISPENSE96', {
@@ -144,6 +148,9 @@ defaults_by_cmd = { # 'field':None indicates field is required when assembling c
         'mixPosition':0.0, # (float)  additional immersion mm below dispense position to start mixing
         'mixVolume':0.0, # (float)  mix volume
         'airTransportRetractDist':10.0, # (float) mm to move up in Z after finishing the dispense at a fixed height before aspirating 'transport air'
+        'xDisplacement':0.0, # (float) displacement in X direction
+        'yDisplacement':0.0, # (float) displacement in Y direction
+        'zDisplacement':0.0, # (float) displacement in Z direction
         'zMoveAfterStep':0, # (integer) 0=normal, 1=Minimized (Attention!!! this depends on labware clearance height, can crash). 
         'sideTouch':0 # (integer) 0=Off , 1=On
     }),
