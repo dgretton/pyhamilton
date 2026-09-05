@@ -198,6 +198,53 @@ class HamiltonServerHandler(server.BaseHTTPRequestHandler):
         pass
 
 
+PYTHON_32BIT_KEY = 'python_32bit_path'
+
+
+def find_python_32bit():
+    """Locate the 32-bit interpreter that hosts the Venus CLR bridge.
+
+    Looked for in three places, most explicit first:
+
+      1. ``PYTHON_32BIT_PATH`` in the environment;
+      2. ``python_32bit_path`` in ``~/.pyhamilton/defaults.json``, which is what
+         the installer writes;
+      3. the location the installer uses by default.
+
+    The environment variable used to be the only route, set by hand and
+    documented nowhere but the text of the exception raised when it was missing
+    -- so an install was correct only for as long as that variable survived.
+    """
+    candidates = []
+    from_env = os.getenv('PYTHON_32BIT_PATH')
+    if from_env:
+        candidates.append(from_env)
+
+    config_path = os.path.join(os.path.expanduser('~'), '.pyhamilton', 'defaults.json')
+    try:
+        with open(config_path, encoding='utf-8') as f:
+            configured = (json.load(f) or {}).get(PYTHON_32BIT_KEY)
+        if configured:
+            candidates.append(configured)
+    except (OSError, ValueError):
+        pass
+
+    local_appdata = os.getenv('LOCALAPPDATA')
+    if local_appdata:
+        candidates.append(os.path.join(local_appdata, 'pyhamilton', 'py32', 'python.exe'))
+
+    for candidate in candidates:
+        if candidate and os.path.exists(candidate):
+            return candidate
+
+    looked = ', '.join(candidates) if candidates else '(nowhere -- nothing configured)'
+    raise HamiltonInterfaceError(
+        'server mode needs a 32-bit Python to host the Venus bridge, and none was found.'
+        + os.linesep + 'Looked at: ' + looked + os.linesep
+        + 'Run `pyhamilton configure` to install one, or set PYTHON_32BIT_PATH yourself.'
+    )
+
+
 def run_hamilton_process():
     print("RUNNING HAMILTON PROCESS")
     """Start the interpreter in a separate python process.
@@ -206,26 +253,13 @@ def run_hamilton_process():
     RunHSLExecutor.exe executable from Hamilton. This should always be done in a
     separate python process using the subprocess module, not a Thread.
     """
-    import clr
-    from pyhamilton import OEM_STAR_PATH, OEM_HSL_PATH
-    clr.AddReference(os.path.join(OEM_STAR_PATH, 'RunHSLExecutor'))
-    clr.AddReference(os.path.join(OEM_STAR_PATH, 'HSLHttp'))
-    try:
-        from RunHSLExecutor import Class1
-    except ModuleNotFoundError:
-        raise RuntimeError('RunHSLExecutor DLLs successfully located, but an internal '
-                           'error prevented import as a CLR module. You might be '
-                           'missing the standard Hamilton software suite HSL '
-                           'executables, their DLLs may not be registered with Windows, '
-                           'or they may not be located in the expected system '
-                           'directory.')
-    C = Class1()
-    C.StartMethod(OEM_HSL_PATH)
-    try:
-        while True:
-            pass # Send external signal to end process
-    except:
-        pass
+    from pyhamilton import OEM_STAR_PATH, OEM_HSL_PATH, require_oem_files
+    from .run_venus_client import run
+
+    require_oem_files()
+    # One implementation, shared with the 32-bit sidecar: the CLR host lives in
+    # run_venus_client.py, which imports nothing from this package.
+    run(OEM_STAR_PATH, OEM_HSL_PATH)
 
 @unique
 class HamiltonResponseStatus(Enum):
@@ -590,6 +624,13 @@ class HamiltonInterface:
             return
         self.log('starting a Hamilton interface')
         if self.windowed:
+            from pyhamilton import require_oem_files
+            require_oem_files()
+            if not os.path.exists(OEM_RUN_EXE_PATH):
+                raise HamiltonInterfaceError(
+                    f'cannot find the Venus run control executable at '
+                    f'{OEM_RUN_EXE_PATH}. Is Venus installed? '
+                    '`pyhamilton doctor` checks this and the rest.')
             self._open()
             #subprocess.Popen([OEM_RUN_EXE_PATH, OEM_HSL_PATH])
             self.log('started the oem application for simulation')
@@ -597,15 +638,17 @@ class HamiltonInterface:
             self.active=True
             self.log('running in simulation mode')
         elif self.server_mode:
+            from pyhamilton import OEM_STAR_PATH, OEM_HSL_PATH, require_oem_files
+            require_oem_files()
             current_directory = os.path.dirname(os.path.abspath(__file__))
             server_script_path = os.path.join(current_directory, 'run_venus_client.py')
-            python_32bit_path = os.getenv('PYTHON_32BIT_PATH')
-            print("SERVER PATHS")
-            print(python_32bit_path)
-            if not python_32bit_path:
-                raise Exception("Please set your PYTHON_32BIT_PATH variable in order to use server mode.")
-            print(server_script_path)
-            self.server_process = subprocess.Popen([python_32bit_path, server_script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            python_32bit_path = find_python_32bit()
+            self.log(f'starting the 32-bit Venus sidecar with {python_32bit_path}')
+            # The sidecar takes its two paths on the command line, so the 32-bit
+            # environment needs pythonnet and nothing else.
+            self.server_process = subprocess.Popen(
+                [python_32bit_path, server_script_path, OEM_STAR_PATH, OEM_HSL_PATH],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
             self.oem_process = Process(target=run_hamilton_process, args=())
             self.oem_process.start()

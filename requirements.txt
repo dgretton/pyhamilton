@@ -1,12 +1,5 @@
-requests
-parse
-pythonnet --pre
-pyserial
-waiter
-SQLalchemy
-pandas
-sqlalchemy-access
-opencv-python
-numpy
-Pillow
-matplotlib
+# One source of truth for dependencies is pyproject.toml; this file just
+# installs the package with every extra, which is what a development
+# checkout wants. It used to list the dependencies a second time, and had
+# already drifted from setup.py over `pythonnet --pre`.
+-e .[venus,ngs,test]

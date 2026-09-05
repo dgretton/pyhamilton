@@ -1,0 +1,86 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyhamilton"
+version = "1.6"
+description = "Python for Hamilton liquid handling robots"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Dana Gretton", email = "dgretton@mit.edu" }]
+urls = { Homepage = "https://github.com/dgretton/pyhamilton" }
+
+# 3.10 is the real floor: defaults.py uses @dataclass(slots=True), which is
+# a TypeError on 3.9 and earlier. There was no python_requires at all before,
+# so pip on 3.9 installed a package that could not be imported.
+requires-python = ">=3.10"
+
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+
+# The base install is what a method needs to run and what a simulation needs on
+# any OS. Windows-only and NGS-only packages are extras, so `pip install
+# pyhamilton` on a Mac no longer pulls OpenCV, Matplotlib and a CLR bridge.
+dependencies = [
+    "parse",
+    "pyserial",
+    "requests",
+    "waiter",
+    "SQLAlchemy",
+]
+
+[project.optional-dependencies]
+# Everything needed to drive real Venus. pythonnet hosts the CLR; pyodbc and
+# sqlalchemy-access are the Microsoft Access driver stack behind the
+# liquid-class database (sqlalchemy-access is never imported by name -- it is
+# the dialect registered for access+pyodbc:// URLs, so it must stay declared).
+venus = [
+    "pythonnet; sys_platform == 'win32'",
+    "pyodbc; sys_platform == 'win32'",
+    "sqlalchemy-access; sys_platform == 'win32'",
+]
+ngs = [
+    "matplotlib",
+    "numpy",
+    "opencv-python",
+    "Pillow",
+]
+test = [
+    "pytest",
+    "pytest-mock",  # required by tests/interface_tests.py and previously undeclared
+]
+all = ["pyhamilton[venus,ngs]"]
+
+[project.scripts]
+# One command with subcommands, plus the historical names so existing docs and
+# muscle memory keep working.
+pyhamilton = "pyhamilton._bootstrap:main"
+pyhamilton-configure = "pyhamilton._bootstrap:configure_entry_point"
+pyhamilton-doctor = "pyhamilton.doctor:main"
+pyhamilton-new-project = "pyhamilton:create_project"
+pyhamilton-ai-project = "pyhamilton:create_ai_project"
+deck-annotator = "pyhamilton.ngs.loading.deck_annotation:main"
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "examples*", "ci*"]
+
+# Recursive globs. The old package_data enumerated five of the twelve library
+# subdirectories by hand, listed a project-template/ directory that no longer
+# exists, and omitted templates/ and defaults/ entirely -- so a non-editable
+# install shipped an incomplete library and a new-project command that silently
+# created nothing. Every one of those bugs was invisible to `pip install -e .`,
+# which is the only install the README ever described.
+[tool.setuptools.package-data]
+pyhamilton = [
+    "star-oem/**/*",
+    "library/**/*",
+    "templates/**/*",
+    "defaults/**/*",
+    "bin/*",
+    "error_code_descriptions.txt",
+]

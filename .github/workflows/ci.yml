@@ -1,0 +1,265 @@
+name: ci
+
+# Every job below runs on a fresh, headless, single-use Windows VM that GitHub
+# provisions and destroys. That is the point: a developer's own machine can only
+# be clean once, and this repo's install has several checks that are only
+# meaningful on a machine nobody has touched.
+#
+# What these runners CANNOT have is Venus -- it is licensed per machine and its
+# installer is interactive. So this file covers everything up to, but not
+# including, talking to the Venus process. See the `venus` job at the bottom for
+# where that goes.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+  # ---------------------------------------------------------------- layer 1+2
+  # Does the package install and import on a clean Windows box, on each Python
+  # we claim to support? The README says "<=3.13"; 3.14 is included to find out
+  # whether that ceiling is real or just stale (locally it installs fine).
+  windows:
+    name: install + tests (win, py${{ matrix.python }}, ${{ matrix.install }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        # Both install shapes, always. Four packaging bugs survived for years
+        # because `pip install -e .` puts the source tree on sys.path and so
+        # masks every missing package_data entry -- and the README described no
+        # other install. Editable is a supported convenience; it must never
+        # again be the only thing that is tested.
+        install: [editable, wheel]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # The vendor installers in pyhamilton/bin are LFS objects. A checkout
+      # without lfs:true gets pointer files, and `pyhamilton-configure` would
+      # happily os.startfile() them (INST-1). Assert they are real PE binaries
+      # so this can never regress silently.
+      - name: bundled installers are real executables
+        shell: pwsh
+        run: |
+          $bad = @()
+          Get-ChildItem pyhamilton/bin -Filter *.exe | ForEach-Object {
+            $bytes = [System.IO.File]::ReadAllBytes($_.FullName)[0..1]
+            $magic = -join ($bytes | ForEach-Object { [char]$_ })
+            if ($magic -ne 'MZ') { $bad += "$($_.Name) (magic=$magic, $($_.Length) bytes)" }
+          }
+          if ($bad) { $bad | ForEach-Object { Write-Error $_ }; exit 1 }
+          Write-Host "OK: all bundled installers are PE binaries"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: install
+        run: |
+          python -m pip install --upgrade pip setuptools
+          python -m pip install ${{ matrix.install == 'editable' && '-e .' || '.' }}
+
+      # The base install must import with no extras present: no pythonnet, no
+      # pyodbc, no OpenCV. That is the macOS/simulation path, and it is what
+      # `from .ngs import *` at module scope used to make impossible.
+      - name: import
+        run: python -c "import pyhamilton; print(pyhamilton.__version__)"
+
+      # doctor is the real smoke test: it checks every data file the code reads
+      # at runtime and finishes with a simulating=True dry run through the real
+      # code path. On a wheel install it is what catches a package_data
+      # regression; there is no Venus here, so its Venus checks warn.
+      - name: doctor
+        run: python -m pyhamilton.doctor
+
+      # README step 9. On a non-editable install this used to create nothing at
+      # all and report success.
+      - name: new-project creates a project
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "$env:TEMP/np" -Force | Out-Null
+          Push-Location "$env:TEMP/np"
+          pyhamilton-new-project
+          if (-not (Test-Path robot_method.py)) { Write-Error "no robot_method.py"; exit 1 }
+          Pop-Location
+
+      # configure must be scriptable and must change nothing when asked not to.
+      - name: configure --dry-run is non-interactive and inert
+        run: python -m pyhamilton._bootstrap configure --dry-run --skip-installers
+
+      # pytest-mock is required by tests/interface_tests.py and declared in no
+      # requirements file. Installed explicitly here rather than hidden, so the
+      # gap stays visible until it is fixed in packaging.
+      - name: test
+        run: |
+          python -m pip install pytest pytest-mock
+          python -m pytest -q
+
+      # The console_scripts in setup.py are never exercised. At minimum they
+      # should resolve and not traceback on --help / a temp dir.
+      - name: entry points resolve
+        shell: pwsh
+        run: |
+          foreach ($e in 'pyhamilton','pyhamilton-doctor','pyhamilton-new-project','pyhamilton-configure') {
+            $c = Get-Command $e -ErrorAction SilentlyContinue
+            if ($c) { Write-Host "OK   $e -> $($c.Source)" }
+            else    { Write-Error "MISSING entry point: $e"; exit 1 }
+          }
+
+  # ------------------------------------------------------- 32-bit Venus sidecar
+  # Venus is 32-bit, so the CLR assembly can only be hosted by a 32-bit Python --
+  # that is what server_mode's PYTHON_32BIT_PATH interpreter is for. User code
+  # stays 64-bit; the HTTP server on 3221 is the bitness boundary.
+  #
+  # The sidecar needs `clr` and two path strings, nothing else. It currently
+  # reaches them through `from pyhamilton.interface import ...`, which drags the
+  # whole package (SQLAlchemy, OpenCV, Pillow, NumPy, Matplotlib) into a 32-bit
+  # interpreter. This job asserts the intended end state: a 32-bit environment
+  # with pythonnet alone is enough to import the sidecar.
+  windows-x86-sidecar:
+    name: 32-bit Venus sidecar
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: x86
+      - name: a 32-bit env with only pythonnet can load the sidecar
+        run: |
+          python -c "import struct; assert struct.calcsize('P') == 4, 'not 32-bit'"
+          python -m pip install --upgrade pip
+          python -m pip install pythonnet
+          python -c "import clr; print('CLR bridge available on x86')"
+          python -c "import pyhamilton.run_venus_client"
+          python -c "import pyhamilton.run_venus_client as s; import sys; sys.exit(0 if s.main([]) == 2 else 1)"
+
+  # ---------------------------------------------------------------- packaging
+  packaging:
+    name: packaging metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: build
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+          python -m twine check dist/*
+
+      # INST-6: package_data pulls in ~126 MB of vendor binaries, and PyPI's
+      # per-file limit is 100 MB. Fail before the upload does.
+      - name: artifact size is under the PyPI limit
+        run: |
+          limit=$((100 * 1024 * 1024))
+          fail=0
+          for f in dist/*; do
+            size=$(stat -c%s "$f")
+            printf '%-60s %10s bytes\n' "$(basename "$f")" "$size"
+            if [ "$size" -ge "$limit" ]; then
+              echo "  ^ exceeds PyPI's 100 MB per-file limit"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      # requirements.txt used to restate the dependency list and had already
+      # drifted from setup.py over `pythonnet --pre`. It now installs the
+      # package with its extras, so there is one source of truth; assert it
+      # stays that way.
+      - name: requirements.txt does not restate dependencies
+        run: |
+          python - <<'PY'
+          import pathlib, sys
+          lines = [l.strip() for l in pathlib.Path('requirements.txt').read_text().splitlines()
+                   if l.strip() and not l.startswith('#')]
+          if lines != ['-e .[venus,ngs,test]']:
+              print('requirements.txt should defer to pyproject.toml, got:', lines)
+              sys.exit(1)
+          print('OK: one source of truth')
+          PY
+
+      # Every data file the code reads at runtime must be in the wheel. This is
+      # the check whose absence let four package_data bugs survive.
+      - name: wheel contains the data files the code reads
+        run: |
+          python - <<'PY'
+          import glob, sys, zipfile
+          wheel = glob.glob('dist/*.whl')[0]
+          names = zipfile.ZipFile(wheel).namelist()
+          required = [
+              'pyhamilton/star-oem/RunHSLExecutor.dll',
+              'pyhamilton/star-oem/HSLHttp.dll',
+              'pyhamilton/templates/basic_template/robot_method.py',
+              'pyhamilton/defaults/defaults.json',
+          ]
+          missing = [r for r in required if r not in names]
+          subdirs = {n.split('/')[2] for n in names
+                     if n.startswith('pyhamilton/library/') and n.count('/') > 2}
+          expected = {'ASWStandard', 'Alpha Numeric Conversion', 'DaisyChainedTiltModule',
+                      'ErrorSimulator', 'HSLAppsLib', 'HSLInhecoTEC', 'HSLLabwrAccess',
+                      'Labware Properties', 'SMT', 'SMTs', 'STAR Tools', 'SchedulingDev'}
+          missing += sorted(f'pyhamilton/library/{d}/' for d in expected - subdirs)
+          installers = [n for n in names if n.startswith('pyhamilton/bin/')]
+          if len(installers) != 9:
+              missing.append(f'pyhamilton/bin/ has {len(installers)} files, expected 9')
+          if missing:
+              print('missing from the wheel:'); [print(' ', m) for m in missing]
+              sys.exit(1)
+          print('OK: every runtime data file is in the wheel')
+          PY
+
+  # ------------------------------------------------------------------- linux
+  # The response-parsing tests need no robot, no Venus and no Windows. Running
+  # them here gives contributors without a Windows machine a signal, and keeps
+  # the pure-logic half of the codebase honestly portable.
+  linux:
+    name: simulation path (linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # Non-editable, no extras: exactly what `uv add pyhamilton` gives someone
+      # on a laptop who only wants to write and dry-run a method. If this job
+      # fails, the Windows-only parts have leaked into the base package again.
+      - run: |
+          python -m pip install --upgrade pip setuptools
+          python -m pip install .
+          python -c "import pyhamilton; print(pyhamilton.__version__)"
+          python -m pyhamilton.doctor
+          python -m pip install pytest pytest-mock
+          python -m pytest -q
+
+  # ------------------------------------------------------------------- venus
+  # The one thing a hosted runner cannot do. When there is a lab machine with
+  # Venus on it, register it as a self-hosted runner with the label `venus` and
+  # drop the `if: false`.
+  #
+  # workflow_dispatch only, deliberately: a pull request from anyone must never
+  # be able to start a method on a machine attached to an instrument. Confirm
+  # the deck is clear before dispatching.
+  venus:
+    name: against real Venus (self-hosted)
+    if: false
+    runs-on: [self-hosted, windows, venus]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - run: python -m pytest -q -m venus

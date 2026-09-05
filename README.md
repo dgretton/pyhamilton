@@ -36,58 +36,100 @@ https://www.youtube.com/watch?v=G92neaVfvyw
 
 ## Installation
 
-1. **Install and test the standard Hamilton software suite for your system.** We no longer host the link here, please contact Hamilton for a copy of the Venus software if you don't have one already
-2. **Install [Python <=3.13.](https://www.python.org/downloads/windows/)** Make sure to check the box that asks if you want to add Python to your path variable.
-3. **Make sure git is installed.** https://git-scm.com/download/win
-4. **Make sure you have .NET framework 4.0 or higher installed.** https://www.microsoft.com/en-us/download/details.aspx?id=17851
-5. [**Install Microsoft Access database engine**](https://www.microsoft.com/en-us/download/details.aspx?id=54920). This must have the same bit number (32-bit or 64-bit) as your Python version, and the rest of your Microsoft Office applications.
-6. **Update your pip and setuptools.**
-    ```
-    > python -m pip install --upgrade pip
-    > pip install --upgrade setuptools
-    ```
-7. **Install pyhamilton.**
-   
-   ```
-   git clone https://github.com/dgretton/pyhamilton
-   cd pyhamilton
-   pip install -e .
-   ```
-   Now changes you make to the cloned repo will be reflected in your package install. You can test new code this way and then push it to a fork. 
-    
-8. **Run the pyhamilton autoconfig tool from the command line.** 
-This will automatically execute all the installers in `pyhamilton/bin` and will copy all the files in `pyhamilton\library` to `C:/Program Files (x86)/HAMILTON/Library`. You are welcome to forgo this command and perform the steps manually if you are concerned about file overwriting.
+**Windows, with Venus installed.** One command in PowerShell:
 
-    ```
-    pyhamilton-configure
-    ``` 
+```powershell
+powershell -c "irm https://raw.githubusercontent.com/dgretton/pyhamilton/main/install.ps1 | iex"
+```
 
-    Press accept to proceed with the bundled installers.
-    
-9. **Test your PyHamilton installation** </br>
-The easiest way to test your PyHamilton installation is by running the following in your terminal
+That installs [uv](https://docs.astral.sh/uv/) if it is missing, creates a
+methods project in `%USERPROFILE%\pyhamilton-methods`, installs PyHamilton and
+a 64-bit Python to run it, provisions the 32-bit interpreter the Venus sidecar
+needs, runs the bundled Hamilton installers, copies the HSL libraries into your
+Venus installation, and finishes by verifying all of it. It asks for
+confirmation once, before it changes anything, and for administrator rights
+once, for the step that writes into the Venus install.
 
-    ```
-    mkdir new-project
-    cd new-project
-    pyhamilton-new-project
-    py robot_method.py
-    ```
+Useful switches (`-File install.ps1 ...`, or after `iex` in a checkout):
 
-10. **Run.** If you have other Python versions installed, always run pyhamilton with `py yourmethod.py` (the bundled Python launcher, which interprets shebangs) or `python3 yourmethod.py`
+| Switch | Effect |
+|---|---|
+| `-Root D:\methods` | put the methods project somewhere else |
+| `-Version 1.6` | pin a PyHamilton version |
+| `-Dev` | install PyHamilton **editable**, from a source checkout, so your changes to the repo take effect immediately |
+| `-SkipConfigure` | install Python and PyHamilton, but do not touch the Venus installation |
 
+**Simulation only, on any operating system.** Venus is Windows-only, but the
+Python-level dry run is not, so methods can be written and checked on a laptop:
 
+```bash
+uv init my-methods && cd my-methods
+uv add pyhamilton
+uv run pyhamilton doctor
+```
+
+Then use `HamiltonInterface(simulating=True)`.
+
+**Anything else** — an existing environment, an offline machine, conda, plain
+pip — installs the normal way, and `pyhamilton configure` does the machine-level
+half on its own:
+
+```
+pip install "pyhamilton[venus]"     # add [ngs] for the NGS tools
+pyhamilton configure                # vendor installers, HSL libraries, sidecar
+pyhamilton doctor                   # check all of it
+```
+
+### Prerequisites
+
+Only two things are not handled for you:
+
+1. **Venus itself.** Install and test the standard Hamilton software suite
+   first; contact Hamilton for a copy.
+2. **The Microsoft Access Database Engine**, which must match your Python's
+   bitness (64-bit) *and* your installed Office. `pyhamilton doctor` reports
+   which one you have and what is wrong with it.
+
+.NET 4.8 ships with Windows 10 and 11, and `uv` supplies Python, so neither is a
+manual step any more. Git is not required.
+
+### If something goes wrong
+
+```
+pyhamilton doctor
+```
+
+It checks the interpreter, the package's data files, .NET, the Access driver at
+your bitness, your Venus installation, the 32-bit sidecar, TCP 3221, and
+finishes with a `simulating=True` dry run through the real code path. It prints
+the failures in the order they should be fixed. Paste the whole transcript into
+a post on [labautomation.io](https://labautomation.io/), or email
+stefanmgolas@gmail.com.
+
+Re-running the installer, or `pyhamilton configure`, is always safe: it compares
+file contents, backs up anything it replaces to `~/.pyhamilton/backup`, and
+merges rather than overwrites your `~/.pyhamilton/defaults.json`.
 
 ## Installation Troubleshooting
+
+**Run `pyhamilton doctor` first.** Most of what used to be in this list is now a
+named check with the fix attached.
+
 1. If you encounter an error relating to HxFan (i.e., your robot does not have a fan), open pyhamilton/star-oem/VENUS_Method/STAR_OEM_Test.med, navigate to the "HxFan" grouping, and delete all commands under this grouping.
 
-2. If you would like to test your PyHamilton installation on a computer not connected to a Hamilton robot, use `HamiltonInterface(simulate=True)` to open your interface inside your robot script. 
+2. To test PyHamilton on a computer with no robot attached, use
+   `HamiltonInterface(simulating=True)`. This works on macOS and Linux too, and
+   is the same code path a real run takes.
 
-3. If your initialization hangs (such as on initial_error_example.py), try these steps:
-    </br>a. Make sure you don't have any other program running which is communicating with the robot e.g. Venus run control
-    </br>b. Make sure the .dlls referenced in ```__init__.py``` are unblocked. See [this StackOverflow thread](https://stackoverflow.com/questions/28840880/pythonnet-filenotfoundexception-unable-to-find-assembly) for more details.
+3. If your initialization hangs (such as on initial_error_example.py), make sure
+   no other program is communicating with the robot -- Venus Run Control in
+   particular. (The blocked-DLL problem that used to live here is handled:
+   `pyhamilton configure` clears the `Zone.Identifier` stream from the OEM
+   assemblies, and `pyhamilton doctor` reports it if anything is still wrong.)
 
-4. If you get an error like `pyhamilton-configure is not recognized as an internal or external command, operable program or batch file,` make sure the directory containing your Python interpreter is in your `path` environment variable.
+4. If `pyhamilton` is not recognised as a command, the interpreter's `Scripts\`
+   directory is not on your `PATH`. `uv run pyhamilton ...` works regardless,
+   and `pyhamilton doctor` reports it.
 
 ## Applications
 
