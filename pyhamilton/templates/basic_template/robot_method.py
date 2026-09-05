@@ -5,6 +5,41 @@ Created on Sun Jul 17 21:12:47 2022
 @author: stefa
 """
 import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+def _use_project_interpreter():
+    """Hand this script to the project's own interpreter, if it is not already.
+
+    `python robot_method.py` runs whatever python is first on PATH. On Windows
+    that is often the Microsoft Store stub, or an older install that happens to
+    carry an older pyhamilton -- which imports cleanly and runs the wrong code
+    against a real robot. Rather than rely on remembering `uv run`, look for the
+    .venv beside this file and hand the script over to it.
+
+    Delete this block if you manage environments yourself.
+    """
+    if os.environ.get("PYHAMILTON_REEXEC"):
+        return  # handed over once already; never loop
+    here = Path(__file__).resolve()
+    for folder in (here.parent, *here.parents):
+        interpreter = folder / ".venv" / (
+            "Scripts/python.exe" if os.name == "nt" else "bin/python")
+        if not interpreter.exists():
+            continue
+        if Path(sys.executable).resolve() == interpreter.resolve():
+            return  # already the right one
+        print(f"[pyhamilton] re-running with {interpreter}")
+        result = subprocess.run(
+            [str(interpreter), str(here), *sys.argv[1:]],
+            env={**os.environ, "PYHAMILTON_REEXEC": "1"})
+        sys.exit(result.returncode)
+
+
+_use_project_interpreter()
+
 from pyhamilton import (HamiltonInterface,  LayoutManager, 
  Plate96, Tip96, initialize, tip_pick_up, tip_eject, 
  aspirate, dispense,  oemerr, resource_list_with_prefix, normal_logging,

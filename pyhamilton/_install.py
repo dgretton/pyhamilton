@@ -16,6 +16,7 @@ the interpreter uv just fetched, before the package exists anywhere.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import platform
 import re
@@ -250,6 +251,39 @@ def sync(uv: str, root: Path) -> None:
     )
 
 
+def configure_vscode(root: Path) -> None:
+    """Point VS Code at this project's interpreter.
+
+    The Run button, and any terminal VS Code opens, use whatever interpreter is
+    selected -- which on a fresh machine is whatever it found first, not this
+    project's .venv. Writing the setting removes the choice, and with it the
+    single most common way of running a method against the wrong pyhamilton.
+
+    Merged, not replaced: re-running the installer is the advertised fix for
+    everything else and must not delete someone's other settings for this
+    folder.
+    """
+    settings_dir = root / ".vscode"
+    settings_dir.mkdir(exist_ok=True)
+    settings_file = settings_dir / "settings.json"
+    settings: dict = {}
+    if settings_file.exists():
+        try:
+            existing = json.loads(settings_file.read_text(encoding="utf-8"))
+            if isinstance(existing, dict):
+                settings = existing
+        except (OSError, ValueError):
+            say("the existing .vscode/settings.json is not readable JSON - replacing it")
+    interpreter = (r"${workspaceFolder}\.venv\Scripts\python.exe" if WINDOWS
+                   else "${workspaceFolder}/.venv/bin/python")
+    settings.update({
+        "python.defaultInterpreterPath": interpreter,
+        "python.terminal.activateEnvironment": True,
+    })
+    settings_file.write_text(json.dumps(settings, indent=2) + os.linesep, encoding="utf-8")
+    ok(".vscode/settings.json points at this project's .venv")
+
+
 def venv_python(root: Path) -> Path:
     return root / ".venv" / ("Scripts/python.exe" if WINDOWS else "bin/python")
 
@@ -271,6 +305,12 @@ def next_steps(root: Path, configured: bool) -> str:
        uv run pyhamilton new-project
   4. Run it:
        uv run python robot_method.py
+
+     `uv run` guarantees the project's own interpreter. If you run it any other
+     way -- `python robot_method.py`, or VS Code's Run button -- the template
+     hands itself to that interpreter anyway, and VS Code has been pointed at
+     it. What you should not do is `pip install pyhamilton` globally as well:
+     two copies is the one situation none of this can sort out for you.
 {configure_line}
 If anything ever looks wrong:  uv run pyhamilton doctor
 """
@@ -338,6 +378,9 @@ def main(argv: list[str]) -> int:
                     "configure` once the problem above is fixed."
                 )
             configured = True
+
+        step("Pointing VS Code at the environment")
+        configure_vscode(root)
 
         step("Verifying the install")
         if run([venv_python(root), "-m", "pyhamilton.doctor"], cwd=root).returncode != 0:

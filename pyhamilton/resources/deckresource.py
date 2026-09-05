@@ -5,7 +5,7 @@ Module `pyhamilton.deckresource` provides convenience classes and methods for in
 """
 import string, shutil, os, string, re
 from datetime import datetime
-from pyhamilton import OEM_LAY_PATH, LAY_BACKUP_DIR
+from pyhamilton import OEM_LAY_PATH, LAY_BACKUP_DIR, lay_backup_dir
 from ..oemerr import ResourceUnavailableError
 from typing import List, Tuple, Union
 
@@ -165,7 +165,7 @@ class LayoutManager:
         self._managers[self.checksum] = self
         if install and not LayoutManager.layfiles_equal(layfile_path, OEM_LAY_PATH):
                 print('BACKING UP AND INSTALLING NEW LAYFILE')
-                shutil.copy2(layfile_path, os.path.join(LAY_BACKUP_DIR, datetime.today().strftime('%Y%m%d_%H%M%S_') + os.path.basename(layfile_path)))
+                shutil.copy2(layfile_path, os.path.join(lay_backup_dir(), datetime.today().strftime('%Y%m%d_%H%M%S_') + os.path.basename(layfile_path)))
                 shutil.copy2(layfile_path, OEM_LAY_PATH)
 
     def assign_unused_resource(self, restype, order_key=None, reverse=False, verify_positions=True):
