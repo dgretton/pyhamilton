@@ -18,6 +18,7 @@ OEM_HSL_PATH = join(OEM_STAR_PATH, 'VENUS_Method', 'STAR_OEM_noFan.hsl')
 OEM_RUN_EXE_PATH = 'C:\\Program Files (x86)\\HAMILTON\\Bin\\HxRun.exe'
 
 from .interface import *
+from .error_handling import ExceptionTable, ErrorAction, ErrorContext, prompt_with_countdown
 from .oemerr import *
 from .liquid_handling_wrappers import *
 from .devices import *

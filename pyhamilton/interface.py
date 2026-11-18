@@ -540,6 +540,8 @@ class HamiltonInterface:
         self.logger = None
         self.log_queue = []
         self.json_logger = JSONLogger()
+        self.exception_table = None
+        self._sent_cmds = {}  # id -> command dict, kept so failed steps can be resent
 
 
         if self.__class__._global_server_thread is not None and \
@@ -727,6 +729,8 @@ class HamiltonInterface:
             send_cmd_dict = template.assemble_cmd(**cmd_dict)
         if 'id' not in send_cmd_dict:
             self.log_and_raise(ValueError("Command dicts sent from HamiltonInterface must have a unique id with key 'id'"))
+        if self.exception_table is not None:
+            self._sent_cmds[send_cmd_dict['id']] = send_cmd_dict
         if not self.simulating:
             HamiltonServerHandler.send_str(json.dumps(send_cmd_dict))
         else:
@@ -777,8 +781,58 @@ class HamiltonInterface:
         
         if self.debug:
             print(server_response)
-        
-        return self.parse_response(server_response, raise_first_exception, return_data)
+
+        sent_cmd = self._sent_cmds.pop(id, None)
+        if not raise_first_exception or self.exception_table is None or sent_cmd is None:
+            return self.parse_response(server_response, raise_first_exception, return_data)
+
+        response = self.parse_response(server_response, False, return_data)
+        try:
+            response.raise_first_exception()
+            return response
+        except HamiltonStepError as err:
+            return self._recover_from_step_error(err, sent_cmd, response, timeout, return_data)
+
+    def register_exception_table(self, table):
+        """Route step errors through a protocol-specific `ExceptionTable`.
+
+        Applies to every wait with `raise_first_exception=True`, which covers all the
+        high-level methods (gripper, iSWAP, pipetting, ...). Pass None to remove it.
+        """
+        self.exception_table = table
+        self._sent_cmds.clear()
+
+    def _recover_from_step_error(self, err, cmd, response, timeout, return_data):
+        from .error_handling import ErrorAction, ErrorContext
+        attempt = 1
+        while True:
+            ctx = ErrorContext(error=err, command=cmd.get('command', ''), cmd=cmd,
+                               response=response, attempt=attempt, ham_int=self)
+            action = self.exception_table.resolve(ctx)
+            self.log(f'exception table: {type(err).__name__} on {ctx.command} '
+                     f'(attempt {attempt}) -> {action.value}', 'warn')
+            if action is ErrorAction.SKIP:
+                return response
+            if action is not ErrorAction.RETRY:
+                self.log_and_raise(err)
+
+            cmd = dict(cmd, id=HamiltonCmdTemplate.unique_id())
+            self._sent_cmds.pop(self.send_command(**cmd), None)
+            server_response = None
+            for _ in wait(delays=1, timeout=timeout):
+                server_response = HamiltonServerHandler.pop_response(cmd['id'])
+                if server_response is not None:
+                    break
+            if server_response is None:
+                self.log_and_raise(HamiltonTimeoutError(
+                    f'Timed out after {timeout} sec while waiting for retried response id {cmd["id"]}'))
+            response = self.parse_response(server_response, False, return_data)
+            try:
+                response.raise_first_exception()
+                return response
+            except HamiltonStepError as new_err:
+                err = new_err
+                attempt += 1
 
     def parse_response(self, server_response:str, raise_first_exception:bool=False, return_data:"list|str"=None):
         """Parse the server response and return parsed response of type HamiltonResponse.
